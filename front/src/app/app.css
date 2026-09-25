@@ -1,0 +1,24 @@
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 100;
+  transform: translateY(-160%);
+  background-color: var(--color-accent);
+  color: var(--color-accent-fg);
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-control);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: transform 0.15s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}

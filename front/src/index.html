@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR" class="">
+<head>
+  <meta charset="utf-8">
+  <title>ObraStay — Gestão de hospedagem em obras</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ObraStay — plataforma premium de gestão de hospedagem de colaboradores em obras.">
+  <meta name="theme-color" content="#6366f1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    // Anti-FOUC: aplica o tema antes da renderização do app
+    try {
+      var t = localStorage.getItem('obrastay-theme');
+      var d = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (d) document.documentElement.classList.add('dark');
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

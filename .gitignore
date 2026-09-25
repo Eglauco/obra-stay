@@ -1,0 +1,33 @@
+# ---- Node / Angular (front) ----
+node_modules/
+/front/dist/
+/front/.angular/
+/front/.nx/
+npm-debug.log*
+yarn-error.log*
+
+# ---- Java / Maven (api) ----
+/api/target/
+*.class
+
+# ---- IDE / editores ----
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.settings/
+.project
+.classpath
+
+# ---- SO ----
+.DS_Store
+Thumbs.db
+
+# ---- Variáveis de ambiente / segredos ----
+.env
+*.env
+!.env.example
+
+# ---- Ferramentas locais (Claude Code) ----
+.claude/
+.mcp.json

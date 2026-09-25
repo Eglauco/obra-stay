@@ -1,0 +1,187 @@
+<section class="flex flex-col gap-6">
+  <!-- Cabeçalho -->
+  <div class="flex items-start gap-3">
+    <button type="button" (click)="voltar()" aria-label="Voltar para os locais"
+      class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-control border text-muted transition-colors hover:bg-surface-2 hover:text-fg">
+      <svg viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true"><path d="M12 5l-5 5 5 5M7 10h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </button>
+    <div class="min-w-0 flex-1">
+      <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">Contratos do local</p>
+      @if (local(); as l) {
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">{{ l.nome }}</h2>
+        <p class="mt-0.5 text-sm text-muted">{{ l.codigo }} · {{ l.cidade }}/{{ l.uf }}</p>
+      } @else if (carregandoLocal()) {
+        <span class="sk mt-1 block h-7 w-56 max-w-full"></span>
+      } @else if (erroLocal()) {
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Local</h2>
+        <p class="mt-0.5 text-sm text-danger">{{ erroLocal() }}</p>
+      }
+    </div>
+  </div>
+
+  <!-- Contrato vigente + Novo -->
+  @if (local()) {
+    <div class="flex flex-col gap-4 rounded-card border bg-surface p-5 shadow-card sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-center gap-3">
+        <span class="grid size-11 shrink-0 place-items-center rounded-full bg-surface" [style.color]="corVigente()" [style.background-color]="corVigenteBg()" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" class="size-5.5"><path d="M6 2v3M14 2v3M3 8h14M4 4h12a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </span>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold" [style.color]="corVigente()">{{ rotuloVigente() }}</p>
+          @if (vigente(); as v) {
+            <p class="truncate text-[0.8125rem] text-muted">Contrato {{ v.codigo }} · {{ v.locadoraNome }} · até {{ fmtData(v.dataFim) }}</p>
+          } @else {
+            <p class="text-[0.8125rem] text-muted">Nenhum contrato vigente neste local.</p>
+          }
+        </div>
+      </div>
+      <a [routerLink]="['/contratos/local', localId, 'novo']"
+        class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        Novo contrato
+      </a>
+    </div>
+  }
+
+  <!-- Status + lista -->
+  <div class="overflow-hidden rounded-card border bg-surface shadow-card">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+      <div role="group" aria-label="Filtrar por status" class="inline-flex rounded-control border bg-canvas p-0.5">
+        @for (opt of statusOpcoes; track opt.value) {
+          <button type="button" (click)="selecionarStatus(opt.value)" [attr.aria-pressed]="filtroStatus() === opt.value" [class]="segClasses(filtroStatus() === opt.value)">{{ opt.label }}</button>
+        }
+      </div>
+      <span class="text-[0.8125rem] text-muted" aria-live="polite">
+        @if (loading()) { Buscando… } @else { <strong class="tabular text-fg">{{ total() }}</strong> {{ total() === 1 ? 'contrato' : 'contratos' }} }
+      </span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[44rem] border-collapse text-left text-sm">
+        <caption class="sr-only">Contratos do local</caption>
+        <thead>
+          <tr class="border-b bg-surface-2/50 text-[0.75rem] uppercase tracking-wide text-muted">
+            <th scope="col" class="px-4 py-3 font-semibold uppercase tracking-wide">Código</th>
+            <th scope="col" class="px-4 py-3 font-semibold uppercase tracking-wide">Locadora</th>
+            <th scope="col" class="w-28 px-4 py-3 font-semibold uppercase tracking-wide">Início</th>
+            <th scope="col" class="w-28 px-4 py-3 font-semibold uppercase tracking-wide">Fim</th>
+            <th scope="col" class="w-28 px-4 py-3 font-semibold uppercase tracking-wide">Status</th>
+            <th scope="col" class="w-36 px-4 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            @for (r of skeletonRows(); track r) {
+              <tr class="border-b border-border/70 last:border-0">
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-24"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-36 max-w-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-20"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-20"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-6 w-16 rounded-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk ml-auto block h-4 w-20"></span></td>
+              </tr>
+            }
+          } @else if (temItens()) {
+            @for (c of itens(); track c.id) {
+              <tr class="border-b border-border/70 transition-colors last:border-0 hover:bg-surface-2/50">
+                <td class="px-4 py-3.5 font-medium text-fg">{{ c.codigo }}</td>
+                <td class="px-4 py-3.5 text-muted">{{ c.locadora.nome }}</td>
+                <td class="tabular px-4 py-3.5 text-muted">{{ fmtData(c.dataInicio) }}</td>
+                <td class="tabular px-4 py-3.5 text-muted">{{ fmtData(c.dataFim) }}</td>
+                <td class="px-4 py-3.5">
+                  @switch (c.status) {
+                    @case ('VIGENTE') {
+                      <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-medium" style="background-color: var(--color-success-soft); color: var(--color-success)"><span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span> Vigente</span>
+                    }
+                    @case ('AGENDADO') {
+                      <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-medium" style="background-color: var(--color-accent-soft); color: var(--color-accent)"><span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span> Agendado</span>
+                    }
+                    @default {
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted"><span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span> Encerrado</span>
+                    }
+                  }
+                </td>
+                <td class="px-4 py-3.5">
+                  <div class="flex items-center justify-end gap-1">
+                    @if (c.status === 'VIGENTE') {
+                      <a [routerLink]="['/contratos/local', localId, 'novo']" [queryParams]="{ renovarDe: c.id }" [attr.aria-label]="'Renovar ' + c.codigo"
+                        class="inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong px-2.5 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2">
+                        <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M15 4v4h-4M5 16v-4h4M15.5 8A6 6 0 0 0 5 6.5M4.5 12A6 6 0 0 0 15 13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        Renovar
+                      </a>
+                    }
+                    <a [routerLink]="['/contratos/editar', c.id]" [attr.aria-label]="'Editar ' + c.codigo"
+                      class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M13.5 4.5 15.5 6.5M4 16l.9-3.2 8-8 2.3 2.3-8 8L4 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </a>
+                    <button type="button" (click)="pedirExclusao(c)" [attr.aria-label]="'Excluir ' + c.codigo"
+                      class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Vazio -->
+    @if (!loading() && !temItens()) {
+      <div class="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+        <span class="grid size-12 place-items-center rounded-2xl bg-surface-2 text-faint" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" class="size-6" stroke="currentColor" stroke-width="1.5"><path d="M6 2v4M15 2v4M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </span>
+        <p class="text-sm text-muted">
+          @if (filtroStatus() === 'VIGENTE') { Nenhum contrato vigente neste local. }
+          @else if (filtroStatus() === 'ENCERRADO') { Sem contratos encerrados no histórico. }
+          @else { Nenhum contrato cadastrado para este local. }
+        </p>
+      </div>
+    }
+
+    <!-- Erro -->
+    @if (erro() && !loading()) {
+      <div class="flex items-center gap-2 border-t px-4 py-3 text-sm text-danger">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 shrink-0" aria-hidden="true"><path d="M10 6.5v4m0 3h.01M10 2.5 1.5 17h17L10 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        {{ erro() }}
+      </div>
+    }
+
+    <!-- Paginação -->
+    @if (!loading() && temItens() && totalPaginas() > 1) {
+      <div class="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-[0.8125rem] text-muted">
+          @if (intervalo(); as iv) { Mostrando <span class="tabular font-medium text-fg">{{ iv.ini }}–{{ iv.fim }}</span> de <span class="tabular font-medium text-fg">{{ total() }}</span> }
+        </p>
+        <nav class="flex items-center gap-1" aria-label="Paginação">
+          <button type="button" (click)="anterior()" [disabled]="resultado()?.first" aria-label="Página anterior"
+            class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m12 5-5 5 5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+          @for (p of paginasVisiveis(); track p) {
+            <button type="button" (click)="irPara(p)" [attr.aria-current]="p === paginaAtual() ? 'page' : null" [class]="pgClasses(p === paginaAtual())">{{ p + 1 }}</button>
+          }
+          <button type="button" (click)="proxima()" [disabled]="resultado()?.last" aria-label="Próxima página"
+            class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+        </nav>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- Confirmação de exclusão -->
+@if (aExcluir(); as alvo) {
+  <app-confirm-dialog
+    title="Excluir contrato"
+    [message]="mensagemExclusao(alvo)"
+    confirmLabel="Excluir"
+    cancelLabel="Cancelar"
+    [loading]="excluindo()"
+    (confirmed)="confirmarExclusao()"
+    (cancelled)="cancelarExclusao()"
+  />
+}

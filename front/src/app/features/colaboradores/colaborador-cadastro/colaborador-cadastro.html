@@ -1,0 +1,177 @@
+<section class="mx-auto flex max-w-2xl flex-col gap-6">
+  <!-- Cabeçalho -->
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      (click)="voltar()"
+      aria-label="Voltar para a lista"
+      class="grid size-10 shrink-0 place-items-center rounded-control border text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+    >
+      <svg viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true">
+        <path d="M12 5l-5 5 5 5M7 10h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+    <div>
+      <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">
+        {{ editMode() ? 'Editar' : 'Novo' }}
+      </p>
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">
+        {{ editMode() ? 'Editar colaborador' : 'Novo colaborador' }}
+      </h2>
+    </div>
+  </div>
+
+  @if (carregando()) {
+    <!-- Carregando (modo edição) -->
+    <div class="flex items-center justify-center gap-3 rounded-card border bg-surface p-10 text-sm text-muted shadow-card">
+      <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin text-accent" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+        <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+      </svg>
+      Carregando colaborador…
+    </div>
+  } @else if (erroCarregar()) {
+    <!-- Erro ao carregar -->
+    <div class="flex flex-col items-center gap-4 rounded-card border bg-surface p-10 text-center shadow-card">
+      <span class="grid size-12 place-items-center rounded-full" style="background-color: var(--color-danger-soft); color: var(--color-danger)" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" class="size-6">
+          <path d="M12 9v4m0 4h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <p class="text-sm text-muted">{{ erroCarregar() }}</p>
+      <button
+        type="button"
+        (click)="voltar()"
+        class="inline-flex h-10 items-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+      >
+        Voltar para a lista
+      </button>
+    </div>
+  } @else {
+    <!-- Formulário -->
+    <form
+      class="form-card flex flex-col gap-5 rounded-card border bg-surface p-6 shadow-card sm:p-7"
+      (submit)="$event.preventDefault(); submit()"
+      novalidate
+    >
+      <!-- Nome -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-baseline justify-between">
+          <label for="cad-nome" class="text-sm font-medium text-fg">
+            Nome <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <span class="tabular text-[0.75rem] text-faint">{{ nomeCount() }}/{{ nomeMax }}</span>
+        </div>
+        <input
+          id="cad-nome"
+          type="text"
+          [formField]="f.nome"
+          (input)="clearServerError('nome')"
+          autocomplete="off"
+          placeholder="Ex.: Ana Beatriz Souza"
+          class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+          [style.border-color]="nomeError() ? 'var(--color-danger)' : null"
+          [attr.aria-invalid]="nomeError() ? 'true' : null"
+          [attr.aria-describedby]="nomeError() ? 'cad-nome-error' : null"
+        />
+        @if (nomeError()) {
+          <p id="cad-nome-error" class="text-[0.8125rem] text-danger">{{ nomeError() }}</p>
+        }
+      </div>
+
+      <!-- Sexo -->
+      <fieldset class="flex flex-col gap-1.5">
+        <legend class="text-sm font-medium text-fg">
+          Sexo <span class="text-danger" aria-hidden="true">*</span>
+        </legend>
+        <div
+          class="grid grid-cols-2 gap-2"
+          role="radiogroup"
+          aria-label="Sexo"
+          [attr.aria-invalid]="sexoError() ? 'true' : null"
+          [attr.aria-describedby]="sexoError() ? 'cad-sexo-error' : null"
+        >
+          @for (opt of sexoOpcoes; track opt.value) {
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="model().sexo === opt.value"
+              (click)="selectSexo(opt.value)"
+              class="flex h-11 items-center justify-center gap-2 rounded-control border px-3 text-sm font-medium transition-colors"
+              [style.border-color]="model().sexo === opt.value ? 'var(--color-accent)' : null"
+              [style.background-color]="model().sexo === opt.value ? 'var(--color-accent-soft)' : null"
+              [style.color]="model().sexo === opt.value ? 'var(--color-accent)' : 'var(--color-fg)'"
+            >
+              <span
+                class="grid size-4 place-items-center rounded-full border"
+                [style.border-color]="model().sexo === opt.value ? 'var(--color-accent)' : 'var(--color-border-strong)'"
+              >
+                @if (model().sexo === opt.value) {
+                  <span class="size-2 rounded-full" style="background-color: var(--color-accent)"></span>
+                }
+              </span>
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+        @if (sexoError()) {
+          <p id="cad-sexo-error" class="text-[0.8125rem] text-danger">{{ sexoError() }}</p>
+        }
+      </fieldset>
+
+      <!-- Função -->
+      <div class="flex flex-col gap-1.5">
+        <label for="cad-funcao" class="text-sm font-medium text-fg">
+          Função <span class="text-danger" aria-hidden="true">*</span>
+        </label>
+        <div class="relative">
+          <select
+            #funcaoSel
+            id="cad-funcao"
+            (change)="selectFuncao(funcaoSel.value)"
+            class="h-11 w-full appearance-none rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors focus:border-accent"
+            [style.border-color]="funcaoError() ? 'var(--color-danger)' : null"
+            [attr.aria-invalid]="funcaoError() ? 'true' : null"
+            [attr.aria-describedby]="funcaoError() ? 'cad-funcao-error' : null"
+          >
+            <option value="" disabled [selected]="model().funcaoId == null">Selecione a função…</option>
+            @for (op of funcoes(); track op.id) {
+              <option [value]="op.id" [selected]="op.id === model().funcaoId">{{ op.nome }}</option>
+            }
+          </select>
+          <svg viewBox="0 0 20 20" fill="none" class="pointer-events-none absolute right-3 top-1/2 size-4.5 -translate-y-1/2 text-faint" aria-hidden="true">
+            <path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        @if (funcaoError()) {
+          <p id="cad-funcao-error" class="text-[0.8125rem] text-danger">{{ funcaoError() }}</p>
+        }
+      </div>
+
+      <!-- Ações -->
+      <div class="mt-1 flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+          (click)="voltar()"
+          [disabled]="saving()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+              <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+            </svg>
+          }
+          {{ editMode() ? 'Salvar alterações' : 'Cadastrar' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

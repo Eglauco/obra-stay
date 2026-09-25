@@ -1,0 +1,131 @@
+<section class="flex flex-col gap-6">
+  <!-- Cabeçalho da página -->
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Hospedagens</h2>
+      <p class="mt-1 text-sm text-muted">Selecione um local para gerenciar as entradas e saídas.</p>
+    </div>
+  </div>
+
+  <!-- Busca -->
+  <div class="rounded-card border bg-surface p-4 shadow-card sm:p-5">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+        <label for="f-nome" class="text-[0.8125rem] font-medium text-muted">Local</label>
+        <div class="relative">
+          <svg viewBox="0 0 20 20" fill="none" class="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-faint" aria-hidden="true">
+            <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6" />
+            <path d="m17 17-3.2-3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <input #nomeInput id="f-nome" type="text" autocomplete="off" [value]="filtroNome()" (input)="onNomeInput(nomeInput.value)" placeholder="Buscar local por nome…"
+            class="h-11 w-full rounded-control border bg-canvas pl-9 pr-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent" />
+        </div>
+      </div>
+      @if (filtrosAtivos()) {
+        <button type="button" (click)="limpar()" class="inline-flex h-11 items-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+          Limpar
+        </button>
+      }
+    </div>
+    <div class="mt-3.5 text-[0.8125rem] text-muted" aria-live="polite">
+      @if (loading()) { <span>Buscando…</span> }
+      @else { <span><strong class="tabular text-fg">{{ total() }}</strong> {{ total() === 1 ? 'local' : 'locais' }}</span> }
+    </div>
+  </div>
+
+  <!-- Grade de locais -->
+  @if (loading()) {
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (s of skeletonCards(); track s) {
+        <div class="rounded-card border bg-surface p-5 shadow-card">
+          <span class="sk block h-5 w-40 max-w-full"></span>
+          <span class="sk mt-2 block h-4 w-24"></span>
+          <span class="sk mt-5 block h-2 w-full rounded-full"></span>
+        </div>
+      }
+    </div>
+  } @else if (temItens()) {
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (l of itens(); track l.id) {
+        <a
+          [routerLink]="['/hospedagens/local', l.id]"
+          class="group flex flex-col gap-4 rounded-card border bg-surface p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-pop"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="truncate font-display text-base font-semibold text-fg">{{ l.nome }}</p>
+              <p class="mt-0.5 text-[0.8125rem] text-muted">{{ l.codigo }} · {{ l.cidade }}/{{ l.uf }}</p>
+            </div>
+            @if (lotado(l)) {
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: var(--color-danger-soft); color: var(--color-danger)">Lotado</span>
+            } @else {
+              <span class="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-semibold text-muted">{{ l.capacidade - ocupadosDe(l) }} vagas</span>
+            }
+          </div>
+
+          <div>
+            <div class="flex items-baseline justify-between text-[0.8125rem]">
+              <span class="text-muted">Ocupação</span>
+              <span class="tabular text-fg"><strong>{{ ocupadosDe(l) }}</strong>/{{ l.capacidade }}</span>
+            </div>
+            <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+              <div class="h-full rounded-full transition-all" [style.width.%]="percentual(l)" [style.background-color]="lotado(l) ? 'var(--color-danger)' : 'var(--color-accent)'"></div>
+            </div>
+          </div>
+
+          <span class="mt-auto inline-flex items-center gap-1 text-[0.8125rem] font-medium text-accent">
+            Gerenciar
+            <svg viewBox="0 0 20 20" fill="none" class="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+        </a>
+      }
+    </div>
+  }
+
+  <!-- Estado vazio -->
+  @if (!loading() && !temItens()) {
+    <div class="flex flex-col items-center justify-center gap-4 rounded-card border bg-surface px-6 py-16 text-center shadow-card">
+      <span class="grid size-14 place-items-center rounded-2xl bg-surface-2 text-faint" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" class="size-7" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" stroke-linecap="round" /></svg>
+      </span>
+      <div class="max-w-sm">
+        <p class="font-display text-base font-semibold text-fg">Nenhum local encontrado</p>
+        <p class="mt-1 text-sm text-muted">
+          @if (filtrosAtivos()) { Ajuste a busca. } @else { Cadastre um local em "Locais" para começar a hospedar. }
+        </p>
+      </div>
+    </div>
+  }
+
+  <!-- Erro -->
+  @if (erro() && !loading()) {
+    <div class="flex items-center gap-2 rounded-card border bg-surface px-4 py-3 text-sm text-danger shadow-card">
+      <svg viewBox="0 0 20 20" fill="none" class="size-4 shrink-0" aria-hidden="true"><path d="M10 6.5v4m0 3h.01M10 2.5 1.5 17h17L10 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      {{ erro() }}
+    </div>
+  }
+
+  <!-- Paginação -->
+  @if (!loading() && temItens() && totalPaginas() > 1) {
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-[0.8125rem] text-muted">
+        @if (intervalo(); as iv) {
+          Mostrando <span class="tabular font-medium text-fg">{{ iv.ini }}–{{ iv.fim }}</span> de <span class="tabular font-medium text-fg">{{ total() }}</span>
+        }
+      </p>
+      <nav class="flex items-center gap-1" aria-label="Paginação">
+        <button type="button" (click)="anterior()" [disabled]="resultado()?.first" aria-label="Página anterior"
+          class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+          <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m12 5-5 5 5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+        @for (p of paginasVisiveis(); track p) {
+          <button type="button" (click)="irPara(p)" [attr.aria-current]="p === paginaAtual() ? 'page' : null" [class]="pgClasses(p === paginaAtual())">{{ p + 1 }}</button>
+        }
+        <button type="button" (click)="proxima()" [disabled]="resultado()?.last" aria-label="Próxima página"
+          class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+          <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      </nav>
+    </div>
+  }
+</section>

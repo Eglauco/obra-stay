@@ -1,0 +1,206 @@
+<section class="flex flex-col gap-6">
+  <!-- Cabeçalho -->
+  <div class="flex items-start gap-3">
+    <button
+      type="button"
+      (click)="voltar()"
+      aria-label="Voltar para os locais"
+      class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-control border text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+    >
+      <svg viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true"><path d="M12 5l-5 5 5 5M7 10h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </button>
+    <div class="min-w-0 flex-1">
+      <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">Gestão de hospedagem</p>
+      @if (local(); as l) {
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">{{ l.nome }}</h2>
+        <p class="mt-0.5 text-sm text-muted">{{ l.codigo }} · {{ l.logradouro }}, {{ l.numero }} — {{ l.bairro }}, {{ l.cidade }}/{{ l.uf }}</p>
+      } @else if (carregandoLocal()) {
+        <span class="sk mt-1 block h-7 w-56 max-w-full"></span>
+      } @else if (erroLocal()) {
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Local</h2>
+        <p class="mt-0.5 text-sm text-danger">{{ erroLocal() }}</p>
+      }
+    </div>
+  </div>
+
+  <!-- Resumo de ocupação + Dar entrada -->
+  @if (local(); as l) {
+    <div class="flex flex-col gap-4 rounded-card border bg-surface p-5 shadow-card sm:flex-row sm:items-center sm:justify-between">
+      <div class="min-w-0 flex-1">
+        <div class="flex items-baseline justify-between gap-3">
+          <span class="text-sm font-medium text-fg">Ocupação</span>
+          <span class="tabular text-sm text-muted">
+            <strong class="text-fg">{{ ocupados() }}</strong>/{{ capacidade() }}
+            @if (!lotado()) { <span class="text-faint">· {{ capacidade() - ocupados() }} vagas</span> }
+          </span>
+        </div>
+        <div class="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-surface-2 sm:w-80">
+          <div class="h-full rounded-full transition-all" [style.width.%]="percentual()" [style.background-color]="lotado() ? 'var(--color-danger)' : 'var(--color-accent)'"></div>
+        </div>
+      </div>
+      @if (lotado()) {
+        <button type="button" disabled title="Local lotado"
+          class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg opacity-50 cursor-not-allowed">
+          <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          Local lotado
+        </button>
+      } @else {
+        <a [routerLink]="['/hospedagens/local', localId, 'entrada']"
+          class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
+          <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          Dar entrada
+        </a>
+      }
+    </div>
+  }
+
+  <!-- Status + lista -->
+  <div class="overflow-hidden rounded-card border bg-surface shadow-card">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+      <div role="group" aria-label="Filtrar por status" class="inline-flex rounded-control border bg-canvas p-0.5">
+        @for (opt of statusOpcoes; track opt.value) {
+          <button type="button" (click)="selecionarStatus(opt.value)" [attr.aria-pressed]="filtroStatus() === opt.value" [class]="segClasses(filtroStatus() === opt.value)">
+            {{ opt.label }}
+          </button>
+        }
+      </div>
+      <span class="text-[0.8125rem] text-muted" aria-live="polite">
+        @if (loading()) { Buscando… } @else { <strong class="tabular text-fg">{{ total() }}</strong> {{ total() === 1 ? 'registro' : 'registros' }} }
+      </span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[38rem] border-collapse text-left text-sm">
+        <caption class="sr-only">Colaboradores no local</caption>
+        <thead>
+          <tr class="border-b bg-surface-2/50 text-[0.75rem] uppercase tracking-wide text-muted">
+            <th scope="col" class="px-4 py-3 font-semibold uppercase tracking-wide">Colaborador</th>
+            <th scope="col" class="w-32 px-4 py-3 font-semibold uppercase tracking-wide">Entrada</th>
+            <th scope="col" class="w-32 px-4 py-3 font-semibold uppercase tracking-wide">Saída</th>
+            <th scope="col" class="w-28 px-4 py-3 font-semibold uppercase tracking-wide">Status</th>
+            <th scope="col" class="w-28 px-4 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            @for (r of skeletonRows(); track r) {
+              <tr class="border-b border-border/70 last:border-0">
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-40 max-w-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-20"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-20"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-6 w-16 rounded-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk ml-auto block h-4 w-16"></span></td>
+              </tr>
+            }
+          } @else if (temItens()) {
+            @for (h of itens(); track h.id) {
+              <tr class="border-b border-border/70 transition-colors last:border-0 hover:bg-surface-2/50">
+                <td class="px-4 py-3.5 font-medium text-fg">{{ h.colaborador.nome }}</td>
+                <td class="tabular px-4 py-3.5 text-muted">{{ fmtData(h.dataEntrada) }}</td>
+                <td class="tabular px-4 py-3.5 text-muted">{{ fmtData(h.dataSaida) }}</td>
+                <td class="px-4 py-3.5">
+                  @if (h.status === 'ATIVA') {
+                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-medium" style="background-color: var(--color-success-soft); color: var(--color-success)">
+                      <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span> Ativa
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted">
+                      <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span> Encerrada
+                    </span>
+                  }
+                </td>
+                <td class="px-4 py-3.5">
+                  <div class="flex items-center justify-end gap-1">
+                    @if (h.status === 'ATIVA') {
+                      <button type="button" (click)="pedirSaida(h)" [attr.aria-label]="'Dar saída de ' + h.colaborador.nome"
+                        class="inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong px-2.5 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2">
+                        <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M13 5l4 5-4 5M17 10H7M9 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        Dar saída
+                      </button>
+                    }
+                    <button type="button" (click)="pedirExclusao(h)" [attr.aria-label]="'Excluir registro de ' + h.colaborador.nome"
+                      class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Vazio -->
+    @if (!loading() && !temItens()) {
+      <div class="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+        <span class="grid size-12 place-items-center rounded-2xl bg-surface-2 text-faint" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" class="size-6" stroke="currentColor" stroke-width="1.5"><path d="M3 10h18M6 10V7a1 1 0 0 1 1-1h3v4M3 14h18M6 14v3m12-3v3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </span>
+        <p class="text-sm text-muted">
+          @if (filtroStatus() === 'ATIVA') { Nenhum colaborador hospedado neste local no momento. }
+          @else if (filtroStatus() === 'ENCERRADA') { Sem histórico de saídas neste local. }
+          @else { Nenhum registro de hospedagem neste local. }
+        </p>
+      </div>
+    }
+
+    <!-- Erro -->
+    @if (erro() && !loading()) {
+      <div class="flex items-center gap-2 border-t px-4 py-3 text-sm text-danger">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 shrink-0" aria-hidden="true"><path d="M10 6.5v4m0 3h.01M10 2.5 1.5 17h17L10 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        {{ erro() }}
+      </div>
+    }
+
+    <!-- Paginação -->
+    @if (!loading() && temItens() && totalPaginas() > 1) {
+      <div class="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-[0.8125rem] text-muted">
+          @if (intervalo(); as iv) {
+            Mostrando <span class="tabular font-medium text-fg">{{ iv.ini }}–{{ iv.fim }}</span> de <span class="tabular font-medium text-fg">{{ total() }}</span>
+          }
+        </p>
+        <nav class="flex items-center gap-1" aria-label="Paginação">
+          <button type="button" (click)="anterior()" [disabled]="resultado()?.first" aria-label="Página anterior"
+            class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m12 5-5 5 5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+          @for (p of paginasVisiveis(); track p) {
+            <button type="button" (click)="irPara(p)" [attr.aria-current]="p === paginaAtual() ? 'page' : null" [class]="pgClasses(p === paginaAtual())">{{ p + 1 }}</button>
+          }
+          <button type="button" (click)="proxima()" [disabled]="resultado()?.last" aria-label="Próxima página"
+            class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+        </nav>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- Diálogo de dar saída -->
+@if (aDarSaida(); as alvo) {
+  <app-hospedagem-saida-dialog
+    [colaboradorNome]="alvo.colaborador.nome"
+    [localNome]="alvo.local.nome"
+    [dataEntradaMin]="alvo.dataEntrada"
+    [loading]="dandoSaida()"
+    [erro]="saidaErro()"
+    (confirmar)="confirmarSaida($event)"
+    (cancelar)="cancelarSaida()"
+  />
+}
+
+<!-- Confirmação de exclusão -->
+@if (aExcluir(); as alvo) {
+  <app-confirm-dialog
+    title="Excluir hospedagem"
+    [message]="mensagemExclusao(alvo)"
+    confirmLabel="Excluir"
+    cancelLabel="Cancelar"
+    [loading]="excluindo()"
+    (confirmed)="confirmarExclusao()"
+    (cancelled)="cancelarExclusao()"
+  />
+}

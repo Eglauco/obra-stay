@@ -1,0 +1,179 @@
+<section class="mx-auto flex max-w-3xl flex-col gap-6">
+  <!-- Cabeçalho -->
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      (click)="voltar()"
+      aria-label="Voltar para a lista"
+      class="grid size-10 shrink-0 place-items-center rounded-control border text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+    >
+      <svg viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true">
+        <path d="M12 5l-5 5 5 5M7 10h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+    <div>
+      <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">
+        {{ editMode() ? 'Editar' : 'Novo' }}
+      </p>
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">
+        {{ editMode() ? 'Editar local' : 'Novo local' }}
+      </h2>
+    </div>
+  </div>
+
+  @if (carregando()) {
+    <div class="flex items-center justify-center gap-3 rounded-card border bg-surface p-10 text-sm text-muted shadow-card">
+      <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin text-accent" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+        <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+      </svg>
+      Carregando local…
+    </div>
+  } @else if (erroCarregar()) {
+    <div class="flex flex-col items-center gap-4 rounded-card border bg-surface p-10 text-center shadow-card">
+      <span class="grid size-12 place-items-center rounded-full" style="background-color: var(--color-danger-soft); color: var(--color-danger)" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" class="size-6">
+          <path d="M12 9v4m0 4h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <p class="text-sm text-muted">{{ erroCarregar() }}</p>
+      <button type="button" (click)="voltar()" class="inline-flex h-10 items-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+        Voltar para a lista
+      </button>
+    </div>
+  } @else {
+    <form
+      class="form-card flex flex-col gap-6 rounded-card border bg-surface p-6 shadow-card sm:p-7"
+      (submit)="$event.preventDefault(); submit()"
+      novalidate
+    >
+      <!-- Identificação -->
+      <fieldset class="flex flex-col gap-3">
+        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Identificação</legend>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <!-- Nome -->
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label for="loc-nome" class="text-sm font-medium text-fg">Nome <span class="text-danger" aria-hidden="true">*</span></label>
+            <input id="loc-nome" [formField]="f.nome" autocomplete="off" placeholder="Ex.: Alojamento Central"
+              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              [style.border-color]="nomeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="nomeError() ? 'true' : null" />
+            @if (nomeError()) { <p class="text-[0.8125rem] text-danger">{{ nomeError() }}</p> }
+          </div>
+          <!-- Código -->
+          <div class="flex flex-col gap-1.5">
+            <label for="loc-codigo" class="text-sm font-medium text-fg">Código <span class="text-danger" aria-hidden="true">*</span></label>
+            <input id="loc-codigo" [formField]="f.codigo" (input)="clearServerError('codigo')" autocomplete="off" placeholder="Ex.: ALJ-001"
+              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              [style.border-color]="codigoError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="codigoError() ? 'true' : null" />
+            @if (codigoError()) { <p class="text-[0.8125rem] text-danger">{{ codigoError() }}</p> }
+          </div>
+          <!-- Capacidade -->
+          <div class="flex flex-col gap-1.5">
+            <label for="loc-capacidade" class="text-sm font-medium text-fg">Capacidade <span class="text-danger" aria-hidden="true">*</span></label>
+            <input id="loc-capacidade" type="number" [formField]="f.capacidade" (input)="clearServerError('capacidade')" placeholder="Ex.: 40"
+              class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              [style.border-color]="capacidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="capacidadeError() ? 'true' : null" />
+            @if (capacidadeError()) { <p class="text-[0.8125rem] text-danger">{{ capacidadeError() }}</p> }
+            @else { <p class="text-[0.8125rem] text-faint">Quantos colaboradores cabem.</p> }
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Endereço -->
+      <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
+        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Endereço</legend>
+        <div class="grid gap-4 sm:grid-cols-6">
+          <!-- CEP -->
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label for="loc-cep" class="text-sm font-medium text-fg">CEP <span class="text-danger" aria-hidden="true">*</span></label>
+            <div class="relative">
+              <input #cepInput id="loc-cep" inputmode="numeric" maxlength="9" [value]="model().cep" (input)="onCepInput(cepInput.value)" placeholder="00000-000"
+                class="h-11 w-full rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="cepErro() ? 'var(--color-danger)' : null" [attr.aria-invalid]="cepErro() ? 'true' : null" aria-describedby="loc-cep-msg" />
+              @if (cepBuscando()) {
+                <svg viewBox="0 0 24 24" fill="none" class="absolute right-3 top-1/2 size-4.5 -translate-y-1/2 animate-spin text-accent" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                </svg>
+              }
+            </div>
+            <p id="loc-cep-msg" class="text-[0.8125rem]" [style.color]="cepErro() ? 'var(--color-danger)' : 'var(--color-faint)'">
+              {{ cepErro() ?? 'Preenche o endereço automaticamente.' }}
+            </p>
+          </div>
+
+          <!-- Logradouro -->
+          <div class="flex flex-col gap-1.5 sm:col-span-4">
+            <label for="loc-logradouro" class="text-sm font-medium text-fg">Logradouro <span class="text-danger" aria-hidden="true">*</span></label>
+            <input id="loc-logradouro" [formField]="f.logradouro" autocomplete="off" placeholder="Rua, avenida…"
+              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              [style.border-color]="logradouroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="logradouroError() ? 'true' : null" />
+            @if (logradouroError()) { <p class="text-[0.8125rem] text-danger">{{ logradouroError() }}</p> }
+          </div>
+
+          <!-- Número -->
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label for="loc-numero" class="text-sm font-medium text-fg">Número <span class="text-danger" aria-hidden="true">*</span></label>
+            <input id="loc-numero" [formField]="f.numero" autocomplete="off" placeholder="Ex.: 100"
+              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              [style.border-color]="numeroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="numeroError() ? 'true' : null" />
+            @if (numeroError()) { <p class="text-[0.8125rem] text-danger">{{ numeroError() }}</p> }
+          </div>
+
+          <!-- Complemento -->
+          <div class="flex flex-col gap-1.5 sm:col-span-4">
+            <label for="loc-complemento" class="text-sm font-medium text-fg">Complemento</label>
+            <input id="loc-complemento" [formField]="f.complemento" autocomplete="off" placeholder="Apto, bloco, referência…"
+              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent" />
+          </div>
+
+          <!-- Bairro -->
+          <div class="flex flex-col gap-1.5 sm:col-span-3">
+            <label for="loc-bairro" class="text-sm font-medium text-fg">Bairro <span class="text-danger" aria-hidden="true">*</span></label>
+            <input id="loc-bairro" [formField]="f.bairro" autocomplete="off" placeholder="Bairro"
+              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              [style.border-color]="bairroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="bairroError() ? 'true' : null" />
+            @if (bairroError()) { <p class="text-[0.8125rem] text-danger">{{ bairroError() }}</p> }
+          </div>
+
+          <!-- Cidade (travado) -->
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label for="loc-cidade" class="flex items-center gap-1 text-sm font-medium text-fg">
+              Cidade
+              <svg viewBox="0 0 20 20" fill="none" class="size-3.5 text-faint" aria-hidden="true"><path d="M6 9V6.5a4 4 0 0 1 8 0V9M5 9h10a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </label>
+            <input id="loc-cidade" [value]="model().cidade" readonly tabindex="-1" placeholder="Vem do CEP"
+              class="h-11 w-full cursor-not-allowed rounded-control border bg-surface-2 px-3.5 text-sm text-muted outline-none placeholder:text-faint"
+              [style.border-color]="cidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="cidadeError() ? 'true' : null" />
+            @if (cidadeError()) { <p class="text-[0.8125rem] text-danger">{{ cidadeError() }}</p> }
+          </div>
+
+          <!-- UF (travado) -->
+          <div class="flex flex-col gap-1.5 sm:col-span-1">
+            <label for="loc-uf" class="text-sm font-medium text-fg">UF</label>
+            <input id="loc-uf" [value]="model().uf" readonly tabindex="-1" placeholder="—"
+              class="h-11 w-full cursor-not-allowed rounded-control border bg-surface-2 px-3.5 text-center text-sm uppercase text-muted outline-none placeholder:text-faint"
+              [style.border-color]="ufError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="ufError() ? 'true' : null" />
+            @if (ufError()) { <p class="text-[0.8125rem] text-danger">{{ ufError() }}</p> }
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Ações -->
+      <div class="flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
+        <button type="button" class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2" (click)="voltar()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button type="submit" class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70" [disabled]="saving()">
+          @if (saving()) {
+            <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+              <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+            </svg>
+          }
+          {{ editMode() ? 'Salvar alterações' : 'Cadastrar' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

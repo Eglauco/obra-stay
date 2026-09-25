@@ -1,0 +1,191 @@
+<section class="flex flex-col gap-6">
+  <!-- Cabeçalho -->
+  <div>
+    <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Painel</h2>
+    <p class="mt-1 text-sm text-muted">Visão geral da operação — ocupação, contratos e gastos.</p>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <!-- Colaboradores -->
+    <a routerLink="/colaboradores" class="flex flex-col gap-2 rounded-card border bg-surface p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-pop">
+      <span class="flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-wide text-muted">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 text-accent" aria-hidden="true"><path d="M13 17v-1a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v1M7.5 9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM18 17v-1a3 3 0 0 0-2.2-2.9M13.5 4.6a2.5 2.5 0 0 1 0 4.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Colaboradores
+      </span>
+      @if (carregando()) { <span class="sk block h-8 w-16"></span> }
+      @else { <span class="tabular text-2xl font-semibold text-fg">{{ erroColab() ? '—' : totalColaboradores() }}</span> }
+    </a>
+
+    <!-- Locais -->
+    <a routerLink="/locais" class="flex flex-col gap-2 rounded-card border bg-surface p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-pop">
+      <span class="flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-wide text-muted">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 text-accent" aria-hidden="true"><path d="M3 17V4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v13M12 8h4a1 1 0 0 1 1 1v8M2 17h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Locais
+      </span>
+      @if (carregando()) { <span class="sk block h-8 w-16"></span> }
+      @else { <span class="tabular text-2xl font-semibold text-fg">{{ erroOcup() ? '—' : totalLocais() }}</span> }
+    </a>
+
+    <!-- Ocupação -->
+    <a routerLink="/hospedagens" class="flex flex-col gap-2 rounded-card border bg-surface p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-pop">
+      <span class="flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-wide text-muted">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 text-accent" aria-hidden="true"><path d="M2 5v10M2 9h13a3 3 0 0 1 3 3v3M18 15v-2M2 13h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Ocupação
+      </span>
+      @if (carregando()) { <span class="sk block h-8 w-20"></span> }
+      @else {
+        <span class="tabular text-2xl font-semibold text-fg">{{ erroOcup() ? '—' : totalOcupados() + '/' + totalVagas() }}</span>
+        @if (!erroOcup()) { <span class="text-[0.75rem] text-muted">{{ percentOcupacao() }}% das vagas</span> }
+      }
+    </a>
+
+    <!-- Contratos -->
+    <a routerLink="/contratos" class="flex flex-col gap-2 rounded-card border bg-surface p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-pop">
+      <span class="flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-wide text-muted">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 text-accent" aria-hidden="true"><path d="M5 3h6l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z M11 3v3h3M7 11h6M7 14h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Contratos vigentes
+      </span>
+      @if (carregando()) { <span class="sk block h-8 w-16"></span> }
+      @else {
+        <span class="tabular text-2xl font-semibold text-fg">{{ erroVig() ? '—' : contratosVigentes() }}</span>
+        @if (!erroVig() && (vencendo30() > 0 || semContrato() > 0)) {
+          <span class="text-[0.75rem]" style="color: #f59e0b">{{ vencendo30() }} vencendo · {{ semContrato() }} sem contrato</span>
+        }
+      }
+    </a>
+
+    <!-- Gasto total -->
+    <a routerLink="/gastos" class="flex flex-col gap-2 rounded-card border bg-surface p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-pop">
+      <span class="flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-wide text-muted">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 text-accent" aria-hidden="true"><path d="M2.5 6.5A1.5 1.5 0 0 1 4 5h12a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 16 15H4a1.5 1.5 0 0 1-1.5-1.5v-7Z" stroke="currentColor" stroke-width="1.4" /><circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.4" /></svg>
+        Gasto total
+      </span>
+      @if (carregando()) { <span class="sk block h-8 w-24"></span> }
+      @else { <span class="tabular text-2xl font-semibold text-fg">{{ erroGasto() ? '—' : fmtBRL(gastoTotal()) }}</span> }
+    </a>
+  </div>
+
+  <!-- Blocos -->
+  <div class="grid gap-6 lg:grid-cols-2">
+    <!-- Ocupação por local -->
+    <div class="rounded-card border bg-surface p-5 shadow-card">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="font-display text-base font-semibold text-fg">Ocupação por local</h3>
+        <a routerLink="/hospedagens" class="text-[0.8125rem] font-medium text-accent hover:underline">Ver tudo</a>
+      </div>
+      @if (erroOcup()) {
+        <p class="py-6 text-center text-sm text-muted">Não foi possível carregar a ocupação.</p>
+      } @else if (ocupacoes().length === 0) {
+        <p class="py-6 text-center text-sm text-muted">Sem locais para exibir.</p>
+      } @else {
+        <div class="flex flex-col gap-3">
+          @for (o of ocupacaoOrdenada(); track o.localId) {
+            <a [routerLink]="['/hospedagens/local', o.localId]" class="group block">
+              <div class="flex items-baseline justify-between text-sm">
+                <span class="truncate font-medium text-fg group-hover:text-accent">{{ o.localNome }}</span>
+                <span class="tabular shrink-0 text-muted">{{ o.ocupados }}/{{ o.capacidade }}</span>
+              </div>
+              <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                <div class="h-full rounded-full transition-all" [style.width.%]="pct(o)" [style.background-color]="corOcup(o)"></div>
+              </div>
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Atenção: contratos -->
+    <div class="rounded-card border bg-surface p-5 shadow-card">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="font-display text-base font-semibold text-fg">Atenção — contratos</h3>
+        <a routerLink="/contratos" class="text-[0.8125rem] font-medium text-accent hover:underline">Ver tudo</a>
+      </div>
+      @if (erroVig() || erroOcup()) {
+        <p class="py-6 text-center text-sm text-muted">Não foi possível carregar os contratos.</p>
+      } @else if (alertas().length === 0) {
+        <div class="flex flex-col items-center gap-2 py-6 text-center">
+          <span class="grid size-10 place-items-center rounded-full" style="background-color: var(--color-success-soft); color: var(--color-success)" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" class="size-5"><path d="m5 10.5 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+          <p class="text-sm text-muted">Tudo em dia — nenhum contrato vencendo.</p>
+        </div>
+      } @else {
+        <div class="flex flex-col divide-y divide-border">
+          @for (a of alertas(); track a.localId) {
+            <a [routerLink]="['/contratos/local', a.localId]" class="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0 group">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-fg group-hover:text-accent">{{ a.localNome }}</p>
+                @if (a.tipo === 'vencendo') { <p class="text-[0.75rem] text-muted">Contrato {{ a.codigo }}</p> }
+              </div>
+              @if (a.tipo === 'sem') {
+                <span class="shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: var(--color-danger-soft); color: var(--color-danger)">Sem contrato</span>
+              } @else {
+                <span class="shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: rgba(245,158,11,0.16); color: #f59e0b">
+                  {{ a.dias <= 0 ? 'Vence hoje' : (a.dias === 1 ? 'Vence amanhã' : 'Vence em ' + a.dias + ' dias') }}
+                </span>
+              }
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Gastos por local -->
+    <div class="rounded-card border bg-surface p-5 shadow-card">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="font-display text-base font-semibold text-fg">Gastos por local</h3>
+        <a routerLink="/gastos" class="text-[0.8125rem] font-medium text-accent hover:underline">Ver tudo</a>
+      </div>
+      @if (erroGasto()) {
+        <p class="py-6 text-center text-sm text-muted">Não foi possível carregar os gastos.</p>
+      } @else if (gastosPorLocal().length === 0) {
+        <p class="py-6 text-center text-sm text-muted">Nenhum gasto lançado ainda.</p>
+      } @else {
+        <div class="flex flex-col gap-3">
+          @for (g of gastosPorLocal(); track g.localId) {
+            <a [routerLink]="['/gastos/local', g.localId]" class="group block">
+              <div class="flex items-baseline justify-between gap-2 text-sm">
+                <span class="truncate font-medium text-fg group-hover:text-accent">{{ g.nome }}</span>
+                <span class="tabular shrink-0 font-semibold text-fg">{{ fmtBRL(g.total) }}</span>
+              </div>
+              <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                <div class="h-full rounded-full bg-accent transition-all" [style.width.%]="larguraGasto(g.total)"></div>
+              </div>
+              @if (g.custoPorColab != null) {
+                <p class="mt-1 text-[0.75rem] text-muted">{{ fmtBRL(g.custoPorColab) }} por colaborador ({{ g.ocupados }} hospedados)</p>
+              }
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Colaboradores por função -->
+    <div class="rounded-card border bg-surface p-5 shadow-card">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="font-display text-base font-semibold text-fg">Colaboradores por função</h3>
+        <a routerLink="/funcoes" class="text-[0.8125rem] font-medium text-accent hover:underline">Ver tudo</a>
+      </div>
+      @if (erroColab()) {
+        <p class="py-6 text-center text-sm text-muted">Não foi possível carregar os colaboradores.</p>
+      } @else if (colaboradoresPorFuncao().length === 0) {
+        <p class="py-6 text-center text-sm text-muted">Nenhum colaborador cadastrado.</p>
+      } @else {
+        <div class="flex flex-col gap-3">
+          @for (f of colaboradoresPorFuncao(); track f.funcao) {
+            <div>
+              <div class="flex items-baseline justify-between text-sm">
+                <span class="truncate text-fg">{{ f.funcao }}</span>
+                <span class="tabular shrink-0 text-muted">{{ f.qtd }}</span>
+              </div>
+              <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                <div class="h-full rounded-full bg-accent/70 transition-all" [style.width.%]="larguraFuncao(f.qtd)"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</section>
