@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { PageResponse } from '../models/colaborador.model';
 import { Locadora, LocadoraFiltro, LocadoraRequest } from '../models/locadora.model';
 
-const API_BASE = 'http://localhost:8080/api';
+import { environment } from '../../../environments/environment';
+
+const API_BASE = environment.apiBase;
 
 @Injectable({ providedIn: 'root' })
 export class LocadoraService {

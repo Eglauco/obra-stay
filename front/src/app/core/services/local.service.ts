@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { PageResponse } from '../models/colaborador.model';
 import { Local, LocalFiltro, LocalRequest } from '../models/local.model';
 
-const API_BASE = 'http://localhost:8080/api';
+import { environment } from '../../../environments/environment';
+
+const API_BASE = environment.apiBase;
 
 @Injectable({ providedIn: 'root' })
 export class LocalService {

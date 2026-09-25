@@ -8,7 +8,9 @@ import {
   PageResponse,
 } from '../models/colaborador.model';
 
-const API_BASE = 'http://localhost:8080/api';
+import { environment } from '../../../environments/environment';
+
+const API_BASE = environment.apiBase;
 
 @Injectable({ providedIn: 'root' })
 export class FuncaoService {
