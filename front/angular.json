@@ -31,7 +31,7 @@
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": []
+              "allowedHosts": ["obra-stay-production.up.railway.app", ".railway.app"]
             },
             "ssr": {
               "entry": "src/server.ts"
