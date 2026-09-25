@@ -6,8 +6,9 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 # URL da API embutida no bundle em tempo de build.
-# Defina a build var API_URL no Railway, ex.: https://sua-api.up.railway.app/api
-ARG API_URL=http://localhost:8080/api
+# Default aponta para a API de produção no Railway; pode sobrescrever com a
+# build var API_URL (ex.: outra API/ambiente).
+ARG API_URL=https://obra-stay-api-production.up.railway.app/api
 RUN printf "export const environment = {\n  apiBase: '%s',\n};\n" "$API_URL" > src/environments/environment.ts
 RUN npm run build
 
