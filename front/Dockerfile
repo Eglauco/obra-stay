@@ -5,11 +5,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-# URL da API embutida no bundle em tempo de build.
-# Default aponta para a API de produção no Railway; pode sobrescrever com a
-# build var API_URL (ex.: outra API/ambiente).
-ARG API_URL=https://obra-stay-api-production.up.railway.app/api
-RUN printf "export const environment = {\n  apiBase: '%s',\n};\n" "$API_URL" > src/environments/environment.ts
+# Build de produção (config padrão) -> usa src/environments/environment.production.ts
+# via fileReplacements no angular.json (URL da API de produção embutida no bundle).
 RUN npm run build
 
 # ---- Runtime ----
