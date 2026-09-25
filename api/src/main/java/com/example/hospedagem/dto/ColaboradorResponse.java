@@ -1,5 +1,6 @@
 package com.example.hospedagem.dto;
 
+import com.example.hospedagem.domain.Mdo;
 import com.example.hospedagem.domain.Sexo;
 
 /**
@@ -9,6 +10,12 @@ public record ColaboradorResponse(
         Long id,
         String nome,
         Sexo sexo,
-        FuncaoResponse funcao
+        Mdo mdo,
+        String cpf,
+        String email,
+        FuncaoResponse funcao,
+        EpcResponse epc,
+        EmpresaResponse empresa,
+        GestaoResponse gestao
 ) {
 }

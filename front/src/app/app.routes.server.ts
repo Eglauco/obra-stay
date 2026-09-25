@@ -4,6 +4,9 @@ export const serverRoutes: ServerRoute[] = [
   // Rotas com parâmetro: renderizadas sob demanda no servidor (sem prerender).
   { path: 'colaboradores/:id/editar', renderMode: RenderMode.Server },
   { path: 'funcoes/:id/editar', renderMode: RenderMode.Server },
+  { path: 'epcs/:id/editar', renderMode: RenderMode.Server },
+  { path: 'empresas/:id/editar', renderMode: RenderMode.Server },
+  { path: 'gestoes/:id/editar', renderMode: RenderMode.Server },
   { path: 'locais/:id/editar', renderMode: RenderMode.Server },
   { path: 'locadoras/:id/editar', renderMode: RenderMode.Server },
   { path: 'hospedagens/local/:id', renderMode: RenderMode.Server },

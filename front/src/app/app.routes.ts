@@ -56,6 +56,72 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'epcs',
+    title: 'EPC · ObraStay',
+    loadComponent: () =>
+      import('./features/epc/epc-pesquisa/epc-pesquisa').then((m) => m.EpcPesquisa),
+  },
+  {
+    path: 'epcs/novo',
+    title: 'Novo EPC · ObraStay',
+    loadComponent: () =>
+      import('./features/epc/epc-cadastro/epc-cadastro').then((m) => m.EpcCadastro),
+  },
+  {
+    path: 'epcs/:id/editar',
+    title: 'Editar EPC · ObraStay',
+    loadComponent: () =>
+      import('./features/epc/epc-cadastro/epc-cadastro').then((m) => m.EpcCadastro),
+  },
+  {
+    path: 'empresas',
+    title: 'Empresas · ObraStay',
+    loadComponent: () =>
+      import('./features/empresas/empresa-pesquisa/empresa-pesquisa').then(
+        (m) => m.EmpresaPesquisa,
+      ),
+  },
+  {
+    path: 'empresas/novo',
+    title: 'Nova empresa · ObraStay',
+    loadComponent: () =>
+      import('./features/empresas/empresa-cadastro/empresa-cadastro').then(
+        (m) => m.EmpresaCadastro,
+      ),
+  },
+  {
+    path: 'empresas/:id/editar',
+    title: 'Editar empresa · ObraStay',
+    loadComponent: () =>
+      import('./features/empresas/empresa-cadastro/empresa-cadastro').then(
+        (m) => m.EmpresaCadastro,
+      ),
+  },
+  {
+    path: 'gestoes',
+    title: 'Gestão · ObraStay',
+    loadComponent: () =>
+      import('./features/gestoes/gestao-pesquisa/gestao-pesquisa').then(
+        (m) => m.GestaoPesquisa,
+      ),
+  },
+  {
+    path: 'gestoes/novo',
+    title: 'Nova gestão · ObraStay',
+    loadComponent: () =>
+      import('./features/gestoes/gestao-cadastro/gestao-cadastro').then(
+        (m) => m.GestaoCadastro,
+      ),
+  },
+  {
+    path: 'gestoes/:id/editar',
+    title: 'Editar gestão · ObraStay',
+    loadComponent: () =>
+      import('./features/gestoes/gestao-cadastro/gestao-cadastro').then(
+        (m) => m.GestaoCadastro,
+      ),
+  },
+  {
     path: 'locais',
     title: 'Locais · ObraStay',
     loadComponent: () =>

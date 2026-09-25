@@ -1,5 +1,14 @@
 export type Sexo = 'MASCULINO' | 'FEMININO';
 
+/** Classificação da mão de obra do colaborador. */
+export type Mdo = 'MAO_DE_OBRA_DIRETA' | 'MAO_DE_OBRA_INDIRETA';
+
+/** Referência mínima (id + nome) para vínculos aninhados na resposta. */
+export interface RefNome {
+  id: number;
+  nome: string;
+}
+
 /** Função (cargo) do colaborador. */
 export interface Funcao {
   id: number;
@@ -24,13 +33,25 @@ export interface Colaborador {
   id: number;
   nome: string;
   sexo: Sexo;
+  mdo: Mdo;
+  cpf: string;
+  email: string;
   funcao: Funcao;
+  epc: RefNome;
+  empresa: RefNome;
+  gestao: RefNome;
 }
 
 export interface ColaboradorRequest {
   nome: string;
   sexo: Sexo | null;
+  mdo: Mdo | null;
+  cpf: string;
+  email: string;
   funcaoId: number | null;
+  epcId: number | null;
+  empresaId: number | null;
+  gestaoId: number | null;
 }
 
 export interface PageResponse<T> {
@@ -75,4 +96,9 @@ export interface ApiError {
 export const SEXO_LABEL: Record<Sexo, string> = {
   MASCULINO: 'Masculino',
   FEMININO: 'Feminino',
+};
+
+export const MDO_LABEL: Record<Mdo, string> = {
+  MAO_DE_OBRA_DIRETA: 'Mão de Obra Direta',
+  MAO_DE_OBRA_INDIRETA: 'Mão de Obra Indireta',
 };

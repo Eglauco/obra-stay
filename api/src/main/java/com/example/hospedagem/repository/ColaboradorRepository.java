@@ -8,4 +8,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ColaboradorRepository
         extends JpaRepository<Colaborador, Long>, JpaSpecificationExecutor<Colaborador> {
+
+    /** Verifica se já existe colaborador com o CPF informado (para bloquear duplicidade na criação). */
+    boolean existsByCpf(String cpf);
+
+    /** Verifica duplicidade de CPF ignorando o próprio registro (para atualização). */
+    boolean existsByCpfAndIdNot(String cpf, Long id);
 }

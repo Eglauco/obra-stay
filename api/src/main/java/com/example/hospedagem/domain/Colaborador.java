@@ -40,7 +40,29 @@ public class Colaborador {
     @Column(name = "sexo", nullable = false, length = 20)
     private Sexo sexo;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mdo", nullable = false, length = 30)
+    private Mdo mdo;
+
+    @Column(name = "cpf", nullable = false, length = 11, unique = true)
+    private String cpf;
+
+    @Column(name = "email", nullable = false, length = 160)
+    private String email;
+
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "funcao_id", nullable = false)
     private Funcao funcao;
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "epc_id", nullable = false)
+    private Epc epc;
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "gestao_id", nullable = false)
+    private Gestao gestao;
 }

@@ -105,6 +105,16 @@ interface NavItem {
             <path d="M4 8h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
             <path d="M9 8V6.5A1.5 1.5 0 0 1 10.5 5h3A1.5 1.5 0 0 1 15 6.5V8M3 12.5h18" />
           }
+          @case ('epc') {
+            <path d="M12 3 4.5 6v5c0 4.55 3.15 7.53 7.5 9 4.35-1.47 7.5-4.45 7.5-9V6L12 3Z" />
+            <path d="m8.75 12 2.25 2.25L15.5 9.75" />
+          }
+          @case ('empresas') {
+            <path d="M3 21h18M5 21V4.5A1.5 1.5 0 0 1 6.5 3h7A1.5 1.5 0 0 1 15 4.5V21M18 21V9.5h1.5A1.5 1.5 0 0 1 21 11v10M8 7h3M8 10.5h3M8 14h3" />
+          }
+          @case ('gestoes') {
+            <path d="M9 4h6a1 1 0 0 1 1 1v2.5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM3.5 15h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1ZM16.5 15h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1ZM12 8.5v3.5M5.5 15v-1.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1V15" />
+          }
           @case ('locais') {
             <path d="M4 21V6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v15M14 21V10a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v11M3 21h18M7.5 8.5h.01M10.5 8.5h.01M7.5 12h.01M10.5 12h.01M8 21v-3h2v3" />
           }
@@ -144,6 +154,9 @@ export class Sidebar {
     { key: 'painel', label: 'Painel', route: '/painel' },
     { key: 'colaboradores', label: 'Colaboradores', route: '/colaboradores' },
     { key: 'funcoes', label: 'Funções', route: '/funcoes' },
+    { key: 'epc', label: 'EPC', route: '/epcs' },
+    { key: 'empresas', label: 'Empresas', route: '/empresas' },
+    { key: 'gestoes', label: 'Gestão', route: '/gestoes' },
     { key: 'locais', label: 'Locais', route: '/locais' },
     { key: 'locadoras', label: 'Locadoras', route: '/locadoras' },
     { key: 'hospedagens', label: 'Hospedagens', route: '/hospedagens' },

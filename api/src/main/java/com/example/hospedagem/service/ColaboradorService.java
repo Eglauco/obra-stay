@@ -1,15 +1,25 @@
 package com.example.hospedagem.service;
 
 import com.example.hospedagem.domain.Colaborador;
+import com.example.hospedagem.domain.Empresa;
+import com.example.hospedagem.domain.Epc;
 import com.example.hospedagem.domain.Funcao;
+import com.example.hospedagem.domain.Gestao;
 import com.example.hospedagem.dto.ColaboradorFiltro;
 import com.example.hospedagem.dto.ColaboradorRequest;
 import com.example.hospedagem.dto.ColaboradorResponse;
+import com.example.hospedagem.dto.EmpresaResponse;
+import com.example.hospedagem.dto.EpcResponse;
 import com.example.hospedagem.dto.FuncaoResponse;
+import com.example.hospedagem.dto.GestaoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.exception.RegraNegocioException;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.ColaboradorRepository;
+import com.example.hospedagem.repository.EmpresaRepository;
+import com.example.hospedagem.repository.EpcRepository;
 import com.example.hospedagem.repository.FuncaoRepository;
+import com.example.hospedagem.repository.GestaoRepository;
 import com.example.hospedagem.specification.ColaboradorSpecifications;
 import java.util.List;
 import java.util.Set;
@@ -34,10 +44,20 @@ public class ColaboradorService {
 
     private final ColaboradorRepository repository;
     private final FuncaoRepository funcaoRepository;
+    private final EpcRepository epcRepository;
+    private final EmpresaRepository empresaRepository;
+    private final GestaoRepository gestaoRepository;
 
-    public ColaboradorService(ColaboradorRepository repository, FuncaoRepository funcaoRepository) {
+    public ColaboradorService(ColaboradorRepository repository,
+                              FuncaoRepository funcaoRepository,
+                              EpcRepository epcRepository,
+                              EmpresaRepository empresaRepository,
+                              GestaoRepository gestaoRepository) {
         this.repository = repository;
         this.funcaoRepository = funcaoRepository;
+        this.epcRepository = epcRepository;
+        this.empresaRepository = empresaRepository;
+        this.gestaoRepository = gestaoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -70,10 +90,20 @@ public class ColaboradorService {
 
     @Transactional
     public ColaboradorResponse criar(ColaboradorRequest request) {
+        String cpf = normalizarCpf(request.cpf());
+        if (repository.existsByCpf(cpf)) {
+            throw new RegraNegocioException("cpf", "Já existe um colaborador com este CPF.");
+        }
         Colaborador colaborador = Colaborador.builder()
                 .nome(request.nome().trim())
                 .sexo(request.sexo())
+                .mdo(request.mdo())
+                .cpf(cpf)
+                .email(request.email().trim().toLowerCase())
                 .funcao(buscarFuncao(request.funcaoId()))
+                .epc(buscarEpc(request.epcId()))
+                .empresa(buscarEmpresa(request.empresaId()))
+                .gestao(buscarGestao(request.gestaoId()))
                 .build();
         return toResponse(repository.save(colaborador));
     }
@@ -81,9 +111,19 @@ public class ColaboradorService {
     @Transactional
     public ColaboradorResponse atualizar(Long id, ColaboradorRequest request) {
         Colaborador colaborador = buscarEntidade(id);
+        String cpf = normalizarCpf(request.cpf());
+        if (repository.existsByCpfAndIdNot(cpf, id)) {
+            throw new RegraNegocioException("cpf", "Já existe um colaborador com este CPF.");
+        }
         colaborador.setNome(request.nome().trim());
         colaborador.setSexo(request.sexo());
+        colaborador.setMdo(request.mdo());
+        colaborador.setCpf(cpf);
+        colaborador.setEmail(request.email().trim().toLowerCase());
         colaborador.setFuncao(buscarFuncao(request.funcaoId()));
+        colaborador.setEpc(buscarEpc(request.epcId()));
+        colaborador.setEmpresa(buscarEmpresa(request.empresaId()));
+        colaborador.setGestao(buscarGestao(request.gestaoId()));
         return toResponse(repository.save(colaborador));
     }
 
@@ -105,13 +145,42 @@ public class ColaboradorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Função não encontrada."));
     }
 
+    private Epc buscarEpc(Long epcId) {
+        return epcRepository.findById(epcId)
+                .orElseThrow(() -> new ResourceNotFoundException("EPC não encontrado."));
+    }
+
+    private Empresa buscarEmpresa(Long empresaId) {
+        return empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada."));
+    }
+
+    private Gestao buscarGestao(Long gestaoId) {
+        return gestaoRepository.findById(gestaoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Gestão não encontrada."));
+    }
+
+    /** Mantém apenas os dígitos do CPF (o front pode enviar com máscara). */
+    private String normalizarCpf(String cpf) {
+        return cpf == null ? null : cpf.replaceAll("\\D", "");
+    }
+
     private ColaboradorResponse toResponse(Colaborador colaborador) {
         Funcao funcao = colaborador.getFuncao();
+        Epc epc = colaborador.getEpc();
+        Empresa empresa = colaborador.getEmpresa();
+        Gestao gestao = colaborador.getGestao();
         return new ColaboradorResponse(
                 colaborador.getId(),
                 colaborador.getNome(),
                 colaborador.getSexo(),
-                new FuncaoResponse(funcao.getId(), funcao.getNome()));
+                colaborador.getMdo(),
+                colaborador.getCpf(),
+                colaborador.getEmail(),
+                new FuncaoResponse(funcao.getId(), funcao.getNome()),
+                new EpcResponse(epc.getId(), epc.getNome()),
+                new EmpresaResponse(empresa.getId(), empresa.getNome()),
+                new GestaoResponse(gestao.getId(), gestao.getNome()));
     }
 
     /**
