@@ -22,6 +22,7 @@ import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Hospedagem, StatusFiltro } from '../../../core/models/hospedagem.model';
 import { formatarDataHora } from '../../../core/util/format';
+import { gerarRelatorioHospedagensPdf } from '../../../core/util/relatorio-hospedagens-pdf';
 
 /** Detalhe de um local: colaboradores hospedados + dar entrada / dar saída. */
 @Component({
@@ -63,6 +64,9 @@ export class HospedagemLocal {
 
   // QR de autoatendimento
   protected readonly qrAberto = signal(false);
+
+  // Relatório PDF
+  protected readonly gerandoPdf = signal(false);
 
   // Ações
   protected readonly aDarSaida = signal<Hospedagem | null>(null);
@@ -183,6 +187,36 @@ export class HospedagemLocal {
   }
   protected fecharQr(): void {
     this.qrAberto.set(false);
+  }
+
+  // ----- Relatório PDF -----
+  protected exportarPdf(): void {
+    if (this.localId == null || this.gerandoPdf()) return;
+    this.gerandoPdf.set(true);
+    // Abre a aba já no gesto do clique para o navegador não bloquear como pop-up.
+    const janela = this.isBrowser ? window.open('', '_blank') : null;
+    if (janela) {
+      janela.document.write(
+        '<!doctype html><meta charset="utf-8"><title>Gerando relatório…</title>' +
+          '<body style="margin:0;display:grid;place-items:center;height:100vh;font:15px system-ui,sans-serif;color:#64748b">' +
+          'Gerando relatório de hospedagens…</body>',
+      );
+    }
+    this.service.relatorio(this.localId, this.filtroStatus() || null).subscribe({
+      next: (rel) => {
+        gerarRelatorioHospedagensPdf(rel, janela)
+          .catch(() => {
+            janela?.close();
+            this.toast.error('Não foi possível gerar o PDF', 'Tente novamente.');
+          })
+          .finally(() => this.gerandoPdf.set(false));
+      },
+      error: (e: HttpErrorResponse) => {
+        janela?.close();
+        this.gerandoPdf.set(false);
+        this.toast.error('Não foi possível gerar o relatório', this.mensagemErro(e));
+      },
+    });
   }
 
   // ----- Filtro de status -----

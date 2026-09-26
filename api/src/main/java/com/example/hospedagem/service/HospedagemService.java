@@ -12,13 +12,19 @@ import com.example.hospedagem.dto.HospedagemEntradaRequest;
 import com.example.hospedagem.dto.HospedagemFiltro;
 import com.example.hospedagem.dto.HospedagemResponse;
 import com.example.hospedagem.dto.HospedagemSaidaRequest;
+import com.example.hospedagem.dto.ItemRelatorioHospedagem;
 import com.example.hospedagem.dto.LocaisColaboradorResponse;
 import com.example.hospedagem.dto.LocalEntradaResponse;
 import com.example.hospedagem.dto.OcupacaoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.RelatorioHospedagensResponse;
 import com.example.hospedagem.dto.ResumoRef;
+import com.example.hospedagem.dto.TotalCategoriaRelatorio;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -143,6 +149,78 @@ public class HospedagemService {
     }
 
     /**
+     * Relatório detalhado das hospedagens de um local (uma linha por estadia/colaborador),
+     * respeitando o filtro de status e de período. Enriquece cada linha com os dados do
+     * colaborador e o tempo de permanência, e agrega resumos por EPC, empresa, função e origem.
+     */
+    @Transactional(readOnly = true)
+    public RelatorioHospedagensResponse relatorio(Long localId, String status,
+                                                  LocalDate entradaDe, LocalDate entradaAte) {
+        Local local = localRepository.findById(localId)
+                .orElseThrow(() -> new ResourceNotFoundException("Local não encontrado."));
+
+        HospedagemFiltro filtro = new HospedagemFiltro(null, localId, status, entradaDe, entradaAte);
+        List<Hospedagem> lista = repository.findAll(
+                HospedagemSpecifications.comFiltro(filtro),
+                Sort.by(Sort.Direction.DESC, "dataEntrada").and(Sort.by(Sort.Direction.ASC, "id")));
+
+        LocalDateTime agora = LocalDateTime.now();
+        List<ItemRelatorioHospedagem> itens = new ArrayList<>();
+        Map<String, long[]> porEpc = new LinkedHashMap<>();
+        Map<String, long[]> porEmpresa = new LinkedHashMap<>();
+        Map<String, long[]> porFuncao = new LinkedHashMap<>();
+        Map<String, long[]> porOrigem = new LinkedHashMap<>();
+        Set<Long> pessoas = new HashSet<>();
+        long ativas = 0;
+        long somaDias = 0;
+
+        for (Hospedagem h : lista) {
+            Colaborador c = h.getColaborador();
+            boolean ativa = h.getDataSaida() == null;
+            LocalDateTime fim = ativa ? agora : h.getDataSaida();
+            long dias = ChronoUnit.DAYS.between(h.getDataEntrada().toLocalDate(), fim.toLocalDate());
+            if (dias < 0) {
+                dias = 0;
+            }
+
+            String funcao = c.getFuncao() != null ? c.getFuncao().getNome() : "—";
+            String epc = c.getEpc() != null ? c.getEpc().getNome() : "—";
+            String empresa = c.getEmpresa() != null ? c.getEmpresa().getNome() : "—";
+            String gestao = c.getGestao() != null ? c.getGestao().getNome() : "—";
+
+            itens.add(new ItemRelatorioHospedagem(
+                    h.getId(), c.getId(), c.getNome(), c.getCpf(), c.getSexo(), c.getMdo(), c.getEmail(),
+                    funcao, epc, empresa, gestao,
+                    h.getDataEntrada(), h.getDataSaida(),
+                    ativa ? STATUS_ATIVA : STATUS_ENCERRADA, h.getOrigem(), dias, h.getObservacao()));
+
+            acumular(porEpc, epc, ativa);
+            acumular(porEmpresa, empresa, ativa);
+            acumular(porFuncao, funcao, ativa);
+            acumular(porOrigem, rotuloOrigem(h.getOrigem()), ativa);
+
+            pessoas.add(c.getId());
+            if (ativa) {
+                ativas++;
+            }
+            somaDias += dias;
+        }
+
+        long encerradas = itens.size() - ativas;
+        double mediaDias = itens.isEmpty() ? 0d : (double) somaDias / itens.size();
+        long ocupadosAtuais = repository.countByLocalIdAndDataSaidaIsNull(localId);
+
+        return new RelatorioHospedagensResponse(
+                new ResumoRef(local.getId(), local.getNome()),
+                local.getCodigo(), montarEndereco(local), local.getCapacidade(),
+                ocupadosAtuais, rotuloStatusFiltro(status), entradaDe, entradaAte, agora,
+                itens,
+                ordenarCategorias(porEpc), ordenarCategorias(porEmpresa),
+                ordenarCategorias(porFuncao), ordenarCategorias(porOrigem),
+                itens.size(), ativas, encerradas, pessoas.size(), somaDias, mediaDias);
+    }
+
+    /**
      * Locais em que o colaborador está ou já esteve hospedado (distintos, mais recentes
      * primeiro), com o id do local da hospedagem ativa (quando houver). Usado pelo módulo
      * de Solicitações para restringir/sugerir o local.
@@ -263,6 +341,58 @@ public class HospedagemService {
         String nome = colaborador.getNome() == null ? "" : colaborador.getNome().trim();
         int espaco = nome.indexOf(' ');
         return espaco > 0 ? nome.substring(0, espaco) : nome;
+    }
+
+    // ----- auxiliares do relatório -----
+
+    private void acumular(Map<String, long[]> mapa, String chave, boolean ativa) {
+        long[] v = mapa.computeIfAbsent(chave, k -> new long[2]);
+        v[0]++;
+        if (ativa) {
+            v[1]++;
+        }
+    }
+
+    private List<TotalCategoriaRelatorio> ordenarCategorias(Map<String, long[]> mapa) {
+        return mapa.entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue()[0], a.getValue()[0]))
+                .map(e -> new TotalCategoriaRelatorio(e.getKey(), e.getValue()[0], e.getValue()[1]))
+                .toList();
+    }
+
+    private String rotuloOrigem(OrigemHospedagem origem) {
+        if (origem == null) {
+            return "—";
+        }
+        return origem == OrigemHospedagem.AUTOATENDIMENTO ? "Autoatendimento" : "Administração";
+    }
+
+    private String rotuloStatusFiltro(String status) {
+        if (!StringUtils.hasText(status)) {
+            return "Todas";
+        }
+        String normalizado = status.trim().toUpperCase();
+        if (STATUS_ATIVA.equals(normalizado)) {
+            return "Somente ativas";
+        }
+        if (STATUS_ENCERRADA.equals(normalizado)) {
+            return "Somente encerradas";
+        }
+        return "Todas";
+    }
+
+    private String montarEndereco(Local local) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(local.getLogradouro()).append(", ").append(local.getNumero());
+        if (StringUtils.hasText(local.getComplemento())) {
+            sb.append(" - ").append(local.getComplemento());
+        }
+        sb.append(" · ").append(local.getBairro());
+        sb.append(" · ").append(local.getCidade()).append("/").append(local.getUf());
+        if (StringUtils.hasText(local.getCep())) {
+            sb.append(" · CEP ").append(local.getCep());
+        }
+        return sb.toString();
     }
 
     // ----- auxiliares -----

@@ -8,6 +8,7 @@ import {
   HospedagemFiltro,
   HospedagemSaidaRequest,
   Ocupacao,
+  RelatorioHospedagens,
 } from '../models/hospedagem.model';
 
 import { environment } from '../../../environments/environment';
@@ -37,6 +38,20 @@ export class HospedagemService {
   /** Ocupação atual por local (para o resumo e o select de entrada). */
   ocupacao(): Observable<Ocupacao[]> {
     return this.http.get<Ocupacao[]>(`${this.resource}/ocupacao`);
+  }
+
+  /** Relatório detalhado de hospedagens do local (respeitando status/período). */
+  relatorio(
+    localId: number,
+    status?: string | null,
+    entradaDe?: string | null,
+    entradaAte?: string | null,
+  ): Observable<RelatorioHospedagens> {
+    let params = new HttpParams().set('localId', String(localId));
+    if (status) params = params.set('status', status);
+    if (entradaDe) params = params.set('entradaDe', entradaDe);
+    if (entradaAte) params = params.set('entradaAte', entradaAte);
+    return this.http.get<RelatorioHospedagens>(`${this.resource}/relatorio`, { params });
   }
 
   obter(id: number): Observable<Hospedagem> {

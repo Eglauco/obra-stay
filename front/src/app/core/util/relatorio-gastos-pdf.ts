@@ -12,8 +12,15 @@ const CHILD_BG = '#F6F7FB';
 const TOTAL_BG = '#EEF2FF';
 const EPC_CORES = ['#6366F1', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
 
-/** Gera e baixa o PDF do relatório de gastos (layout premium, minimalista). */
-export async function gerarRelatorioGastosPdf(rel: RelatorioGastos): Promise<void> {
+/**
+ * Gera o PDF do relatório de gastos (layout premium, minimalista) e o abre em uma
+ * nova aba. Para não cair no bloqueador de pop-up, a aba deve ser aberta pelo
+ * chamador ainda dentro do gesto de clique e repassada em `janela`.
+ */
+export async function gerarRelatorioGastosPdf(
+  rel: RelatorioGastos,
+  janela?: Window | null,
+): Promise<void> {
   const pdfMake: any = (await import('pdfmake/build/pdfmake')).default;
   const vfs: any = (await import('pdfmake/build/vfs_fonts')).default;
   pdfMake.vfs = vfs;
@@ -84,7 +91,11 @@ export async function gerarRelatorioGastosPdf(rel: RelatorioGastos): Promise<voi
     content: conteudo,
   };
 
-  pdfMake.createPdf(dd).download(nomeArquivo(rel));
+  const doc = pdfMake.createPdf(dd);
+  // Abre em nova aba. Se a aba já foi aberta no clique (evita bloqueio de pop-up),
+  // reaproveita-a; senão o próprio pdfmake abre uma.
+  if (janela) doc.open({}, janela);
+  else doc.open();
 }
 
 function corpoGastos(rel: RelatorioGastos, corDe: (id: number | null) => string): any[] {
@@ -211,15 +222,4 @@ function periodoTexto(de: string | null, ate: string | null): string {
 
 function chaveEpc(id: number | null): string {
   return id == null ? 'nao-rateado' : String(id);
-}
-
-function nomeArquivo(rel: RelatorioGastos): string {
-  const slug = (rel.local?.nome ?? 'local')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  const data = (rel.geradoEm ?? '').split('T')[0] || 'relatorio';
-  return `relatorio-gastos-${slug}-${data}.pdf`;
 }

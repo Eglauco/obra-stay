@@ -11,6 +11,7 @@ import com.example.hospedagem.dto.LocaisColaboradorResponse;
 import com.example.hospedagem.dto.LocalEntradaResponse;
 import com.example.hospedagem.dto.OcupacaoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.RelatorioHospedagensResponse;
 import com.example.hospedagem.service.HospedagemService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -69,6 +70,19 @@ public class HospedagemController {
     @GetMapping("/ocupacao")
     public List<OcupacaoResponse> ocupacao() {
         return service.ocupacao();
+    }
+
+    /**
+     * Relatório detalhado das hospedagens do local (uma linha por colaborador), respeitando
+     * o filtro de status e período. Declarado antes de "/{id}" para não virar path variable.
+     */
+    @GetMapping("/relatorio")
+    public RelatorioHospedagensResponse relatorio(
+            @RequestParam Long localId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaAte) {
+        return service.relatorio(localId, status, entradaDe, entradaAte);
     }
 
     /**

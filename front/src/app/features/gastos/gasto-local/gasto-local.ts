@@ -204,13 +204,27 @@ export class GastoLocal {
   protected exportarPdf(): void {
     if (this.localId == null || this.gerandoPdf()) return;
     this.gerandoPdf.set(true);
+    // Abre a aba já aqui, dentro do gesto de clique, para o navegador não bloquear
+    // como pop-up (a geração acontece depois de uma chamada HTTP + import dinâmico).
+    const janela = this.isBrowser ? window.open('', '_blank') : null;
+    if (janela) {
+      janela.document.write(
+        '<!doctype html><meta charset="utf-8"><title>Gerando relatório…</title>' +
+          '<body style="margin:0;display:grid;place-items:center;height:100vh;font:15px system-ui,sans-serif;color:#64748b">' +
+          'Gerando relatório de gastos…</body>',
+      );
+    }
     this.service.relatorio(this.localId, this.filtroDe() || null, this.filtroAte() || null).subscribe({
       next: (rel) => {
-        gerarRelatorioGastosPdf(rel)
-          .catch(() => this.toast.error('Não foi possível gerar o PDF', 'Tente novamente.'))
+        gerarRelatorioGastosPdf(rel, janela)
+          .catch(() => {
+            janela?.close();
+            this.toast.error('Não foi possível gerar o PDF', 'Tente novamente.');
+          })
           .finally(() => this.gerandoPdf.set(false));
       },
       error: (e: HttpErrorResponse) => {
+        janela?.close();
         this.gerandoPdf.set(false);
         this.toast.error('Não foi possível gerar o relatório', this.mensagemErro(e));
       },

@@ -1,3 +1,5 @@
+import { Mdo, Sexo } from './colaborador.model';
+
 export interface RefItem {
   id: number;
   nome: string;
@@ -48,4 +50,58 @@ export interface Ocupacao {
   localNome: string;
   capacidade: number;
   ocupados: number;
+}
+
+// ----- Relatório de hospedagens (PDF) -----
+
+/** Uma estadia detalhada com os dados completos do colaborador. */
+export interface ItemRelatorioHospedagem {
+  id: number;
+  colaboradorId: number;
+  colaboradorNome: string;
+  cpf: string;
+  sexo: Sexo;
+  mdo: Mdo;
+  email: string;
+  funcao: string;
+  epc: string;
+  empresa: string;
+  gestao: string;
+  dataEntrada: string;
+  dataSaida: string | null;
+  status: HospedagemStatus;
+  origem: OrigemHospedagem;
+  diasHospedados: number;
+  observacao: string | null;
+}
+
+/** Linha de resumo agrupada por categoria (EPC, empresa, função, origem). */
+export interface TotalCategoriaRelatorio {
+  rotulo: string;
+  total: number;
+  ativas: number;
+}
+
+/** Payload completo do relatório de hospedagens do local. */
+export interface RelatorioHospedagens {
+  local: RefItem;
+  localCodigo: string;
+  localEndereco: string;
+  capacidade: number;
+  ocupadosAtuais: number;
+  statusFiltro: string;
+  dataDe: string | null;
+  dataAte: string | null;
+  geradoEm: string;
+  itens: ItemRelatorioHospedagem[];
+  porEpc: TotalCategoriaRelatorio[];
+  porEmpresa: TotalCategoriaRelatorio[];
+  porFuncao: TotalCategoriaRelatorio[];
+  porOrigem: TotalCategoriaRelatorio[];
+  totalRegistros: number;
+  totalAtivas: number;
+  totalEncerradas: number;
+  totalPessoas: number;
+  somaDias: number;
+  mediaDias: number;
 }

@@ -50,6 +50,20 @@
           </svg>
           QR de autoatendimento
         </button>
+        <button
+          type="button"
+          (click)="exportarPdf()"
+          [disabled]="gerandoPdf() || !temItens()"
+          title="Abrir relatório de hospedagens em PDF em uma nova aba"
+          class="inline-flex h-11 items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          @if (gerandoPdf()) {
+            <svg viewBox="0 0 24 24" fill="none" class="size-4.5 animate-spin text-accent" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
+          } @else {
+            <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M9 4.5H5.5A1.5 1.5 0 0 0 4 6v8.5A1.5 1.5 0 0 0 5.5 16H14a1.5 1.5 0 0 0 1.5-1.5V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 4h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M16 4 9.5 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          }
+          Relatório PDF
+        </button>
         @if (lotado()) {
           <button type="button" disabled title="Local lotado"
             class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg opacity-50 cursor-not-allowed">
