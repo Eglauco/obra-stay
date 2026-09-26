@@ -5,23 +5,26 @@ import com.example.hospedagem.dto.LocalRequest;
 import com.example.hospedagem.dto.LocalResponse;
 import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.service.LocalService;
+import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -53,6 +56,21 @@ public class LocalController {
     }
 
     /**
+     * Exporta os locais filtrados (sem paginação) para Excel.
+     * Declarado antes de "/{id}" para não ser capturado como path variable.
+     */
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String codigo,
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String cidade) {
+
+        byte[] conteudo = service.exportar(new LocalFiltro(id, codigo, nome, cidade));
+        return PlanilhaExcel.resposta(conteudo, "locais");
+    }
+
+    /**
      * Busca um local por id.
      */
     @GetMapping("/{id}")
@@ -61,14 +79,15 @@ public class LocalController {
     }
 
     /**
-     * Cria um local.
+     * Cria um local. Multipart: parte "dados" (JSON do LocalRequest) + "foto" (opcional).
      */
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<LocalResponse> criar(
-            @Valid @RequestBody LocalRequest request,
+            @Valid @RequestPart("dados") LocalRequest request,
+            @RequestPart(value = "foto", required = false) MultipartFile foto,
             UriComponentsBuilder uriBuilder) {
 
-        LocalResponse criado = service.criar(request);
+        LocalResponse criado = service.criar(request, foto);
         URI location = uriBuilder.path("/api/locais/{id}")
                 .buildAndExpand(criado.id())
                 .toUri();
@@ -76,13 +95,16 @@ public class LocalController {
     }
 
     /**
-     * Atualiza um local existente.
+     * Atualiza um local. Multipart: parte "dados" (JSON) + "foto" (opcional) e o
+     * campo "removerFoto" (quando o usuário remove a foto existente sem enviar outra).
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public LocalResponse atualizar(
             @PathVariable Long id,
-            @Valid @RequestBody LocalRequest request) {
-        return service.atualizar(id, request);
+            @Valid @RequestPart("dados") LocalRequest request,
+            @RequestPart(value = "foto", required = false) MultipartFile foto,
+            @RequestParam(value = "removerFoto", defaultValue = "false") boolean removerFoto) {
+        return service.atualizar(id, request, foto, removerFoto);
     }
 
     /**

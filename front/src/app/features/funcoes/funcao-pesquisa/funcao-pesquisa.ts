@@ -15,6 +15,7 @@ import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import { FuncaoService } from '../../../core/services/funcao.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import {
   ApiError,
   Funcao,
@@ -26,7 +27,7 @@ import {
 
 @Component({
   selector: 'app-funcao-pesquisa',
-  imports: [ConfirmDialog, RouterLink],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel],
   templateUrl: './funcao-pesquisa.html',
   styleUrl: './funcao-pesquisa.css',
 })
@@ -83,6 +84,9 @@ export class FuncaoPesquisa {
   protected readonly skeletonRows = computed(() =>
     Array.from({ length: Math.min(this.size(), 10) }, (_, i) => i),
   );
+
+  /** Fonte da exportação Excel (respeita os filtros atuais, sem paginação). */
+  protected readonly exportarExcel = () => this.service.exportar(this.filtroAtual());
 
   private readonly buscar$ = new Subject<void>();
   private readonly digitar$ = new Subject<void>();

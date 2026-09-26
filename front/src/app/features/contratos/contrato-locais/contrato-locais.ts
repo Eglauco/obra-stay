@@ -18,13 +18,14 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Vigencia } from '../../../core/models/contrato.model';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 
 const ALERTA_DIAS = 30;
 
 /** Lista principal da gestão de Contratos: os LOCAIS, com o vencimento do contrato vigente. */
 @Component({
   selector: 'app-contrato-locais',
-  imports: [RouterLink],
+  imports: [RouterLink, ExportarExcel],
   templateUrl: './contrato-locais.html',
   styleUrl: './contrato-locais.css',
 })
@@ -68,6 +69,10 @@ export class ContratoLocais {
   protected readonly skeletonCards = computed(() =>
     Array.from({ length: Math.min(this.size(), 6) }, (_, i) => i),
   );
+
+  /** Exporta a grade de locais (contrato vigente) respeitando o filtro de nome. */
+  protected readonly exportarLocaisExcel = () =>
+    this.contratoService.exportarLocais(this.filtroNome().trim() || null);
 
   private readonly buscar$ = new Subject<void>();
   private readonly digitar$ = new Subject<void>();

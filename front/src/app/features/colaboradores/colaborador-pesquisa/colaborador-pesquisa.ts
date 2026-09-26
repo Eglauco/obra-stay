@@ -16,6 +16,7 @@ import { ColaboradorService } from '../../../core/services/colaborador.service';
 import { FuncaoService } from '../../../core/services/funcao.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import {
   ApiError,
   Colaborador,
@@ -32,7 +33,7 @@ type SexoFiltro = Sexo | '';
 
 @Component({
   selector: 'app-colaborador-pesquisa',
-  imports: [ConfirmDialog, RouterLink],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel],
   templateUrl: './colaborador-pesquisa.html',
   styleUrl: './colaborador-pesquisa.css',
 })
@@ -103,6 +104,9 @@ export class ColaboradorPesquisa {
   protected readonly skeletonRows = computed(() =>
     Array.from({ length: Math.min(this.size(), 10) }, (_, i) => i),
   );
+
+  /** Fonte da exportação Excel (respeita os filtros atuais, sem paginação). */
+  protected readonly exportarExcel = () => this.service.exportar(this.filtroAtual());
 
   private readonly buscar$ = new Subject<void>();
   private readonly digitar$ = new Subject<void>();

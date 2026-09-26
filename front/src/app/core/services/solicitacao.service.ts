@@ -39,6 +39,22 @@ export class SolicitacaoService {
     return this.http.get<PageResponse<Solicitacao>>(this.resource, { params });
   }
 
+  /** Exporta as solicitações filtradas (sem paginação) em Excel. */
+  exportar(filtro: SolicitacaoFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.status) params = params.set('status', filtro.status);
+    if (filtro.tipoSolicitacaoId != null) {
+      params = params.set('tipoSolicitacaoId', String(filtro.tipoSolicitacaoId));
+    }
+    if (filtro.colaboradorId != null) {
+      params = params.set('colaboradorId', String(filtro.colaboradorId));
+    }
+    if (filtro.localId != null) params = params.set('localId', String(filtro.localId));
+    if (filtro.aberturaDe) params = params.set('aberturaDe', filtro.aberturaDe);
+    if (filtro.aberturaAte) params = params.set('aberturaAte', filtro.aberturaAte);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Solicitacao> {
     return this.http.get<Solicitacao>(`${this.resource}/${id}`);
   }

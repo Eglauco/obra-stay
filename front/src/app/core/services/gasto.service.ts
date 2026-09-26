@@ -57,6 +57,25 @@ export class GastoService {
     return this.http.get<ResumoGasto>(`${this.resource}/resumo`, { params });
   }
 
+  /** Exporta os gastos filtrados (detalhe do local) em Excel. */
+  exportar(filtro: GastoFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.localId != null) params = params.set('localId', String(filtro.localId));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    if (filtro.dataDe) params = params.set('dataDe', filtro.dataDe);
+    if (filtro.dataAte) params = params.set('dataAte', filtro.dataAte);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
+  /** Exporta a grade de locais com o total gasto (respeita o filtro de nome). */
+  exportarLocais(nome?: string | null): Observable<Blob> {
+    let params = new HttpParams();
+    const n = nome?.trim();
+    if (n) params = params.set('nome', n);
+    return this.http.get(`${this.resource}/exportar-locais`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Gasto> {
     return this.http.get<Gasto>(`${this.resource}/${id}`);
   }

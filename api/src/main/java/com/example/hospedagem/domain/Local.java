@@ -57,4 +57,8 @@ public class Local {
 
     @Column(name = "uf", nullable = false, length = 2)
     private String uf;
+
+    /** Chave do objeto da foto no storage (S3/MinIO). Nulo = sem foto. */
+    @Column(name = "foto_key", length = 255)
+    private String fotoKey;
 }

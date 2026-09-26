@@ -9,6 +9,7 @@ import com.example.hospedagem.dto.RelatorioGastosResponse;
 import com.example.hospedagem.dto.ResumoGastoResponse;
 import com.example.hospedagem.dto.TotalGastoResponse;
 import com.example.hospedagem.service.GastoService;
+import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
@@ -65,6 +66,24 @@ public class GastoController {
     @GetMapping("/totais")
     public List<TotalGastoResponse> totais() {
         return service.totais();
+    }
+
+    /** Exporta os gastos do local (detalhe) para Excel, respeitando os filtros de período. */
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) Long localId,
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataAte) {
+
+        byte[] conteudo = service.exportar(new GastoFiltro(localId, nome, dataDe, dataAte));
+        return PlanilhaExcel.resposta(conteudo, "gastos");
+    }
+
+    /** Exporta a grade de locais com o total gasto (respeita o filtro de nome). */
+    @GetMapping("/exportar-locais")
+    public ResponseEntity<byte[]> exportarLocais(@RequestParam(required = false) String nome) {
+        return PlanilhaExcel.resposta(service.exportarLocais(nome), "gastos-locais");
     }
 
     /**

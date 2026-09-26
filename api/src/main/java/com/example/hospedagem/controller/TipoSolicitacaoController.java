@@ -5,6 +5,7 @@ import com.example.hospedagem.dto.TipoSolicitacaoRequest;
 import com.example.hospedagem.dto.TipoSolicitacaoResponse;
 import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.service.TipoSolicitacaoService;
+import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -58,6 +59,19 @@ public class TipoSolicitacaoController {
     @GetMapping("/opcoes")
     public List<TipoSolicitacaoResponse> opcoes() {
         return service.listarOpcoes();
+    }
+
+    /**
+     * Exporta os tipos de solicitação filtrados (sem paginação) para Excel.
+     * Declarado antes de "/{id}" para não ser capturado como path variable.
+     */
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String nome) {
+
+        byte[] conteudo = service.exportar(new TipoSolicitacaoFiltro(id, nome));
+        return PlanilhaExcel.resposta(conteudo, "tipos-solicitacao");
     }
 
     /**

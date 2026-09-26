@@ -54,6 +54,25 @@ export class HospedagemService {
     return this.http.get<RelatorioHospedagens>(`${this.resource}/relatorio`, { params });
   }
 
+  /** Exporta as hospedagens filtradas (detalhe do local) em Excel. */
+  exportar(filtro: HospedagemFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.colaboradorId != null) params = params.set('colaboradorId', String(filtro.colaboradorId));
+    if (filtro.localId != null) params = params.set('localId', String(filtro.localId));
+    if (filtro.status) params = params.set('status', filtro.status);
+    if (filtro.entradaDe) params = params.set('entradaDe', filtro.entradaDe);
+    if (filtro.entradaAte) params = params.set('entradaAte', filtro.entradaAte);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
+  /** Exporta a grade de locais com a ocupação (respeita o filtro de nome). */
+  exportarLocais(nome?: string | null): Observable<Blob> {
+    let params = new HttpParams();
+    const n = nome?.trim();
+    if (n) params = params.set('nome', n);
+    return this.http.get(`${this.resource}/exportar-locais`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Hospedagem> {
     return this.http.get<Hospedagem>(`${this.resource}/${id}`);
   }

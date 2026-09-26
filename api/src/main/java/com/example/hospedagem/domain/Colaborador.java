@@ -65,4 +65,9 @@ public class Colaborador {
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "gestao_id", nullable = false)
     private Gestao gestao;
+
+    /** Hospedagem atualmente ativa (denormalizado; sincronizado pela HospedagemService). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hospedagem_ativa_id")
+    private Hospedagem hospedagemAtiva;
 }

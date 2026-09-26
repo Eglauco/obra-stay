@@ -17,6 +17,7 @@ import { ColaboradorService } from '../../../core/services/colaborador.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { BuscaOpcao, BuscaSelect } from '../../../core/components/busca-select/busca-select';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import { SolicitacaoHistoricoDialog } from '../solicitacao-historico-dialog/solicitacao-historico-dialog';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import {
@@ -29,7 +30,7 @@ import { diasDesde, formatarDataHora } from '../../../core/util/format';
 
 @Component({
   selector: 'app-solicitacao-pesquisa',
-  imports: [ConfirmDialog, BuscaSelect, RouterLink, SolicitacaoHistoricoDialog],
+  imports: [ConfirmDialog, BuscaSelect, RouterLink, SolicitacaoHistoricoDialog, ExportarExcel],
   templateUrl: './solicitacao-pesquisa.html',
   styleUrl: './solicitacao-pesquisa.css',
 })
@@ -95,6 +96,9 @@ export class SolicitacaoPesquisa {
   protected readonly skeletonRows = computed(() =>
     Array.from({ length: Math.min(this.size(), 8) }, (_, i) => i),
   );
+
+  /** Fonte da exportação Excel (respeita os filtros atuais, sem paginação). */
+  protected readonly exportarExcel = () => this.service.exportar(this.filtroAtual());
 
   private readonly buscar$ = new Subject<void>();
 

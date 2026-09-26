@@ -50,4 +50,8 @@ public class Contrato {
 
     @Column(name = "data_fim", nullable = false)
     private LocalDate dataFim;
+
+    /** Chave do PDF do contrato no storage (S3/MinIO). Nulo = sem arquivo. */
+    @Column(name = "arquivo_key", length = 255)
+    private String arquivoKey;
 }

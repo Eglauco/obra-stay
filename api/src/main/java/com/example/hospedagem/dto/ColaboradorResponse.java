@@ -16,6 +16,7 @@ public record ColaboradorResponse(
         FuncaoResponse funcao,
         EpcResponse epc,
         EmpresaResponse empresa,
-        GestaoResponse gestao
+        GestaoResponse gestao,
+        HospedagemAtivaResumo hospedagemAtiva
 ) {
 }

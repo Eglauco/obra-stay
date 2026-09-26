@@ -8,6 +8,9 @@ import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.FuncaoRepository;
 import com.example.hospedagem.specification.FuncaoSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -82,6 +85,23 @@ public class FuncaoService {
     public void excluir(Long id) {
         Funcao funcao = buscarEntidade(id);
         repository.delete(funcao);
+    }
+
+    /** Exporta as funções filtradas (sem paginação) para Excel (.xlsx). */
+    @Transactional(readOnly = true)
+    public byte[] exportar(FuncaoFiltro filtro) {
+        List<Funcao> lista = repository.findAll(
+                FuncaoSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.ASC, "nome"));
+
+        List<String> cabecalhos = List.of("ID", "Nome");
+
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Funcao f : lista) {
+            linhas.add(Arrays.asList(
+                    f.getId(),
+                    f.getNome()));
+        }
+        return PlanilhaExcel.gerar("Funções", cabecalhos, linhas);
     }
 
     // ----- auxiliares -----

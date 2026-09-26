@@ -8,6 +8,9 @@ import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.TipoSolicitacaoRepository;
 import com.example.hospedagem.specification.TipoSolicitacaoSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -82,6 +85,21 @@ public class TipoSolicitacaoService {
     public void excluir(Long id) {
         TipoSolicitacao tipoSolicitacao = buscarEntidade(id);
         repository.delete(tipoSolicitacao);
+    }
+
+    /** Exporta os tipos de solicitação filtrados (sem paginação) para Excel (.xlsx). */
+    @Transactional(readOnly = true)
+    public byte[] exportar(TipoSolicitacaoFiltro filtro) {
+        List<TipoSolicitacao> lista = repository.findAll(
+                TipoSolicitacaoSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.ASC, "nome"));
+
+        List<String> cabecalhos = List.of("ID", "Nome");
+
+        List<List<Object>> linhas = new ArrayList<>();
+        for (TipoSolicitacao t : lista) {
+            linhas.add(Arrays.asList(t.getId(), t.getNome()));
+        }
+        return PlanilhaExcel.gerar("Tipos de Solicitação", cabecalhos, linhas);
     }
 
     // ----- auxiliares -----

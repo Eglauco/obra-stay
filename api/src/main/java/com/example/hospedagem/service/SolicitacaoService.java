@@ -22,7 +22,10 @@ import com.example.hospedagem.repository.SolicitacaoHistoricoRepository;
 import com.example.hospedagem.repository.SolicitacaoRepository;
 import com.example.hospedagem.repository.TipoSolicitacaoRepository;
 import com.example.hospedagem.specification.SolicitacaoSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -218,6 +221,43 @@ public class SolicitacaoService {
     public void excluir(Long id) {
         Solicitacao s = buscarEntidade(id);
         repository.delete(s);
+    }
+
+    /** Exporta as solicitações filtradas (sem paginação) para Excel (.xlsx). */
+    @Transactional(readOnly = true)
+    public byte[] exportar(SolicitacaoFiltro filtro) {
+        List<Solicitacao> lista = repository.findAll(
+                SolicitacaoSpecifications.comFiltro(filtro),
+                Sort.by(Sort.Direction.DESC, "dataHoraAbertura"));
+
+        List<String> cabecalhos = List.of("ID", "Tipo", "Colaborador", "Local", "Status",
+                "Aberta em", "Encerrada em", "Observação");
+
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Solicitacao s : lista) {
+            linhas.add(Arrays.asList(
+                    s.getId(),
+                    s.getTipoSolicitacao() != null ? s.getTipoSolicitacao().getNome() : null,
+                    s.getColaborador() != null ? s.getColaborador().getNome() : null,
+                    s.getLocal() != null ? s.getLocal().getNome() : null,
+                    rotuloStatus(s.getStatus()),
+                    s.getDataHoraAbertura(),
+                    s.getDataHoraEncerramento(),
+                    s.getObservacao()));
+        }
+        return PlanilhaExcel.gerar("Solicitações", cabecalhos, linhas);
+    }
+
+    private String rotuloStatus(StatusSolicitacao status) {
+        if (status == null) {
+            return null;
+        }
+        return switch (status) {
+            case AGUARDANDO_ANALISE -> "Aguardando análise";
+            case EM_PROCESSAMENTO -> "Em processamento";
+            case FINALIZADA -> "Finalizada";
+            case CANCELADA -> "Cancelada";
+        };
     }
 
     /** Linha do tempo (admin) de uma solicitação. */

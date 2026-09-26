@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   PLATFORM_ID,
   afterNextRender,
   computed,
@@ -44,6 +45,7 @@ export class LocalCadastro {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
@@ -56,6 +58,14 @@ export class LocalCadastro {
   // Estado do CEP (tratado manualmente por causa da máscara + ViaCEP)
   protected readonly cepBuscando = signal(false);
   protected readonly cepErro = signal<string | null>(null);
+
+  // Foto do local (só vai pro S3 no Salvar)
+  protected readonly fotoPreview = signal<string | null>(null);
+  protected readonly fotoArquivo = signal<File | null>(null);
+  protected readonly removerFoto = signal(false);
+  protected readonly fotoErro = signal<string | null>(null);
+  private readonly tinhaFoto = signal(false);
+  private fotoObjectUrl: string | null = null;
 
   protected readonly model = signal<LocalModel>({
     codigo: '',
@@ -92,8 +102,10 @@ export class LocalCadastro {
   protected readonly bairroError = computed(() => this.err(this.f.bairro, 'bairro'));
   protected readonly cidadeError = computed(() => this.err(this.f.cidade, 'cidade'));
   protected readonly ufError = computed(() => this.err(this.f.uf, 'uf'));
+  protected readonly fotoError = computed(() => this.serverErrors()['foto'] ?? this.fotoErro());
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.revogarObjectUrl());
     afterNextRender(() => {
       const id = this.id();
       if (id != null) this.carregar(id);
@@ -125,6 +137,10 @@ export class LocalCadastro {
           cidade: l.cidade,
           uf: l.uf,
         });
+        this.fotoPreview.set(l.fotoUrl ?? null);
+        this.tinhaFoto.set(!!l.fotoUrl);
+        this.fotoArquivo.set(null);
+        this.removerFoto.set(false);
         this.carregando.set(false);
         queueMicrotask(() => document.getElementById('loc-codigo')?.focus());
       },
@@ -218,7 +234,11 @@ export class LocalCadastro {
     const id = this.id();
     this.saving.set(true);
 
-    const op$ = id != null ? this.service.atualizar(id, req) : this.service.criar(req);
+    const foto = this.fotoArquivo();
+    const op$ =
+      id != null
+        ? this.service.atualizar(id, req, foto, this.removerFoto())
+        : this.service.criar(req, foto);
 
     op$.subscribe({
       next: () => {
@@ -234,6 +254,49 @@ export class LocalCadastro {
         this.handleError(e);
       },
     });
+  }
+
+  // ----- Foto -----
+  protected onFotoSelecionada(input: HTMLInputElement): void {
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // permite re-selecionar o mesmo arquivo depois
+    if (!file) return;
+
+    const tiposOk = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!tiposOk.includes(file.type)) {
+      this.fotoErro.set('Formato inválido. Use JPG, PNG ou WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.fotoErro.set('A imagem deve ter no máximo 5 MB.');
+      return;
+    }
+
+    this.fotoErro.set(null);
+    this.clearServerError('foto');
+    this.revogarObjectUrl();
+    const url = this.isBrowser ? URL.createObjectURL(file) : null;
+    this.fotoObjectUrl = url;
+    this.fotoArquivo.set(file);
+    this.fotoPreview.set(url);
+    this.removerFoto.set(false);
+  }
+
+  protected removerFotoAtual(): void {
+    this.revogarObjectUrl();
+    this.fotoArquivo.set(null);
+    this.fotoPreview.set(null);
+    this.fotoErro.set(null);
+    this.clearServerError('foto');
+    // Só marca remoção no servidor se o local já tinha foto salva.
+    this.removerFoto.set(this.tinhaFoto());
+  }
+
+  private revogarObjectUrl(): void {
+    if (this.fotoObjectUrl && this.isBrowser) {
+      URL.revokeObjectURL(this.fotoObjectUrl);
+    }
+    this.fotoObjectUrl = null;
   }
 
   protected voltar(): void {

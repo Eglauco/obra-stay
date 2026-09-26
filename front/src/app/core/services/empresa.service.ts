@@ -35,6 +35,15 @@ export class EmpresaService {
     return this.http.get<Empresa[]>(`${this.resource}/opcoes`);
   }
 
+  /** Exporta as empresas filtradas (sem paginação) em Excel. */
+  exportar(filtro: EmpresaFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.id != null && !Number.isNaN(filtro.id)) params = params.set('id', String(filtro.id));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Empresa> {
     return this.http.get<Empresa>(`${this.resource}/${id}`);
   }

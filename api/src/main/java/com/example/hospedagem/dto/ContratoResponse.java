@@ -13,6 +13,7 @@ public record ContratoResponse(
         ResumoRef locadora,
         LocalDate dataInicio,
         LocalDate dataFim,
-        String status
+        String status,
+        String arquivoUrl
 ) {
 }

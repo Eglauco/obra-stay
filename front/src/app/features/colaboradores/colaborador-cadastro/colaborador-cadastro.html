@@ -21,6 +21,28 @@
     </div>
   </div>
 
+  <!-- Hospedagem ativa (link para a tela da hospedagem) -->
+  @if (hospedagemAtiva(); as h) {
+    <a
+      [routerLink]="['/hospedagens/local', h.localId]"
+      class="group flex items-center gap-3 rounded-card border p-4 shadow-card transition-colors hover:border-accent/50"
+      style="background-color: var(--color-success-soft)"
+    >
+      <span class="grid size-10 shrink-0 place-items-center rounded-full bg-surface" style="color: var(--color-success)" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" class="size-5"><path d="M3 10h18M6 10V7a1 1 0 0 1 1-1h3v4M3 14h18M6 14v3m12-3v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-[0.6875rem] font-semibold uppercase tracking-wider" style="color: var(--color-success)">Hospedagem ativa</p>
+        <p class="truncate text-sm font-medium text-fg">{{ h.localNome }}</p>
+        <p class="text-[0.8125rem] text-muted">Desde {{ fmtDataHora(h.dataEntrada) }}</p>
+      </div>
+      <span class="inline-flex shrink-0 items-center gap-1 text-[0.8125rem] font-medium text-accent">
+        Ver hospedagem
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </span>
+    </a>
+  }
+
   @if (carregando()) {
     <!-- Carregando (modo edição) -->
     <div class="flex items-center justify-center gap-3 rounded-card border bg-surface p-10 text-sm text-muted shadow-card">

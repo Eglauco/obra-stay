@@ -5,15 +5,18 @@
       <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Gestão</h2>
       <p class="mt-1 text-sm text-muted">Áreas de gestão dos colaboradores.</p>
     </div>
-    <a
-      routerLink="/gestoes/novo"
-      class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
-    >
-      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
-        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-      </svg>
-      Nova gestão
-    </a>
+    <div class="flex items-center gap-2">
+      <app-exportar-excel nome="gestoes" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+      <a
+        routerLink="/gestoes/novo"
+        class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
+      >
+        <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Nova gestão
+      </a>
+    </div>
   </div>
 
   <!-- Console de busca -->

@@ -15,12 +15,13 @@ import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import { ApiError, PageResponse, SortDir } from '../../../core/models/colaborador.model';
 import { Empresa, EmpresaFiltro, EmpresaSortField } from '../../../core/models/empresa.model';
 
 @Component({
   selector: 'app-empresa-pesquisa',
-  imports: [ConfirmDialog, RouterLink],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel],
   templateUrl: './empresa-pesquisa.html',
   styleUrl: './empresa-pesquisa.css',
 })
@@ -77,6 +78,9 @@ export class EmpresaPesquisa {
   protected readonly skeletonRows = computed(() =>
     Array.from({ length: Math.min(this.size(), 10) }, (_, i) => i),
   );
+
+  /** Fonte da exportação Excel (respeita os filtros atuais, sem paginação). */
+  protected readonly exportarExcel = () => this.service.exportar(this.filtroAtual());
 
   private readonly buscar$ = new Subject<void>();
   private readonly digitar$ = new Subject<void>();

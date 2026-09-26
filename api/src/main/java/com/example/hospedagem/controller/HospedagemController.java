@@ -13,6 +13,7 @@ import com.example.hospedagem.dto.OcupacaoResponse;
 import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.dto.RelatorioHospedagensResponse;
 import com.example.hospedagem.service.HospedagemService;
+import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
@@ -70,6 +71,26 @@ public class HospedagemController {
     @GetMapping("/ocupacao")
     public List<OcupacaoResponse> ocupacao() {
         return service.ocupacao();
+    }
+
+    /** Exporta as hospedagens do local (detalhe) para Excel, respeitando os filtros. */
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) Long colaboradorId,
+            @RequestParam(required = false) Long localId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaAte) {
+
+        byte[] conteudo = service.exportar(
+                new HospedagemFiltro(colaboradorId, localId, status, entradaDe, entradaAte));
+        return PlanilhaExcel.resposta(conteudo, "hospedagens");
+    }
+
+    /** Exporta a grade de locais com a ocupação atual (respeita o filtro de nome). */
+    @GetMapping("/exportar-locais")
+    public ResponseEntity<byte[]> exportarLocais(@RequestParam(required = false) String nome) {
+        return PlanilhaExcel.resposta(service.exportarLocais(nome), "hospedagens-locais");
     }
 
     /**

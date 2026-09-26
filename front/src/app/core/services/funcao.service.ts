@@ -39,6 +39,15 @@ export class FuncaoService {
     return this.http.get<Funcao[]>(`${this.resource}/opcoes`);
   }
 
+  /** Exporta as funções filtradas (sem paginação) em Excel. */
+  exportar(filtro: FuncaoFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.id != null && !Number.isNaN(filtro.id)) params = params.set('id', String(filtro.id));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Funcao> {
     return this.http.get<Funcao>(`${this.resource}/${id}`);
   }

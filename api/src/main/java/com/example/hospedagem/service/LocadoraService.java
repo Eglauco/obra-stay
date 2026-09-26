@@ -8,6 +8,9 @@ import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.LocadoraRepository;
 import com.example.hospedagem.specification.LocadoraSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -84,6 +87,39 @@ public class LocadoraService {
     public void excluir(Long id) {
         Locadora locadora = buscarEntidade(id);
         repository.delete(locadora);
+    }
+
+    /** Exporta as locadoras filtradas (sem paginação) para Excel (.xlsx). */
+    @Transactional(readOnly = true)
+    public byte[] exportar(LocadoraFiltro filtro) {
+        List<Locadora> lista = repository.findAll(
+                LocadoraSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.ASC, "nome"));
+
+        List<String> cabecalhos = List.of("ID", "Nome", "Telefone");
+
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Locadora l : lista) {
+            linhas.add(Arrays.asList(
+                    l.getId(),
+                    l.getNome(),
+                    formatarTelefone(l.getTelefone())));
+        }
+        return PlanilhaExcel.gerar("Locadoras", cabecalhos, linhas);
+    }
+
+    /** Formata o telefone (10 = fixo, 11 = celular); texto cru se não bater. */
+    private String formatarTelefone(String telefone) {
+        if (telefone == null) {
+            return null;
+        }
+        String d = telefone.replaceAll("\\D", "");
+        if (d.length() == 11) {
+            return "(" + d.substring(0, 2) + ") " + d.substring(2, 7) + "-" + d.substring(7);
+        }
+        if (d.length() == 10) {
+            return "(" + d.substring(0, 2) + ") " + d.substring(2, 6) + "-" + d.substring(6);
+        }
+        return telefone;
     }
 
     // ----- auxiliares -----

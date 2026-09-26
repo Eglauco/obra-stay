@@ -35,6 +35,15 @@ export class GestaoService {
     return this.http.get<Gestao[]>(`${this.resource}/opcoes`);
   }
 
+  /** Exporta as gestões filtradas (sem paginação) em Excel. */
+  exportar(filtro: GestaoFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.id != null && !Number.isNaN(filtro.id)) params = params.set('id', String(filtro.id));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Gestao> {
     return this.http.get<Gestao>(`${this.resource}/${id}`);
   }

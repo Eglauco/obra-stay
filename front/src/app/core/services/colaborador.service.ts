@@ -45,6 +45,19 @@ export class ColaboradorService {
     return this.http.get<Colaborador[]>(`${this.resource}/opcoes`);
   }
 
+  /** Exporta os colaboradores filtrados (sem paginação) em Excel. */
+  exportar(filtro: ColaboradorFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.id != null && !Number.isNaN(filtro.id)) params = params.set('id', String(filtro.id));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    if (filtro.sexo) params = params.set('sexo', filtro.sexo);
+    if (filtro.funcaoId != null && !Number.isNaN(filtro.funcaoId)) {
+      params = params.set('funcaoId', String(filtro.funcaoId));
+    }
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Colaborador> {
     return this.http.get<Colaborador>(`${this.resource}/${id}`);
   }

@@ -6,6 +6,7 @@ import com.example.hospedagem.dto.ColaboradorRequest;
 import com.example.hospedagem.dto.ColaboradorResponse;
 import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.service.ColaboradorService;
+import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.data.domain.Pageable;
@@ -60,6 +61,21 @@ public class ColaboradorController {
     @GetMapping("/opcoes")
     public java.util.List<ColaboradorResponse> opcoes() {
         return service.listarOpcoes();
+    }
+
+    /**
+     * Exporta os colaboradores filtrados (sem paginação) para Excel.
+     * Declarado antes de "/{id}" para não ser capturado como path variable.
+     */
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) Sexo sexo,
+            @RequestParam(required = false) Long funcaoId) {
+
+        byte[] conteudo = service.exportar(new ColaboradorFiltro(id, nome, sexo, funcaoId));
+        return PlanilhaExcel.resposta(conteudo, "colaboradores");
     }
 
     /**

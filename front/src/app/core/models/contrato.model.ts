@@ -12,6 +12,8 @@ export interface Contrato {
   dataInicio: string; // "YYYY-MM-DD"
   dataFim: string;
   status: ContratoStatus;
+  /** URL pré-assinada (~1h) do PDF do contrato, ou null quando não há arquivo. */
+  arquivoUrl?: string | null;
 }
 
 export interface ContratoRequest {

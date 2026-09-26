@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -34,6 +35,7 @@ import com.example.hospedagem.repository.ColaboradorRepository;
 import com.example.hospedagem.repository.HospedagemRepository;
 import com.example.hospedagem.repository.LocalRepository;
 import com.example.hospedagem.specification.HospedagemSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -117,7 +119,9 @@ public class HospedagemService {
                 .origem(OrigemHospedagem.ADMINISTRACAO)
                 .build();
 
-        return toResponse(repository.save(hospedagem));
+        Hospedagem salvo = repository.save(hospedagem);
+        sincronizarHospedagemAtiva(colaborador);
+        return toResponse(salvo);
     }
 
     @Transactional
@@ -134,18 +138,68 @@ public class HospedagemService {
         }
 
         hospedagem.setDataSaida(request.dataSaida());
-        return toResponse(repository.save(hospedagem));
+        Hospedagem salvo = repository.save(hospedagem);
+        sincronizarHospedagemAtiva(hospedagem.getColaborador());
+        return toResponse(salvo);
     }
 
     @Transactional
     public void excluir(Long id) {
         Hospedagem hospedagem = buscarEntidade(id);
+        // Limpa a referência denormalizada antes de apagar (evita violar a FK).
+        Colaborador colaborador = hospedagem.getColaborador();
+        Hospedagem ativa = colaborador.getHospedagemAtiva();
+        if (ativa != null && ativa.getId().equals(hospedagem.getId())) {
+            colaborador.setHospedagemAtiva(null);
+            colaboradorRepository.save(colaborador);
+        }
         repository.delete(hospedagem);
     }
 
     @Transactional(readOnly = true)
     public List<OcupacaoResponse> ocupacao() {
         return repository.ocupacaoPorLocal();
+    }
+
+    /** Exporta as hospedagens filtradas (detalhe do local) para Excel. */
+    @Transactional(readOnly = true)
+    public byte[] exportar(HospedagemFiltro filtro) {
+        List<Hospedagem> lista = repository.findAll(
+                HospedagemSpecifications.comFiltro(filtro),
+                Sort.by(Sort.Direction.DESC, "dataEntrada").and(Sort.by(Sort.Direction.ASC, "id")));
+
+        List<String> cabecalhos = List.of("Colaborador", "Entrada", "Saída", "Status", "Origem");
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Hospedagem h : lista) {
+            linhas.add(Arrays.asList(
+                    h.getColaborador().getNome(),
+                    h.getDataEntrada(),
+                    h.getDataSaida(),
+                    h.getDataSaida() == null ? "Ativa" : "Encerrada",
+                    rotuloOrigem(h.getOrigem())));
+        }
+        return PlanilhaExcel.gerar("Hospedagens", cabecalhos, linhas);
+    }
+
+    /** Exporta a grade de locais com a ocupação atual (respeita o filtro de nome). */
+    @Transactional(readOnly = true)
+    public byte[] exportarLocais(String nome) {
+        List<Local> locais = localRepository.findAll(Sort.by(Sort.Direction.ASC, "nome"));
+        String termo = nome == null ? "" : nome.trim().toLowerCase();
+
+        List<String> cabecalhos = List.of("Código", "Nome", "Cidade/UF", "Capacidade", "Ocupados", "Vagas");
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Local l : locais) {
+            if (!termo.isEmpty() && !l.getNome().toLowerCase().contains(termo)) {
+                continue;
+            }
+            long ocupados = repository.countByLocalIdAndDataSaidaIsNull(l.getId());
+            long capacidade = l.getCapacidade() != null ? l.getCapacidade() : 0L;
+            linhas.add(Arrays.asList(
+                    l.getCodigo(), l.getNome(), l.getCidade() + "/" + l.getUf(),
+                    capacidade, ocupados, Math.max(0L, capacidade - ocupados)));
+        }
+        return PlanilhaExcel.gerar("Locais - ocupação", cabecalhos, linhas);
     }
 
     /**
@@ -304,6 +358,7 @@ public class HospedagemService {
             if (ativa.getLocal().getId().equals(local.getId())) {
                 ativa.setDataSaida(LocalDateTime.now());
                 repository.save(ativa);
+                sincronizarHospedagemAtiva(colaborador);
                 return new EntradaPublicaResultado(AcaoEntrada.SAIDA, colaborador.getNome(),
                         local.getNome(), ativa.getDataSaida().toLocalDate(),
                         "Saída registrada. Até logo, " + primeiroNome(colaborador) + "!");
@@ -325,6 +380,7 @@ public class HospedagemService {
                 .origem(OrigemHospedagem.AUTOATENDIMENTO)
                 .build();
         repository.save(nova);
+        sincronizarHospedagemAtiva(colaborador);
         return new EntradaPublicaResultado(AcaoEntrada.ENTRADA, colaborador.getNome(),
                 local.getNome(), nova.getDataEntrada().toLocalDate(),
                 "Entrada registrada. Bem-vindo(a), " + primeiroNome(colaborador) + "!");
@@ -396,6 +452,18 @@ public class HospedagemService {
     }
 
     // ----- auxiliares -----
+
+    /**
+     * Atualiza a referência denormalizada de hospedagem ativa no colaborador, a partir da
+     * hospedagem em aberto (data_saida nula) — ou null quando não houver.
+     */
+    private void sincronizarHospedagemAtiva(Colaborador colaborador) {
+        Hospedagem ativa = repository
+                .findFirstByColaboradorIdAndDataSaidaIsNull(colaborador.getId())
+                .orElse(null);
+        colaborador.setHospedagemAtiva(ativa);
+        colaboradorRepository.save(colaborador);
+    }
 
     private Hospedagem buscarEntidade(Long id) {
         return repository.findById(id)

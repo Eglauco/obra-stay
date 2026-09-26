@@ -11,6 +11,7 @@ import com.example.hospedagem.dto.SolicitacaoRequest;
 import com.example.hospedagem.dto.SolicitacaoResponse;
 import com.example.hospedagem.dto.TransicaoStatusRequest;
 import com.example.hospedagem.service.SolicitacaoService;
+import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
@@ -59,6 +60,24 @@ public class SolicitacaoController {
         SolicitacaoFiltro filtro = new SolicitacaoFiltro(
                 status, tipoSolicitacaoId, colaboradorId, localId, aberturaDe, aberturaAte);
         return service.buscar(filtro, pageable);
+    }
+
+    /**
+     * Exporta as solicitações filtradas (sem paginação) para Excel.
+     * Declarado antes de "/{id}" para não ser capturado como path variable.
+     */
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) StatusSolicitacao status,
+            @RequestParam(required = false) Long tipoSolicitacaoId,
+            @RequestParam(required = false) Long colaboradorId,
+            @RequestParam(required = false) Long localId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aberturaDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aberturaAte) {
+
+        byte[] conteudo = service.exportar(new SolicitacaoFiltro(
+                status, tipoSolicitacaoId, colaboradorId, localId, aberturaDe, aberturaAte));
+        return PlanilhaExcel.resposta(conteudo, "solicitacoes");
     }
 
     @GetMapping("/{id}")

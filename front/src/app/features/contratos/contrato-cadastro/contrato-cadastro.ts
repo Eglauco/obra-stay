@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   PLATFORM_ID,
   afterNextRender,
   computed,
@@ -33,6 +34,7 @@ export class ContratoCadastro {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly modo = this.route.snapshot.data['modo'] as 'novo' | 'editar';
   private readonly paramId = this.lerId();
@@ -56,6 +58,16 @@ export class ContratoCadastro {
   protected readonly submetido = signal(false);
   protected readonly saving = signal(false);
   protected readonly serverErrors = signal<Record<string, string>>({});
+
+  // Arquivo PDF do contrato (só vai pro S3 no Salvar)
+  protected readonly arquivoSelecionado = signal<File | null>(null);
+  protected readonly arquivoNome = signal<string | null>(null);
+  protected readonly arquivoTamanho = signal<string | null>(null);
+  protected readonly arquivoUrlAtual = signal<string | null>(null);
+  protected readonly arquivoObjectUrl = signal<string | null>(null);
+  protected readonly removerArquivo = signal(false);
+  protected readonly arquivoErro = signal<string | null>(null);
+  private readonly tinhaArquivo = signal(false);
 
   protected readonly codigoError = computed(() => {
     const s = this.serverErrors()['codigo'];
@@ -82,7 +94,18 @@ export class ContratoCadastro {
     return null;
   });
 
+  protected readonly arquivoError = computed(() => this.serverErrors()['arquivo'] ?? this.arquivoErro());
+  protected readonly temArquivo = computed(
+    () => !!this.arquivoSelecionado() || (!!this.arquivoUrlAtual() && !this.removerArquivo()),
+  );
+  protected readonly arquivoLink = computed(
+    () => this.arquivoObjectUrl() ?? (this.removerArquivo() ? null : this.arquivoUrlAtual()),
+  );
+  protected readonly arquivoRotulo = computed(() => this.arquivoNome() ?? 'Contrato.pdf');
+  protected readonly arquivoEhNovo = computed(() => !!this.arquivoSelecionado());
+
   constructor() {
+    this.destroyRef.onDestroy(() => this.revogarObjectUrl());
     afterNextRender(() => {
       this.carregarLocadoras();
       if (this.editMode) {
@@ -144,6 +167,10 @@ export class ContratoCadastro {
         this.dataFim.set(c.dataFim);
         this.localId.set(c.local.id);
         this.localNome.set(c.local.nome);
+        this.arquivoUrlAtual.set(c.arquivoUrl ?? null);
+        this.tinhaArquivo.set(!!c.arquivoUrl);
+        this.arquivoSelecionado.set(null);
+        this.removerArquivo.set(false);
       },
       error: (e: HttpErrorResponse) => {
         this.carregando.set(false);
@@ -220,7 +247,11 @@ export class ContratoCadastro {
     this.saving.set(true);
 
     const id = this.contratoId();
-    const op$ = this.editMode && id != null ? this.service.atualizar(id, req) : this.service.criar(req);
+    const arquivo = this.arquivoSelecionado();
+    const op$ =
+      this.editMode && id != null
+        ? this.service.atualizar(id, req, arquivo, this.removerArquivo())
+        : this.service.criar(req, arquivo);
 
     op$.subscribe({
       next: () => {
@@ -236,6 +267,55 @@ export class ContratoCadastro {
         this.handleError(e);
       },
     });
+  }
+
+  // ----- Arquivo PDF -----
+  protected onArquivoSelecionado(input: HTMLInputElement): void {
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // permite re-selecionar o mesmo arquivo
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      this.arquivoErro.set('Envie um arquivo PDF.');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      this.arquivoErro.set('O PDF deve ter no máximo 15 MB.');
+      return;
+    }
+
+    this.arquivoErro.set(null);
+    this.limparServer('arquivo');
+    this.revogarObjectUrl();
+    const url = this.isBrowser ? URL.createObjectURL(file) : null;
+    this.arquivoObjectUrl.set(url);
+    this.arquivoSelecionado.set(file);
+    this.arquivoNome.set(file.name);
+    this.arquivoTamanho.set(this.fmtTamanho(file.size));
+    this.removerArquivo.set(false);
+  }
+
+  protected removerArquivoAtual(): void {
+    this.revogarObjectUrl();
+    this.arquivoSelecionado.set(null);
+    this.arquivoNome.set(null);
+    this.arquivoTamanho.set(null);
+    this.arquivoObjectUrl.set(null);
+    this.arquivoErro.set(null);
+    this.limparServer('arquivo');
+    // Só marca remoção no servidor se o contrato já tinha arquivo salvo.
+    this.removerArquivo.set(this.tinhaArquivo());
+  }
+
+  private revogarObjectUrl(): void {
+    const u = this.arquivoObjectUrl();
+    if (u && this.isBrowser) URL.revokeObjectURL(u);
+  }
+
+  private fmtTamanho(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   protected voltar(): void {

@@ -18,11 +18,12 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { QrEntradaDialog } from '../../../core/components/qr-entrada-dialog/qr-entrada-dialog';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 
 /** Lista principal da Gestão de Hospedagem: os LOCAIS, com ocupação. Clicar abre o detalhe. */
 @Component({
   selector: 'app-hospedagem-locais',
-  imports: [RouterLink, QrEntradaDialog],
+  imports: [RouterLink, QrEntradaDialog, ExportarExcel],
   templateUrl: './hospedagem-locais.html',
   styleUrl: './hospedagem-locais.css',
 })
@@ -71,6 +72,10 @@ export class HospedagemLocais {
   protected readonly skeletonCards = computed(() =>
     Array.from({ length: Math.min(this.size(), 6) }, (_, i) => i),
   );
+
+  /** Exporta a grade de locais (ocupação) respeitando o filtro de nome. */
+  protected readonly exportarLocaisExcel = () =>
+    this.hospedagemService.exportarLocais(this.filtroNome().trim() || null);
 
   private readonly buscar$ = new Subject<void>();
   private readonly digitar$ = new Subject<void>();

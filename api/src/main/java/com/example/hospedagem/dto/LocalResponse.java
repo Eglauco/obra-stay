@@ -14,6 +14,7 @@ public record LocalResponse(
         String complemento,
         String bairro,
         String cidade,
-        String uf
+        String uf,
+        String fotoUrl
 ) {
 }

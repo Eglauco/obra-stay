@@ -1,20 +1,30 @@
 <section class="flex flex-col gap-6">
-  <!-- Cabeçalho -->
-  <div class="flex items-start gap-3">
+  <!-- Cabeçalho (hero com a foto do local) -->
+  <div class="relative overflow-hidden rounded-card border shadow-card">
+    <div class="h-44 w-full sm:h-52">
+      @if (local()?.fotoUrl) {
+        <img [src]="local()!.fotoUrl!" alt="" class="size-full object-cover" />
+      } @else {
+        <div class="grid size-full place-items-center" style="background-image: linear-gradient(135deg, var(--color-surface-2), var(--color-accent-soft))" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" class="size-12 text-faint"><path d="M4 16l4-4 3 3 4-5 5 6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </div>
+      }
+      <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+    </div>
     <button type="button" (click)="voltar()" aria-label="Voltar para os locais"
-      class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-control border text-muted transition-colors hover:bg-surface-2 hover:text-fg">
+      class="absolute left-4 top-4 grid size-10 place-items-center rounded-full bg-white/85 text-slate-700 shadow-sm backdrop-blur transition-colors hover:bg-white">
       <svg viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true"><path d="M12 5l-5 5 5 5M7 10h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
-    <div class="min-w-0 flex-1">
-      <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">Contratos do local</p>
+    <div class="absolute inset-x-0 bottom-0 p-5">
+      <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-white/80">Contratos do local</p>
       @if (local(); as l) {
-        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">{{ l.nome }}</h2>
-        <p class="mt-0.5 text-sm text-muted">{{ l.codigo }} · {{ l.cidade }}/{{ l.uf }}</p>
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-white drop-shadow-sm">{{ l.nome }}</h2>
+        <p class="mt-0.5 text-sm text-white/85 drop-shadow-sm">{{ l.codigo }} · {{ l.cidade }}/{{ l.uf }}</p>
       } @else if (carregandoLocal()) {
-        <span class="sk mt-1 block h-7 w-56 max-w-full"></span>
+        <span class="mt-1 block h-7 w-56 max-w-full animate-pulse rounded bg-white/30"></span>
       } @else if (erroLocal()) {
-        <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Local</h2>
-        <p class="mt-0.5 text-sm text-danger">{{ erroLocal() }}</p>
+        <h2 class="font-display text-2xl font-semibold tracking-tight text-white">Local</h2>
+        <p class="mt-0.5 text-sm text-white/90">{{ erroLocal() }}</p>
       }
     </div>
   </div>
@@ -35,11 +45,14 @@
           }
         </div>
       </div>
-      <a [routerLink]="['/contratos/local', localId, 'novo']"
-        class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
-        <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-        Novo contrato
-      </a>
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
+        <app-exportar-excel nome="contratos" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+        <a [routerLink]="['/contratos/local', localId, 'novo']"
+          class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
+          <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          Novo contrato
+        </a>
+      </div>
     </div>
   }
 
@@ -103,6 +116,12 @@
                 </td>
                 <td class="px-4 py-3.5">
                   <div class="flex items-center justify-end gap-1">
+                    @if (c.arquivoUrl) {
+                      <a [href]="c.arquivoUrl" target="_blank" rel="noopener" [attr.aria-label]="'Ver PDF de ' + c.codigo" title="Ver contrato em PDF"
+                        class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
+                        <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M6 2.5h5l3.5 3.5V16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /><path d="M11 2.5V6h3.5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
+                      </a>
+                    }
                     @if (c.status === 'VIGENTE') {
                       <a [routerLink]="['/contratos/local', localId, 'novo']" [queryParams]="{ renovarDe: c.id }" [attr.aria-label]="'Renovar ' + c.codigo"
                         class="inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong px-2.5 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2">

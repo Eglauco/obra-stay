@@ -85,6 +85,46 @@
         </div>
       </div>
 
+      <!-- Arquivo do contrato (PDF) -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-fg">Arquivo do contrato (PDF)</span>
+        <input #arquivoInput type="file" accept="application/pdf" class="hidden" (change)="onArquivoSelecionado(arquivoInput)" />
+        @if (temArquivo()) {
+          <div class="flex flex-wrap items-center gap-3 rounded-control border bg-surface-2/60 p-3">
+            <span class="grid size-10 shrink-0 place-items-center rounded-control bg-surface text-danger" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" class="size-5"><path d="M6 2.5h5l3.5 3.5V16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /><path d="M11 2.5V6h3.5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-fg">{{ arquivoRotulo() }}</p>
+              <p class="text-[0.75rem] text-muted">
+                @if (arquivoEhNovo()) { Novo · {{ arquivoTamanho() }} — enviado ao salvar } @else { Arquivo atual }
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-1.5">
+              @if (arquivoLink(); as link) {
+                <a [href]="link" target="_blank" rel="noopener"
+                  class="inline-flex h-9 items-center gap-1.5 rounded-control border border-border-strong px-3 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2">
+                  <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M9 4.5H5.5A1.5 1.5 0 0 0 4 6v8.5A1.5 1.5 0 0 0 5.5 16H14a1.5 1.5 0 0 0 1.5-1.5V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 4h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M16 4 9.5 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  Ver
+                </a>
+              }
+              <button type="button" (click)="arquivoInput.click()"
+                class="inline-flex h-9 items-center rounded-control border border-border-strong px-3 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2">Trocar</button>
+              <button type="button" (click)="removerArquivoAtual()"
+                class="inline-flex h-9 items-center rounded-control px-3 text-[0.8125rem] font-medium text-danger transition-colors hover:bg-danger-soft">Remover</button>
+            </div>
+          </div>
+        } @else {
+          <button type="button" (click)="arquivoInput.click()"
+            class="flex h-24 w-full flex-col items-center justify-center gap-1 rounded-control border border-dashed border-border-strong text-muted transition-colors hover:bg-surface-2 hover:text-fg">
+            <svg viewBox="0 0 24 24" fill="none" class="size-6" aria-hidden="true"><path d="M12 15V4m0 0 4 4m-4-4-4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span class="text-sm font-medium">Anexar contrato (PDF)</span>
+            <span class="text-[0.75rem] text-faint">PDF · até 15 MB</span>
+          </button>
+        }
+        @if (arquivoError()) { <p class="text-[0.8125rem] text-danger">{{ arquivoError() }}</p> }
+      </div>
+
       <!-- Ações -->
       <div class="mt-1 flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
         <button type="button" class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2" (click)="voltar()" [disabled]="saving()">Cancelar</button>

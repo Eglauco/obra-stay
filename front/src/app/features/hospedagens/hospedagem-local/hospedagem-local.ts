@@ -17,6 +17,7 @@ import { HospedagemService } from '../../../core/services/hospedagem.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { QrEntradaDialog } from '../../../core/components/qr-entrada-dialog/qr-entrada-dialog';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import { HospedagemSaidaDialog } from '../hospedagem-saida-dialog/hospedagem-saida-dialog';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
@@ -27,7 +28,7 @@ import { gerarRelatorioHospedagensPdf } from '../../../core/util/relatorio-hospe
 /** Detalhe de um local: colaboradores hospedados + dar entrada / dar saída. */
 @Component({
   selector: 'app-hospedagem-local',
-  imports: [ConfirmDialog, QrEntradaDialog, HospedagemSaidaDialog, RouterLink],
+  imports: [ConfirmDialog, QrEntradaDialog, HospedagemSaidaDialog, RouterLink, ExportarExcel],
   templateUrl: './hospedagem-local.html',
   styleUrl: './hospedagem-local.css',
 })
@@ -67,6 +68,10 @@ export class HospedagemLocal {
 
   // Relatório PDF
   protected readonly gerandoPdf = signal(false);
+
+  /** Exporta as hospedagens deste local (Excel), respeitando o filtro de status. */
+  protected readonly exportarExcel = () =>
+    this.service.exportar({ localId: this.localId, status: this.filtroStatus() || undefined, page: 0, size: 0, sort: '' });
 
   // Ações
   protected readonly aDarSaida = signal<Hospedagem | null>(null);

@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormField, email, form, maxLength, required, validate } from '@angular/forms/signals';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -22,11 +22,12 @@ import { BuscaOpcao, BuscaSelect } from '../../../core/components/busca-select/b
 import {
   ApiError,
   ColaboradorRequest,
+  HospedagemAtivaResumo,
   MDO_LABEL,
   Mdo,
   Sexo,
 } from '../../../core/models/colaborador.model';
-import { apenasDigitosCpf, cpfValido, formatarCpf } from '../../../core/util/format';
+import { apenasDigitosCpf, cpfValido, formatarCpf, formatarDataHora } from '../../../core/util/format';
 
 interface CadastroModel {
   nome: string;
@@ -46,7 +47,7 @@ const EMAIL_MAX = 160;
 /** Tela dedicada de criar/editar colaborador (padrão de CRUD: sempre em nova tela). */
 @Component({
   selector: 'app-colaborador-cadastro',
-  imports: [FormField, BuscaSelect],
+  imports: [FormField, BuscaSelect, RouterLink],
   templateUrl: './colaborador-cadastro.html',
   styleUrl: './colaborador-cadastro.css',
 })
@@ -86,6 +87,10 @@ export class ColaboradorCadastro {
   protected readonly carregando = signal(false);
   protected readonly erroCarregar = signal<string | null>(null);
   protected readonly serverErrors = signal<Record<string, string>>({});
+
+  // Hospedagem ativa do colaborador (modo edição)
+  protected readonly hospedagemAtiva = signal<HospedagemAtivaResumo | null>(null);
+  protected readonly fmtDataHora = formatarDataHora;
 
   protected readonly model = signal<CadastroModel>({
     nome: '',
@@ -185,6 +190,7 @@ export class ColaboradorCadastro {
         this.epcInicial.set(c.epc ?? null);
         this.empresaInicial.set(c.empresa ?? null);
         this.gestaoInicial.set(c.gestao ?? null);
+        this.hospedagemAtiva.set(c.hospedagemAtiva ?? null);
         this.carregando.set(false);
         queueMicrotask(() => document.getElementById('cad-nome')?.focus());
       },

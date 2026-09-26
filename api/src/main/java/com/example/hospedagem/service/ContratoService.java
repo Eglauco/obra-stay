@@ -11,25 +11,39 @@ import com.example.hospedagem.dto.ResumoRef;
 import com.example.hospedagem.dto.VigenciaResponse;
 import com.example.hospedagem.exception.RegraNegocioException;
 import com.example.hospedagem.exception.ResourceNotFoundException;
+import com.example.hospedagem.exception.StorageException;
 import com.example.hospedagem.repository.ContratoRepository;
 import com.example.hospedagem.repository.LocadoraRepository;
 import com.example.hospedagem.repository.LocalRepository;
 import com.example.hospedagem.specification.ContratoSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
+import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Regras de negócio do módulo Gestão de Contratos (locação de locais por locadoras).
  */
 @Service
 public class ContratoService {
+
+    private static final Logger log = LoggerFactory.getLogger(ContratoService.class);
 
     /** Campos permitidos para ordenação. */
     private static final Set<String> CAMPOS_ORDENAVEIS = Set.of("id", "codigo", "dataInicio", "dataFim");
@@ -44,16 +58,25 @@ public class ContratoService {
     /** Id sentinela usado na criação (nenhum contrato existente a excluir da sobreposição). */
     private static final long ID_INEXISTENTE = -1L;
 
+    // Arquivo (PDF) do contrato
+    private static final String PREFIXO_ARQUIVO = "contratos";
+    private static final long MAX_BYTES = 15L * 1024 * 1024;
+    private static final Set<String> TIPOS_PERMITIDOS = Set.of("application/pdf");
+    private static final Duration URL_TTL = Duration.ofHours(1);
+
     private final ContratoRepository repository;
     private final LocalRepository localRepository;
     private final LocadoraRepository locadoraRepository;
+    private final ObjectProvider<StorageService> storageProvider;
 
     public ContratoService(ContratoRepository repository,
                            LocalRepository localRepository,
-                           LocadoraRepository locadoraRepository) {
+                           LocadoraRepository locadoraRepository,
+                           ObjectProvider<StorageService> storageProvider) {
         this.repository = repository;
         this.localRepository = localRepository;
         this.locadoraRepository = locadoraRepository;
+        this.storageProvider = storageProvider;
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +98,7 @@ public class ContratoService {
     }
 
     @Transactional
-    public ContratoResponse criar(ContratoRequest request) {
+    public ContratoResponse criar(ContratoRequest request, MultipartFile arquivo) {
         validarPeriodo(request);
 
         if (repository.existsByCodigoIgnoreCase(request.codigo().trim())) {
@@ -99,11 +122,15 @@ public class ContratoService {
                 .dataFim(request.dataFim())
                 .build();
 
+        if (temArquivo(arquivo)) {
+            contrato.setArquivoKey(subirArquivo(arquivo));
+        }
+
         return toResponse(repository.save(contrato));
     }
 
     @Transactional
-    public ContratoResponse atualizar(Long id, ContratoRequest request) {
+    public ContratoResponse atualizar(Long id, ContratoRequest request, MultipartFile arquivo, boolean removerArquivo) {
         Contrato contrato = buscarEntidade(id);
         validarPeriodo(request);
 
@@ -126,18 +153,150 @@ public class ContratoService {
         contrato.setDataInicio(request.dataInicio());
         contrato.setDataFim(request.dataFim());
 
-        return toResponse(repository.save(contrato));
+        String keyAntiga = contrato.getArquivoKey();
+        boolean apagarAntiga = false;
+        if (temArquivo(arquivo)) {
+            contrato.setArquivoKey(subirArquivo(arquivo));
+            apagarAntiga = keyAntiga != null;
+        } else if (removerArquivo && keyAntiga != null) {
+            contrato.setArquivoKey(null);
+            apagarAntiga = true;
+        }
+
+        Contrato salvo = repository.save(contrato);
+        if (apagarAntiga) {
+            apagarArquivoSilencioso(keyAntiga);
+        }
+        return toResponse(salvo);
     }
 
     @Transactional
     public void excluir(Long id) {
         Contrato contrato = buscarEntidade(id);
+        String key = contrato.getArquivoKey();
         repository.delete(contrato);
+        if (key != null) {
+            apagarArquivoSilencioso(key);
+        }
     }
 
     @Transactional(readOnly = true)
     public List<VigenciaResponse> vigencia() {
         return repository.vigentesEm(LocalDate.now());
+    }
+
+    /** Exporta os contratos filtrados (detalhe do local) para Excel. */
+    @Transactional(readOnly = true)
+    public byte[] exportar(ContratoFiltro filtro) {
+        List<Contrato> lista = repository.findAll(
+                ContratoSpecifications.comFiltro(filtro, LocalDate.now()),
+                Sort.by(Sort.Direction.DESC, "dataInicio"));
+
+        List<String> cabecalhos = List.of("Código", "Locadora", "Início", "Fim", "Status", "PDF");
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Contrato c : lista) {
+            String s = derivarStatus(c);
+            String rotulo = s.equals(STATUS_VIGENTE) ? "Vigente"
+                    : s.equals(STATUS_AGENDADO) ? "Agendado" : "Encerrado";
+            linhas.add(Arrays.asList(
+                    c.getCodigo(), c.getLocadora().getNome(),
+                    c.getDataInicio(), c.getDataFim(), rotulo, c.getArquivoKey() != null));
+        }
+        return PlanilhaExcel.gerar("Contratos", cabecalhos, linhas);
+    }
+
+    /** Exporta a grade de locais com o contrato vigente (respeita o filtro de nome). */
+    @Transactional(readOnly = true)
+    public byte[] exportarLocais(String nome) {
+        List<Local> locais = localRepository.findAll(Sort.by(Sort.Direction.ASC, "nome"));
+        String termo = nome == null ? "" : nome.trim().toLowerCase();
+
+        Map<Long, VigenciaResponse> vigencias = new HashMap<>();
+        for (VigenciaResponse v : repository.vigentesEm(LocalDate.now())) {
+            vigencias.put(v.localId(), v);
+        }
+
+        List<String> cabecalhos = List.of("Código", "Nome", "Cidade/UF",
+                "Contrato vigente", "Locadora", "Início", "Fim");
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Local l : locais) {
+            if (!termo.isEmpty() && !l.getNome().toLowerCase().contains(termo)) {
+                continue;
+            }
+            VigenciaResponse v = vigencias.get(l.getId());
+            linhas.add(Arrays.asList(
+                    l.getCodigo(), l.getNome(), l.getCidade() + "/" + l.getUf(),
+                    v != null ? v.codigo() : null,
+                    v != null ? v.locadoraNome() : null,
+                    v != null ? v.dataInicio() : null,
+                    v != null ? v.dataFim() : null));
+        }
+        return PlanilhaExcel.gerar("Locais - contratos", cabecalhos, linhas);
+    }
+
+    // ----- arquivo (PDF) -----
+
+    private boolean temArquivo(MultipartFile arquivo) {
+        return arquivo != null && !arquivo.isEmpty();
+    }
+
+    private String subirArquivo(MultipartFile arquivo) {
+        validarArquivo(arquivo);
+        byte[] bytes;
+        try {
+            bytes = arquivo.getBytes();
+        } catch (IOException e) {
+            throw new StorageException("Falha ao ler o arquivo enviado.", e);
+        }
+        return storage().upload(PREFIXO_ARQUIVO, "contrato.pdf", "application/pdf", bytes).key();
+    }
+
+    private void validarArquivo(MultipartFile arquivo) {
+        String ct = arquivo.getContentType();
+        if (ct == null || !TIPOS_PERMITIDOS.contains(ct.toLowerCase())) {
+            throw new RegraNegocioException("arquivo", "Envie o contrato em PDF.");
+        }
+        if (arquivo.getSize() > MAX_BYTES) {
+            throw new RegraNegocioException("arquivo", "O PDF deve ter no máximo 15 MB.");
+        }
+    }
+
+    private StorageService storage() {
+        StorageService s = storageProvider.getIfAvailable();
+        if (s == null) {
+            throw new RegraNegocioException("arquivo",
+                    "Armazenamento de arquivos não está configurado no servidor.");
+        }
+        return s;
+    }
+
+    /** Apaga o arquivo no storage sem propagar erro (best-effort). */
+    private void apagarArquivoSilencioso(String key) {
+        StorageService s = storageProvider.getIfAvailable();
+        if (s == null) {
+            return;
+        }
+        try {
+            s.delete(key);
+        } catch (RuntimeException e) {
+            log.warn("Não foi possível apagar o arquivo '{}': {}", key, e.getMessage());
+        }
+    }
+
+    private String urlArquivo(String arquivoKey) {
+        if (arquivoKey == null) {
+            return null;
+        }
+        StorageService s = storageProvider.getIfAvailable();
+        if (s == null) {
+            return null;
+        }
+        try {
+            return s.presignedGetUrl(arquivoKey, URL_TTL);
+        } catch (RuntimeException e) {
+            log.warn("Falha ao gerar URL do arquivo '{}': {}", arquivoKey, e.getMessage());
+            return null;
+        }
     }
 
     // ----- auxiliares -----
@@ -175,7 +334,8 @@ public class ContratoService {
                 new ResumoRef(locadora.getId(), locadora.getNome()),
                 contrato.getDataInicio(),
                 contrato.getDataFim(),
-                derivarStatus(contrato));
+                derivarStatus(contrato),
+                urlArquivo(contrato.getArquivoKey()));
     }
 
     /** Status derivado comparando a data atual com o período do contrato. */

@@ -5,6 +5,10 @@ import com.example.hospedagem.domain.Empresa;
 import com.example.hospedagem.domain.Epc;
 import com.example.hospedagem.domain.Funcao;
 import com.example.hospedagem.domain.Gestao;
+import com.example.hospedagem.domain.Hospedagem;
+import com.example.hospedagem.domain.Local;
+import com.example.hospedagem.domain.Mdo;
+import com.example.hospedagem.domain.Sexo;
 import com.example.hospedagem.dto.ColaboradorFiltro;
 import com.example.hospedagem.dto.ColaboradorRequest;
 import com.example.hospedagem.dto.ColaboradorResponse;
@@ -12,6 +16,7 @@ import com.example.hospedagem.dto.EmpresaResponse;
 import com.example.hospedagem.dto.EpcResponse;
 import com.example.hospedagem.dto.FuncaoResponse;
 import com.example.hospedagem.dto.GestaoResponse;
+import com.example.hospedagem.dto.HospedagemAtivaResumo;
 import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.exception.RegraNegocioException;
 import com.example.hospedagem.exception.ResourceNotFoundException;
@@ -21,6 +26,9 @@ import com.example.hospedagem.repository.EpcRepository;
 import com.example.hospedagem.repository.FuncaoRepository;
 import com.example.hospedagem.repository.GestaoRepository;
 import com.example.hospedagem.specification.ColaboradorSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -133,6 +141,60 @@ public class ColaboradorService {
         repository.delete(colaborador);
     }
 
+    /** Exporta os colaboradores filtrados (sem paginação) para Excel (.xlsx). */
+    @Transactional(readOnly = true)
+    public byte[] exportar(ColaboradorFiltro filtro) {
+        List<Colaborador> lista = repository.findAll(
+                ColaboradorSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.ASC, "nome"));
+
+        List<String> cabecalhos = List.of("ID", "Nome", "CPF", "Sexo", "Mão de obra", "E-mail",
+                "Função", "EPC", "Empresa", "Gestão", "Hospedagem ativa", "Hospedado desde");
+
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Colaborador c : lista) {
+            Hospedagem h = c.getHospedagemAtiva();
+            linhas.add(Arrays.asList(
+                    c.getId(),
+                    c.getNome(),
+                    formatarCpf(c.getCpf()),
+                    rotuloSexo(c.getSexo()),
+                    rotuloMdo(c.getMdo()),
+                    c.getEmail(),
+                    c.getFuncao() != null ? c.getFuncao().getNome() : null,
+                    c.getEpc() != null ? c.getEpc().getNome() : null,
+                    c.getEmpresa() != null ? c.getEmpresa().getNome() : null,
+                    c.getGestao() != null ? c.getGestao().getNome() : null,
+                    h != null ? h.getLocal().getNome() : null,
+                    h != null ? h.getDataEntrada() : null));
+        }
+        return PlanilhaExcel.gerar("Colaboradores", cabecalhos, linhas);
+    }
+
+    private String rotuloSexo(Sexo sexo) {
+        if (sexo == null) {
+            return null;
+        }
+        return sexo == Sexo.FEMININO ? "Feminino" : "Masculino";
+    }
+
+    private String rotuloMdo(Mdo mdo) {
+        if (mdo == null) {
+            return null;
+        }
+        return mdo == Mdo.MAO_DE_OBRA_DIRETA ? "Mão de Obra Direta" : "Mão de Obra Indireta";
+    }
+
+    private String formatarCpf(String cpf) {
+        if (cpf == null) {
+            return null;
+        }
+        String d = cpf.replaceAll("\\D", "");
+        if (d.length() != 11) {
+            return cpf;
+        }
+        return d.substring(0, 3) + "." + d.substring(3, 6) + "." + d.substring(6, 9) + "-" + d.substring(9);
+    }
+
     // ----- auxiliares -----
 
     private Colaborador buscarEntidade(Long id) {
@@ -180,7 +242,18 @@ public class ColaboradorService {
                 new FuncaoResponse(funcao.getId(), funcao.getNome()),
                 new EpcResponse(epc.getId(), epc.getNome()),
                 new EmpresaResponse(empresa.getId(), empresa.getNome()),
-                new GestaoResponse(gestao.getId(), gestao.getNome()));
+                new GestaoResponse(gestao.getId(), gestao.getNome()),
+                hospedagemAtiva(colaborador));
+    }
+
+    /** Resumo da hospedagem ativa do colaborador (null quando não há). */
+    private HospedagemAtivaResumo hospedagemAtiva(Colaborador colaborador) {
+        Hospedagem h = colaborador.getHospedagemAtiva();
+        if (h == null) {
+            return null;
+        }
+        Local local = h.getLocal();
+        return new HospedagemAtivaResumo(h.getId(), local.getId(), local.getNome(), h.getDataEntrada());
     }
 
     /**

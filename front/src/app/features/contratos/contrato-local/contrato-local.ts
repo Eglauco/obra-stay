@@ -16,6 +16,7 @@ import { LocalService } from '../../../core/services/local.service';
 import { ContratoService } from '../../../core/services/contrato.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Contrato, StatusFiltroContrato, Vigencia } from '../../../core/models/contrato.model';
@@ -25,7 +26,7 @@ const ALERTA_DIAS = 30;
 /** Detalhe de um local: contratos (vigente + histórico) + novo/editar/renovar/excluir. */
 @Component({
   selector: 'app-contrato-local',
-  imports: [ConfirmDialog, RouterLink],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel],
   templateUrl: './contrato-local.html',
   styleUrl: './contrato-local.css',
 })
@@ -66,6 +67,10 @@ export class ContratoLocal {
   protected readonly itens = computed(() => this.resultado()?.content ?? []);
   protected readonly temItens = computed(() => this.itens().length > 0);
   protected readonly paginaAtual = computed(() => this.resultado()?.page ?? 0);
+
+  /** Exporta os contratos deste local (Excel), respeitando o filtro de status. */
+  protected readonly exportarExcel = () =>
+    this.service.exportar({ localId: this.localId, status: this.filtroStatus() || undefined, page: 0, size: 0, sort: '' });
 
   protected readonly diasVigente = computed(() => {
     const v = this.vigente();

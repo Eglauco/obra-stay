@@ -18,11 +18,12 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { formatarBRL } from '../../../core/util/format';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 
 /** Lista principal da gestão de Gastos: os LOCAIS, com o total já gasto em cada um. */
 @Component({
   selector: 'app-gasto-locais',
-  imports: [RouterLink],
+  imports: [RouterLink, ExportarExcel],
   templateUrl: './gasto-locais.html',
   styleUrl: './gasto-locais.css',
 })
@@ -66,6 +67,10 @@ export class GastoLocais {
   protected readonly skeletonCards = computed(() =>
     Array.from({ length: Math.min(this.size(), 6) }, (_, i) => i),
   );
+
+  /** Exporta a grade de locais (total gasto) respeitando o filtro de nome. */
+  protected readonly exportarLocaisExcel = () =>
+    this.gastoService.exportarLocais(this.filtroNome().trim() || null);
 
   private readonly buscar$ = new Subject<void>();
   private readonly digitar$ = new Subject<void>();

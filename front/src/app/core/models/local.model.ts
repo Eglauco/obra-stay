@@ -10,6 +10,8 @@ export interface Local {
   bairro: string;
   cidade: string;
   uf: string;
+  /** URL pré-assinada (~1h) da foto, ou null quando não há foto. */
+  fotoUrl?: string | null;
 }
 
 export interface LocalRequest {

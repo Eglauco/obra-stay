@@ -17,6 +17,7 @@ import { GastoService } from '../../../core/services/gasto.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { RateioDialog } from '../rateio-dialog/rateio-dialog';
+import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Gasto, ResumoGasto } from '../../../core/models/gasto.model';
@@ -26,7 +27,7 @@ import { gerarRelatorioGastosPdf } from '../../../core/util/relatorio-gastos-pdf
 /** Detalhe de um local: gastos (com filtro de período) + total geral e do período. */
 @Component({
   selector: 'app-gasto-local',
-  imports: [ConfirmDialog, RateioDialog, RouterLink],
+  imports: [ConfirmDialog, RateioDialog, RouterLink, ExportarExcel],
   templateUrl: './gasto-local.html',
   styleUrl: './gasto-local.css',
 })
@@ -62,6 +63,17 @@ export class GastoLocal {
 
   /** Gerando o PDF do relatório. */
   protected readonly gerandoPdf = signal(false);
+
+  /** Exporta os gastos deste local (Excel), respeitando o filtro de período. */
+  protected readonly exportarExcel = () =>
+    this.service.exportar({
+      localId: this.localId,
+      dataDe: this.filtroDe() || null,
+      dataAte: this.filtroAte() || null,
+      page: 0,
+      size: 0,
+      sort: '',
+    });
 
   protected readonly total = computed(() => this.resultado()?.totalElements ?? 0);
   protected readonly totalPaginas = computed(() => this.resultado()?.totalPages ?? 0);

@@ -35,6 +35,15 @@ export class EpcService {
     return this.http.get<Epc[]>(`${this.resource}/opcoes`);
   }
 
+  /** Exporta os EPCs filtrados (sem paginação) em Excel. */
+  exportar(filtro: EpcFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.id != null && !Number.isNaN(filtro.id)) params = params.set('id', String(filtro.id));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Epc> {
     return this.http.get<Epc>(`${this.resource}/${id}`);
   }

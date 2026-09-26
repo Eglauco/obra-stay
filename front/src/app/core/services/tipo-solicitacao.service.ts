@@ -35,6 +35,15 @@ export class TipoSolicitacaoService {
     return this.http.get<TipoSolicitacao[]>(`${this.resource}/opcoes`);
   }
 
+  /** Exporta os tipos de solicitação filtrados (sem paginação) em Excel. */
+  exportar(filtro: TipoSolicitacaoFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.id != null && !Number.isNaN(filtro.id)) params = params.set('id', String(filtro.id));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<TipoSolicitacao> {
     return this.http.get<TipoSolicitacao>(`${this.resource}/${id}`);
   }

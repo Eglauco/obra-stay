@@ -21,11 +21,13 @@ import com.example.hospedagem.repository.HospedagemRepository;
 import com.example.hospedagem.repository.LocalRepository;
 import com.example.hospedagem.repository.RateioGastoRepository;
 import com.example.hospedagem.specification.GastoSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -135,6 +137,47 @@ public class GastoService {
     @Transactional(readOnly = true)
     public List<TotalGastoResponse> totais() {
         return repository.totaisPorLocal();
+    }
+
+    /** Exporta os gastos filtrados (detalhe do local) para Excel. */
+    @Transactional(readOnly = true)
+    public byte[] exportar(GastoFiltro filtro) {
+        List<Gasto> lista = repository.findAll(
+                GastoSpecifications.comFiltro(filtro),
+                Sort.by(Sort.Direction.DESC, "data").and(Sort.by(Sort.Direction.ASC, "id")));
+
+        List<String> cabecalhos = List.of("Data", "Gasto", "Quantidade", "Valor unitário", "Total");
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Gasto g : lista) {
+            linhas.add(Arrays.asList(
+                    g.getData(), g.getNome(), g.getQuantidade(), g.getValor(),
+                    g.getQuantidade().multiply(g.getValor())));
+        }
+        return PlanilhaExcel.gerar("Gastos", cabecalhos, linhas);
+    }
+
+    /** Exporta a grade de locais com o total gasto (respeita o filtro de nome). */
+    @Transactional(readOnly = true)
+    public byte[] exportarLocais(String nome) {
+        List<Local> locais = localRepository.findAll(Sort.by(Sort.Direction.ASC, "nome"));
+        String termo = nome == null ? "" : nome.trim().toLowerCase();
+
+        Map<Long, BigDecimal> totalPorLocal = new HashMap<>();
+        for (TotalGastoResponse t : totais()) {
+            totalPorLocal.put(t.localId(), t.total());
+        }
+
+        List<String> cabecalhos = List.of("Código", "Nome", "Cidade/UF", "Total gasto");
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Local l : locais) {
+            if (!termo.isEmpty() && !l.getNome().toLowerCase().contains(termo)) {
+                continue;
+            }
+            linhas.add(Arrays.asList(
+                    l.getCodigo(), l.getNome(), l.getCidade() + "/" + l.getUf(),
+                    totalPorLocal.getOrDefault(l.getId(), BigDecimal.ZERO)));
+        }
+        return PlanilhaExcel.gerar("Locais - gastos", cabecalhos, linhas);
     }
 
     /** Relatório de gastos do local no período: itens com rateio por EPC + totais por EPC. */

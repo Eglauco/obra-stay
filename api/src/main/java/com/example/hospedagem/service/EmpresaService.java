@@ -8,6 +8,9 @@ import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.EmpresaRepository;
 import com.example.hospedagem.specification.EmpresaSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -82,6 +85,23 @@ public class EmpresaService {
     public void excluir(Long id) {
         Empresa empresa = buscarEntidade(id);
         repository.delete(empresa);
+    }
+
+    /** Exporta as empresas filtradas (sem paginação) para Excel (.xlsx). */
+    @Transactional(readOnly = true)
+    public byte[] exportar(EmpresaFiltro filtro) {
+        List<Empresa> lista = repository.findAll(
+                EmpresaSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.ASC, "nome"));
+
+        List<String> cabecalhos = List.of("ID", "Nome");
+
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Empresa e : lista) {
+            linhas.add(Arrays.asList(
+                    e.getId(),
+                    e.getNome()));
+        }
+        return PlanilhaExcel.gerar("Empresas", cabecalhos, linhas);
     }
 
     // ----- auxiliares -----

@@ -29,6 +29,14 @@ export interface FuncaoFiltro {
   sort: string; // "campo,direcao" (padrão Spring)
 }
 
+/** Resumo da hospedagem ativa do colaborador (para link no cadastro). */
+export interface HospedagemAtivaResumo {
+  hospedagemId: number;
+  localId: number;
+  localNome: string;
+  dataEntrada: string; // ISO datetime
+}
+
 export interface Colaborador {
   id: number;
   nome: string;
@@ -40,6 +48,8 @@ export interface Colaborador {
   epc: RefNome;
   empresa: RefNome;
   gestao: RefNome;
+  /** Hospedagem ativa atual, ou null quando não está hospedado. */
+  hospedagemAtiva?: HospedagemAtivaResumo | null;
 }
 
 export interface ColaboradorRequest {

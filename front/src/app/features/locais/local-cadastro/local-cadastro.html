@@ -79,6 +79,37 @@
         </div>
       </fieldset>
 
+      <!-- Foto -->
+      <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
+        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Foto do local</legend>
+        <input #fotoInput type="file" accept="image/png,image/jpeg,image/webp" class="hidden" (change)="onFotoSelecionada(fotoInput)" />
+        @if (fotoPreview()) {
+          <div class="flex flex-wrap items-center gap-4">
+            <img [src]="fotoPreview()!" alt="Prévia da foto do local" class="size-28 rounded-card border border-border object-cover" />
+            <div class="flex flex-col gap-2">
+              <button type="button" (click)="fotoInput.click()"
+                class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+                <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 13.5V16h2.5l7-7L11 6.5l-7 7ZM12.5 5l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                Trocar foto
+              </button>
+              <button type="button" (click)="removerFotoAtual()"
+                class="inline-flex h-10 items-center gap-2 rounded-control px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger-soft">
+                <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                Remover
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button type="button" (click)="fotoInput.click()"
+            class="flex h-32 w-full max-w-xs flex-col items-center justify-center gap-1.5 rounded-card border border-dashed border-border-strong text-muted transition-colors hover:bg-surface-2 hover:text-fg">
+            <svg viewBox="0 0 24 24" fill="none" class="size-7" aria-hidden="true"><path d="M4 16l4-4 3 3 4-5 5 6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span class="text-sm font-medium">Adicionar foto</span>
+            <span class="text-[0.75rem] text-faint">JPG, PNG ou WebP · até 5 MB</span>
+          </button>
+        }
+        @if (fotoError()) { <p class="text-[0.8125rem] text-danger">{{ fotoError() }}</p> }
+      </fieldset>
+
       <!-- Endereço -->
       <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
         <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Endereço</legend>

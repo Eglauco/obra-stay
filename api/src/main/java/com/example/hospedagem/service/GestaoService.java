@@ -8,6 +8,9 @@ import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.GestaoRepository;
 import com.example.hospedagem.specification.GestaoSpecifications;
+import com.example.hospedagem.util.PlanilhaExcel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -82,6 +85,21 @@ public class GestaoService {
     public void excluir(Long id) {
         Gestao gestao = buscarEntidade(id);
         repository.delete(gestao);
+    }
+
+    /** Exporta as gestões filtradas (sem paginação) para Excel (.xlsx). */
+    @Transactional(readOnly = true)
+    public byte[] exportar(GestaoFiltro filtro) {
+        List<Gestao> lista = repository.findAll(
+                GestaoSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.ASC, "nome"));
+
+        List<String> cabecalhos = List.of("ID", "Nome");
+
+        List<List<Object>> linhas = new ArrayList<>();
+        for (Gestao g : lista) {
+            linhas.add(Arrays.asList(g.getId(), g.getNome()));
+        }
+        return PlanilhaExcel.gerar("Gestões", cabecalhos, linhas);
     }
 
     // ----- auxiliares -----

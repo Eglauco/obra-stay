@@ -35,6 +35,15 @@ export class LocadoraService {
     return this.http.get<Locadora[]>(`${this.resource}/opcoes`);
   }
 
+  /** Exporta as locadoras filtradas (sem paginação) em Excel. */
+  exportar(filtro: LocadoraFiltro): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtro.id != null && !Number.isNaN(filtro.id)) params = params.set('id', String(filtro.id));
+    const nome = filtro.nome?.trim();
+    if (nome) params = params.set('nome', nome);
+    return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
+  }
+
   obter(id: number): Observable<Locadora> {
     return this.http.get<Locadora>(`${this.resource}/${id}`);
   }

@@ -5,6 +5,7 @@ import com.example.hospedagem.dto.LocadoraRequest;
 import com.example.hospedagem.dto.LocadoraResponse;
 import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.service.LocadoraService;
+import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -58,6 +59,19 @@ public class LocadoraController {
     @GetMapping("/opcoes")
     public List<LocadoraResponse> opcoes() {
         return service.listarOpcoes();
+    }
+
+    /**
+     * Exporta as locadoras filtradas (sem paginação) para Excel.
+     * Declarado antes de "/{id}" para não ser capturado como path variable.
+     */
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String nome) {
+
+        byte[] conteudo = service.exportar(new LocadoraFiltro(id, nome));
+        return PlanilhaExcel.resposta(conteudo, "locadoras");
     }
 
     /**
