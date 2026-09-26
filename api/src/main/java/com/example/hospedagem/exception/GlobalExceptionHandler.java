@@ -9,8 +9,10 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Tratamento centralizado de exceções, retornando o corpo padronizado de erro (pt-BR).
@@ -155,6 +157,21 @@ public class GlobalExceptionHandler {
                 request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    /**
+     * Exceções com status explícito (ex.: 401 de login inválido) -> preserva o status.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleResponseStatus(ResponseStatusException ex,
+                                                         HttpServletRequest request) {
+        HttpStatusCode status = ex.getStatusCode();
+        ApiError body = ApiError.of(
+                status.value(),
+                "Erro",
+                ex.getReason() != null ? ex.getReason() : "Não foi possível concluir a requisição.",
+                request.getRequestURI());
+        return ResponseEntity.status(status).body(body);
     }
 
     /**

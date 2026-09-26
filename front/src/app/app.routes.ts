@@ -1,7 +1,12 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'painel', pathMatch: 'full' },
+  {
+    path: 'login',
+    title: 'Entrar · ObraStay',
+    loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+  },
   {
     path: 'auto-atendimento/:localId',
     title: 'Autoatendimento · ObraStay',
@@ -9,7 +14,12 @@ export const routes: Routes = [
       import('./features/entrada/entrada-publica/entrada-publica').then((m) => m.EntradaPublica),
   },
   {
-    path: 'painel',
+    path: '',
+    canActivate: [authGuard],
+    children: [
+      { path: '', redirectTo: 'painel', pathMatch: 'full' },
+      {
+        path: 'painel',
     title: 'Painel · ObraStay',
     loadComponent: () => import('./features/painel/painel').then((m) => m.Painel),
   },
@@ -305,5 +315,23 @@ export const routes: Routes = [
         (m) => m.SolicitacaoCadastro,
       ),
   },
-  { path: '**', redirectTo: 'painel' },
+      {
+        path: 'usuarios',
+        title: 'Usuários · ObraStay',
+        loadComponent: () =>
+          import('./features/usuarios/usuario-pesquisa/usuario-pesquisa').then(
+            (m) => m.UsuarioPesquisa,
+          ),
+      },
+      {
+        path: 'usuarios/novo',
+        title: 'Novo usuário · ObraStay',
+        loadComponent: () =>
+          import('./features/usuarios/usuario-cadastro/usuario-cadastro').then(
+            (m) => m.UsuarioCadastro,
+          ),
+      },
+      { path: '**', redirectTo: 'painel' },
+    ],
+  },
 ];

@@ -18,8 +18,10 @@ export class App {
   protected readonly sidebarOpen = signal(false);
   private readonly url = signal(this.router.url);
 
-  /** Rotas públicas (quiosque) renderizam sem o menu/topbar. */
-  protected readonly layoutLimpo = computed(() => this.url().startsWith('/auto-atendimento'));
+  /** Rotas públicas (quiosque e login) renderizam sem o menu/topbar. */
+  protected readonly layoutLimpo = computed(
+    () => this.url().startsWith('/auto-atendimento') || this.url().startsWith('/login'),
+  );
 
   constructor() {
     this.router.events

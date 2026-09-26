@@ -148,6 +148,9 @@ interface NavItem {
           @case ('relatorios') {
             <path d="M3 13.13C3 12.5 3.5 12 4.13 12h2.25c.62 0 1.12.5 1.12 1.13v6.75c0 .62-.5 1.12-1.13 1.12H4.13A1.13 1.13 0 0 1 3 19.88v-6.75ZM9.75 8.63c0-.63.5-1.13 1.13-1.13h2.25c.62 0 1.12.5 1.12 1.13v11.25c0 .62-.5 1.12-1.13 1.12h-2.25a1.13 1.13 0 0 1-1.12-1.12V8.63ZM16.5 4.13c0-.63.5-1.13 1.13-1.13h2.25C20.5 3 21 3.5 21 4.13v15.75c0 .62-.5 1.12-1.13 1.12h-2.25a1.13 1.13 0 0 1-1.12-1.12V4.13Z" />
           }
+          @case ('usuarios') {
+            <path d="M15.75 7.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0" />
+          }
         }
       </svg>
     </ng-template>
@@ -171,6 +174,7 @@ export class Sidebar {
     { key: 'contratos', label: 'Contratos', route: '/contratos' },
     { key: 'gastos', label: 'Gastos', route: '/gastos' },
     { key: 'solicitacoes', label: 'Solicitações', route: '/solicitacoes' },
+    { key: 'usuarios', label: 'Usuários', route: '/usuarios' },
     { key: 'obras', label: 'Obras', route: null },
     { key: 'relatorios', label: 'Relatórios', route: null },
   ];
