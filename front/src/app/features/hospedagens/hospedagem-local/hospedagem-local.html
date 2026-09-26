@@ -38,19 +38,32 @@
           <div class="h-full rounded-full transition-all" [style.width.%]="percentual()" [style.background-color]="lotado() ? 'var(--color-danger)' : 'var(--color-accent)'"></div>
         </div>
       </div>
-      @if (lotado()) {
-        <button type="button" disabled title="Local lotado"
-          class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg opacity-50 cursor-not-allowed">
-          <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-          Local lotado
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
+        <button
+          type="button"
+          (click)="abrirQr()"
+          title="Gerar QR de autoatendimento"
+          class="inline-flex h-11 items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-4.5" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 14v7M17 21h4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          QR de autoatendimento
         </button>
-      } @else {
-        <a [routerLink]="['/hospedagens/local', localId, 'entrada']"
-          class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
-          <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-          Dar entrada
-        </a>
-      }
+        @if (lotado()) {
+          <button type="button" disabled title="Local lotado"
+            class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg opacity-50 cursor-not-allowed">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            Local lotado
+          </button>
+        } @else {
+          <a [routerLink]="['/hospedagens/local', localId, 'entrada']"
+            class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            Dar entrada
+          </a>
+        }
+      </div>
     </div>
   }
 
@@ -75,8 +88,8 @@
         <thead>
           <tr class="border-b bg-surface-2/50 text-[0.75rem] uppercase tracking-wide text-muted">
             <th scope="col" class="px-4 py-3 font-semibold uppercase tracking-wide">Colaborador</th>
-            <th scope="col" class="w-32 px-4 py-3 font-semibold uppercase tracking-wide">Entrada</th>
-            <th scope="col" class="w-32 px-4 py-3 font-semibold uppercase tracking-wide">Saída</th>
+            <th scope="col" class="w-44 px-4 py-3 font-semibold uppercase tracking-wide">Entrada</th>
+            <th scope="col" class="w-44 px-4 py-3 font-semibold uppercase tracking-wide">Saída</th>
             <th scope="col" class="w-28 px-4 py-3 font-semibold uppercase tracking-wide">Status</th>
             <th scope="col" class="w-28 px-4 py-3 text-right">Ações</th>
           </tr>
@@ -95,7 +108,15 @@
           } @else if (temItens()) {
             @for (h of itens(); track h.id) {
               <tr class="border-b border-border/70 transition-colors last:border-0 hover:bg-surface-2/50">
-                <td class="px-4 py-3.5 font-medium text-fg">{{ h.colaborador.nome }}</td>
+                <td class="px-4 py-3.5">
+                  <div class="font-medium text-fg">{{ h.colaborador.nome }}</div>
+                  @if (h.origem === 'AUTOATENDIMENTO') {
+                    <span class="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: var(--color-accent-soft); color: var(--color-accent)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="size-3" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 14v7M17 21h4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      Autoatendimento
+                    </span>
+                  }
+                </td>
                 <td class="tabular px-4 py-3.5 text-muted">{{ fmtData(h.dataEntrada) }}</td>
                 <td class="tabular px-4 py-3.5 text-muted">{{ fmtData(h.dataSaida) }}</td>
                 <td class="px-4 py-3.5">
@@ -203,4 +224,9 @@
     (confirmed)="confirmarExclusao()"
     (cancelled)="cancelarExclusao()"
   />
+}
+
+<!-- QR de autoatendimento do local -->
+@if (qrAberto() && local(); as l) {
+  <app-qr-entrada-dialog [local]="l" (fechar)="fecharQr()" />
 }

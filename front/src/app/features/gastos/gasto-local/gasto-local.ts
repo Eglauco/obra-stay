@@ -16,15 +16,17 @@ import { LocalService } from '../../../core/services/local.service';
 import { GastoService } from '../../../core/services/gasto.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
+import { RateioDialog } from '../rateio-dialog/rateio-dialog';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Gasto, ResumoGasto } from '../../../core/models/gasto.model';
 import { formatarBRL, formatarData } from '../../../core/util/format';
+import { gerarRelatorioGastosPdf } from '../../../core/util/relatorio-gastos-pdf';
 
 /** Detalhe de um local: gastos (com filtro de período) + total geral e do período. */
 @Component({
   selector: 'app-gasto-local',
-  imports: [ConfirmDialog, RouterLink],
+  imports: [ConfirmDialog, RateioDialog, RouterLink],
   templateUrl: './gasto-local.html',
   styleUrl: './gasto-local.css',
 })
@@ -54,6 +56,12 @@ export class GastoLocal {
 
   protected readonly aExcluir = signal<Gasto | null>(null);
   protected readonly excluindo = signal(false);
+
+  /** Gasto com o modal de rateio aberto. */
+  protected readonly rateioAlvo = signal<Gasto | null>(null);
+
+  /** Gerando o PDF do relatório. */
+  protected readonly gerandoPdf = signal(false);
 
   protected readonly total = computed(() => this.resultado()?.totalElements ?? 0);
   protected readonly totalPaginas = computed(() => this.resultado()?.totalPages ?? 0);
@@ -190,6 +198,31 @@ export class GastoLocal {
   protected proxima(): void {
     const r = this.resultado();
     if (r && !r.last) this.irPara(r.page + 1);
+  }
+
+  // ----- Relatório PDF -----
+  protected exportarPdf(): void {
+    if (this.localId == null || this.gerandoPdf()) return;
+    this.gerandoPdf.set(true);
+    this.service.relatorio(this.localId, this.filtroDe() || null, this.filtroAte() || null).subscribe({
+      next: (rel) => {
+        gerarRelatorioGastosPdf(rel)
+          .catch(() => this.toast.error('Não foi possível gerar o PDF', 'Tente novamente.'))
+          .finally(() => this.gerandoPdf.set(false));
+      },
+      error: (e: HttpErrorResponse) => {
+        this.gerandoPdf.set(false);
+        this.toast.error('Não foi possível gerar o relatório', this.mensagemErro(e));
+      },
+    });
+  }
+
+  // ----- Rateio -----
+  protected abrirRateio(g: Gasto): void {
+    this.rateioAlvo.set(g);
+  }
+  protected fecharRateio(): void {
+    this.rateioAlvo.set(null);
   }
 
   // ----- Excluir -----

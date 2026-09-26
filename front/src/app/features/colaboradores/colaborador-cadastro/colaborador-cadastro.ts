@@ -10,23 +10,22 @@ import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormField, email, form, maxLength, required, validate } from '@angular/forms/signals';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ColaboradorService } from '../../../core/services/colaborador.service';
 import { FuncaoService } from '../../../core/services/funcao.service';
 import { EpcService } from '../../../core/services/epc.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { GestaoService } from '../../../core/services/gestao.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { BuscaOpcao, BuscaSelect } from '../../../core/components/busca-select/busca-select';
 import {
   ApiError,
   ColaboradorRequest,
-  Funcao,
   MDO_LABEL,
   Mdo,
   Sexo,
 } from '../../../core/models/colaborador.model';
-import { Epc } from '../../../core/models/epc.model';
-import { Empresa } from '../../../core/models/empresa.model';
-import { Gestao } from '../../../core/models/gestao.model';
 import { apenasDigitosCpf, cpfValido, formatarCpf } from '../../../core/util/format';
 
 interface CadastroModel {
@@ -47,7 +46,7 @@ const EMAIL_MAX = 160;
 /** Tela dedicada de criar/editar colaborador (padrão de CRUD: sempre em nova tela). */
 @Component({
   selector: 'app-colaborador-cadastro',
-  imports: [FormField],
+  imports: [FormField, BuscaSelect],
   templateUrl: './colaborador-cadastro.html',
   styleUrl: './colaborador-cadastro.css',
 })
@@ -73,10 +72,12 @@ export class ColaboradorCadastro {
     { value: 'MAO_DE_OBRA_DIRETA', label: MDO_LABEL.MAO_DE_OBRA_DIRETA },
     { value: 'MAO_DE_OBRA_INDIRETA', label: MDO_LABEL.MAO_DE_OBRA_INDIRETA },
   ];
-  protected readonly funcoes = signal<Funcao[]>([]);
-  protected readonly epcs = signal<Epc[]>([]);
-  protected readonly empresas = signal<Empresa[]>([]);
-  protected readonly gestoes = signal<Gestao[]>([]);
+
+  // Valor inicial (modo edição) dos campos de busca — alimenta o rótulo do autocomplete.
+  protected readonly funcaoInicial = signal<BuscaOpcao | null>(null);
+  protected readonly epcInicial = signal<BuscaOpcao | null>(null);
+  protected readonly empresaInicial = signal<BuscaOpcao | null>(null);
+  protected readonly gestaoInicial = signal<BuscaOpcao | null>(null);
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
@@ -131,9 +132,26 @@ export class ColaboradorCadastro {
   protected readonly empresaError = computed(() => this.fieldError('empresaId', this.f.empresaId));
   protected readonly gestaoError = computed(() => this.fieldError('gestaoId', this.f.gestaoId));
 
+  // Funções de busca no backend (autocomplete). size 8 = primeira página enxuta.
+  protected readonly buscarFuncao = (t: string): Observable<BuscaOpcao[]> =>
+    this.funcaoService
+      .listar({ id: null, nome: t || null, page: 0, size: 8, sort: 'nome,asc' })
+      .pipe(map((r) => r.content));
+  protected readonly buscarEpc = (t: string): Observable<BuscaOpcao[]> =>
+    this.epcService
+      .listar({ id: null, nome: t || null, page: 0, size: 8, sort: 'nome,asc' })
+      .pipe(map((r) => r.content));
+  protected readonly buscarEmpresa = (t: string): Observable<BuscaOpcao[]> =>
+    this.empresaService
+      .listar({ id: null, nome: t || null, page: 0, size: 8, sort: 'nome,asc' })
+      .pipe(map((r) => r.content));
+  protected readonly buscarGestao = (t: string): Observable<BuscaOpcao[]> =>
+    this.gestaoService
+      .listar({ id: null, nome: t || null, page: 0, size: 8, sort: 'nome,asc' })
+      .pipe(map((r) => r.content));
+
   constructor() {
     afterNextRender(() => {
-      this.carregarListas();
       const id = this.id();
       if (id != null) this.carregar(id);
       else document.getElementById('cad-nome')?.focus();
@@ -145,28 +163,6 @@ export class ColaboradorCadastro {
     if (raw == null) return null;
     const n = Number(raw);
     return Number.isFinite(n) ? n : null;
-  }
-
-  private carregarListas(): void {
-    this.funcaoService.opcoes().subscribe({
-      next: (fs) => this.funcoes.set(fs),
-      error: () =>
-        this.toast.error('Funções indisponíveis', 'Não foi possível carregar a lista de funções.'),
-    });
-    this.epcService.opcoes().subscribe({
-      next: (xs) => this.epcs.set(xs),
-      error: () => this.toast.error('EPCs indisponíveis', 'Não foi possível carregar a lista de EPCs.'),
-    });
-    this.empresaService.opcoes().subscribe({
-      next: (xs) => this.empresas.set(xs),
-      error: () =>
-        this.toast.error('Empresas indisponíveis', 'Não foi possível carregar a lista de empresas.'),
-    });
-    this.gestaoService.opcoes().subscribe({
-      next: (xs) => this.gestoes.set(xs),
-      error: () =>
-        this.toast.error('Gestões indisponíveis', 'Não foi possível carregar a lista de gestões.'),
-    });
   }
 
   private carregar(id: number): void {
@@ -185,6 +181,10 @@ export class ColaboradorCadastro {
           empresaId: c.empresa?.id ?? null,
           gestaoId: c.gestao?.id ?? null,
         });
+        this.funcaoInicial.set(c.funcao ?? null);
+        this.epcInicial.set(c.epc ?? null);
+        this.empresaInicial.set(c.empresa ?? null);
+        this.gestaoInicial.set(c.gestao ?? null);
         this.carregando.set(false);
         queueMicrotask(() => document.getElementById('cad-nome')?.focus());
       },
@@ -197,7 +197,10 @@ export class ColaboradorCadastro {
     });
   }
 
-  private fieldError(campo: string, field: { (): { touched(): boolean; errors(): { message?: string }[] } }): string | null {
+  private fieldError(
+    campo: string,
+    field: { (): { touched(): boolean; errors(): { message?: string }[] } },
+  ): string | null {
     const server = this.serverErrors()[campo];
     if (server) return server;
     const st = field();
@@ -224,33 +227,28 @@ export class ColaboradorCadastro {
     this.clearServerError('cpf');
   }
 
-  protected selectFuncao(value: string): void {
-    this.model.update((m) => ({ ...m, funcaoId: this.paraId(value) }));
+  protected onFuncao(op: BuscaOpcao | null): void {
+    this.model.update((m) => ({ ...m, funcaoId: op?.id ?? null }));
     this.f.funcaoId().markAsTouched();
     this.clearServerError('funcaoId');
   }
 
-  protected selectEpc(value: string): void {
-    this.model.update((m) => ({ ...m, epcId: this.paraId(value) }));
+  protected onEpc(op: BuscaOpcao | null): void {
+    this.model.update((m) => ({ ...m, epcId: op?.id ?? null }));
     this.f.epcId().markAsTouched();
     this.clearServerError('epcId');
   }
 
-  protected selectEmpresa(value: string): void {
-    this.model.update((m) => ({ ...m, empresaId: this.paraId(value) }));
+  protected onEmpresa(op: BuscaOpcao | null): void {
+    this.model.update((m) => ({ ...m, empresaId: op?.id ?? null }));
     this.f.empresaId().markAsTouched();
     this.clearServerError('empresaId');
   }
 
-  protected selectGestao(value: string): void {
-    this.model.update((m) => ({ ...m, gestaoId: this.paraId(value) }));
+  protected onGestao(op: BuscaOpcao | null): void {
+    this.model.update((m) => ({ ...m, gestaoId: op?.id ?? null }));
     this.f.gestaoId().markAsTouched();
     this.clearServerError('gestaoId');
-  }
-
-  private paraId(value: string): number | null {
-    const n = value === '' ? null : Number(value);
-    return n != null && Number.isFinite(n) ? n : null;
   }
 
   protected clearServerError(field: string): void {

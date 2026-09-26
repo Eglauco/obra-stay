@@ -1,15 +1,19 @@
 <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
-<div class="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
-  <app-sidebar [open]="sidebarOpen()" (close)="sidebarOpen.set(false)" />
+@if (layoutLimpo()) {
+  <router-outlet />
+} @else {
+  <div class="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
+    <app-sidebar [open]="sidebarOpen()" (close)="sidebarOpen.set(false)" />
 
-  <div class="flex min-h-dvh min-w-0 flex-col">
-    <app-topbar (menu)="sidebarOpen.set(true)" />
+    <div class="flex min-h-dvh min-w-0 flex-col">
+      <app-topbar (menu)="sidebarOpen.set(true)" />
 
-    <main id="conteudo" class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <router-outlet />
-    </main>
+      <main id="conteudo" class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <router-outlet />
+      </main>
+    </div>
   </div>
-</div>
+}
 
 <app-toast-container />

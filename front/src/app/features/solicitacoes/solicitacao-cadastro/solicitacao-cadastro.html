@@ -1,0 +1,289 @@
+<section class="mx-auto flex max-w-3xl flex-col gap-6">
+  <!-- Cabeçalho -->
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      (click)="voltar()"
+      aria-label="Voltar para a lista"
+      class="grid size-10 shrink-0 place-items-center rounded-control border text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+    >
+      <svg viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true">
+        <path d="M12 5l-5 5 5 5M7 10h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+    <div>
+      <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">
+        {{ editMode() ? 'Gerenciar' : 'Nova' }}
+      </p>
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">
+        {{ editMode() ? 'Solicitação' : 'Nova solicitação' }}
+      </h2>
+    </div>
+  </div>
+
+  @if (carregando()) {
+    <div class="flex items-center justify-center gap-3 rounded-card border bg-surface p-10 text-sm text-muted shadow-card">
+      <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin text-accent" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+        <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+      </svg>
+      Carregando solicitação…
+    </div>
+  } @else if (erroCarregar()) {
+    <div class="flex flex-col items-center gap-4 rounded-card border bg-surface p-10 text-center shadow-card">
+      <span class="grid size-12 place-items-center rounded-full" style="background-color: var(--color-danger-soft); color: var(--color-danger)" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" class="size-6">
+          <path d="M12 9v4m0 4h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <p class="text-sm text-muted">{{ erroCarregar() }}</p>
+      <button type="button" (click)="voltar()" class="inline-flex h-10 items-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+        Voltar para a lista
+      </button>
+    </div>
+  } @else {
+    @if (editMode() && status(); as st) {
+      <div class="flex flex-wrap items-center justify-between gap-4 rounded-card border bg-surface p-5 shadow-card">
+        <div class="flex items-center gap-2.5">
+          <span class="text-sm text-muted">Situação</span>
+          <span
+            class="inline-flex items-center rounded-full px-2.5 py-1 text-[0.75rem] font-semibold"
+            [style.color]="badgeColor(st)"
+            [style.background-color]="badgeBg(st)"
+          >{{ statusLabel(st) }}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            (click)="abrirHistorico()"
+            class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-4" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            Histórico
+          </button>
+          @if (podeIniciar()) {
+            <button
+              type="button"
+              (click)="pedirIniciar()"
+              [disabled]="acaoStatus()"
+              class="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M6 4.5v11l9-5.5-9-5.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
+              Iniciar
+            </button>
+          }
+          @if (podeFinalizar()) {
+            <button
+              type="button"
+              (click)="pedirFinalizar()"
+              [disabled]="acaoStatus()"
+              class="inline-flex h-10 items-center gap-2 rounded-control bg-success px-4 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Finalizar
+            </button>
+          }
+          @if (podeReabrir()) {
+            <button
+              type="button"
+              (click)="pedirReabrir()"
+              [disabled]="acaoStatus()"
+              class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-semibold text-accent transition-colors hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M15.5 6.5A6 6 0 1 0 16 10M15.5 3.5v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Reabrir
+            </button>
+          }
+          @if (podeCancelar()) {
+            <button
+              type="button"
+              (click)="pedirCancelar()"
+              [disabled]="acaoStatus()"
+              class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-4 text-sm font-semibold text-danger transition-colors hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="1.5" /><path d="m5.5 5.5 9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+              Cancelar
+            </button>
+          }
+        </div>
+      </div>
+    }
+    @if (!editMode()) {
+    <form
+      class="form-card flex flex-col gap-5 rounded-card border bg-surface p-6 shadow-card sm:p-7"
+      (submit)="$event.preventDefault(); submit()"
+      novalidate
+    >
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <!-- Tipo de solicitação -->
+        <app-busca-select
+          label="Tipo de solicitação"
+          idBase="sol-tipo"
+          [obrigatorio]="true"
+          placeholder="Buscar tipo…"
+          [buscar]="buscarTipo"
+          [inicial]="tipoInicial()"
+          [erro]="tipoError()"
+          (selecionadoChange)="onTipo($event)"
+          (tocado)="f.tipoSolicitacaoId().markAsTouched()"
+        />
+
+        <!-- Colaborador (solicitante) -->
+        <app-busca-select
+          label="Colaborador (solicitante)"
+          idBase="sol-colaborador"
+          [obrigatorio]="true"
+          placeholder="Buscar colaborador…"
+          [buscar]="buscarColaborador"
+          [inicial]="colaboradorInicial()"
+          [erro]="colaboradorError()"
+          (selecionadoChange)="onColaborador($event)"
+          (tocado)="f.colaboradorId().markAsTouched()"
+        />
+
+        <!-- Local (restrito à hospedagem do colaborador) -->
+        <div class="sm:col-span-2">
+          <app-busca-select
+            label="Local"
+            idBase="sol-local"
+            [obrigatorio]="true"
+            [placeholder]="temColaborador() ? 'Buscar local do colaborador…' : 'Selecione o colaborador primeiro'"
+            [buscar]="buscarLocal"
+            [inicial]="localInicial()"
+            [erro]="localError()"
+            (selecionadoChange)="onLocal($event)"
+            (tocado)="f.localId().markAsTouched()"
+          />
+          <p class="mt-1.5 text-[0.75rem] text-faint">
+            Só é possível abrir solicitação em locais onde o colaborador está ou já esteve hospedado.
+          </p>
+        </div>
+
+        <!-- Observação / descrição da demanda -->
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <div class="flex items-baseline justify-between">
+            <label for="sol-observacao" class="text-sm font-medium text-fg">
+              Descrição da solicitação <span class="text-danger" aria-hidden="true">*</span>
+            </label>
+            <span class="tabular text-[0.75rem] text-faint">{{ obsCount() }}/{{ obsMax }}</span>
+          </div>
+          <textarea
+            id="sol-observacao"
+            [formField]="f.observacao"
+            (input)="clearServerError('observacao')"
+            rows="4"
+            autocomplete="off"
+            placeholder="Descreva o que você precisa (ex.: reparo, limpeza, troca de item…)."
+            class="w-full resize-y rounded-control border bg-canvas px-3.5 py-2.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+            [style.border-color]="obsError() ? 'var(--color-danger)' : null"
+            [attr.aria-invalid]="obsError() ? 'true' : null"
+            [attr.aria-describedby]="obsError() ? 'sol-observacao-error' : null"
+          ></textarea>
+          @if (obsError()) {
+            <p id="sol-observacao-error" class="text-[0.8125rem] text-danger">{{ obsError() }}</p>
+          }
+        </div>
+      </div>
+
+      @if (encerrada()) {
+        <p class="text-[0.8125rem] text-muted">
+          Solicitação encerrada — use <strong class="text-fg">Reabrir</strong> acima para poder editar os dados.
+        </p>
+      }
+
+      <!-- Ações -->
+      <div class="mt-1 flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+          (click)="voltar()"
+          [disabled]="saving()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70"
+          [disabled]="saving() || encerrada()"
+        >
+          @if (saving()) {
+            <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+              <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+            </svg>
+          }
+          {{ editMode() ? 'Salvar alterações' : 'Abrir solicitação' }}
+        </button>
+      </div>
+    </form>
+    } @else {
+      <!-- Edição bloqueada: somente leitura + troca de status acima -->
+      <div class="flex flex-col gap-5 rounded-card border bg-surface p-6 shadow-card sm:p-7">
+        @if (carregada(); as s) {
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Tipo</p>
+              <p class="mt-0.5 text-sm text-fg">{{ s.tipoSolicitacao.nome }}</p>
+            </div>
+            <div>
+              <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Solicitante</p>
+              <p class="mt-0.5 text-sm text-fg">{{ s.colaborador.nome }}</p>
+            </div>
+            <div>
+              <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Local</p>
+              <p class="mt-0.5 text-sm text-fg">{{ s.local.nome }}</p>
+            </div>
+            <div>
+              <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Abertura</p>
+              <p class="mt-0.5 text-sm text-fg">{{ fmtDataHora(s.dataHoraAbertura) }}</p>
+            </div>
+            @if (s.dataHoraEncerramento) {
+              <div>
+                <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Encerramento</p>
+                <p class="mt-0.5 text-sm text-fg">{{ fmtDataHora(s.dataHoraEncerramento) }}</p>
+              </div>
+            }
+          </div>
+          <div>
+            <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Descrição</p>
+            <p class="mt-0.5 whitespace-pre-line text-sm text-fg">{{ s.observacao }}</p>
+          </div>
+        }
+        <div class="flex items-center justify-between gap-3 border-t border-border pt-5">
+          <p class="text-[0.75rem] text-faint">
+            A solicitação não pode ser editada — use as ações de status acima.
+          </p>
+          <button
+            type="button"
+            (click)="voltar()"
+            class="inline-flex h-11 shrink-0 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+          >
+            Voltar
+          </button>
+        </div>
+      </div>
+    }
+  }
+</section>
+
+<!-- Modal de troca de status (com observação) -->
+@if (mudanca(); as m) {
+  <app-mudar-status-dialog
+    [titulo]="m.titulo"
+    [descricao]="m.descricao"
+    [confirmLabel]="m.confirmLabel"
+    [perigo]="m.perigo"
+    [loading]="acaoStatus()"
+    (confirmar)="confirmarMudanca($event)"
+    (cancelar)="fecharMudanca()"
+  />
+}
+
+<!-- Histórico -->
+@if (historicoAberto() && id() != null) {
+  <app-solicitacao-historico-dialog
+    [solicitacaoId]="id()!"
+    [titulo]="colaboradorInicial()?.nome ?? ''"
+    (fechar)="fecharHistorico()"
+  />
+}

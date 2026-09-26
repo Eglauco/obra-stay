@@ -4,6 +4,8 @@ import com.example.hospedagem.dto.GastoFiltro;
 import com.example.hospedagem.dto.GastoRequest;
 import com.example.hospedagem.dto.GastoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.RateioGastoResponse;
+import com.example.hospedagem.dto.RelatorioGastosResponse;
 import com.example.hospedagem.dto.ResumoGastoResponse;
 import com.example.hospedagem.dto.TotalGastoResponse;
 import com.example.hospedagem.service.GastoService;
@@ -79,11 +81,32 @@ public class GastoController {
     }
 
     /**
+     * Relatório de gastos do local (respeitando o período), com rateio por EPC e totais.
+     * Declarado antes de "/{id}" para não ser capturado como path variable.
+     */
+    @GetMapping("/relatorio")
+    public RelatorioGastosResponse relatorio(
+            @RequestParam Long localId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataDe,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataAte) {
+
+        return service.relatorio(localId, dataDe, dataAte);
+    }
+
+    /**
      * Busca um gasto por id.
      */
     @GetMapping("/{id}")
     public GastoResponse obter(@PathVariable Long id) {
         return service.obter(id);
+    }
+
+    /**
+     * Rateio do gasto por EPC (lista de divisão do custo).
+     */
+    @GetMapping("/{id}/rateio")
+    public List<RateioGastoResponse> rateio(@PathVariable Long id) {
+        return service.rateio(id);
     }
 
     /**

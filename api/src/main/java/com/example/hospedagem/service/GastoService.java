@@ -2,19 +2,34 @@ package com.example.hospedagem.service;
 
 import com.example.hospedagem.domain.Gasto;
 import com.example.hospedagem.domain.Local;
+import com.example.hospedagem.domain.RateioGasto;
+import com.example.hospedagem.dto.DistribuicaoEpcResponse;
 import com.example.hospedagem.dto.GastoFiltro;
 import com.example.hospedagem.dto.GastoRequest;
 import com.example.hospedagem.dto.GastoResponse;
+import com.example.hospedagem.dto.ItemRelatorioGasto;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.RateioGastoResponse;
+import com.example.hospedagem.dto.RelatorioGastosResponse;
 import com.example.hospedagem.dto.ResumoGastoResponse;
 import com.example.hospedagem.dto.ResumoRef;
+import com.example.hospedagem.dto.TotalEpcRelatorio;
 import com.example.hospedagem.dto.TotalGastoResponse;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.GastoRepository;
+import com.example.hospedagem.repository.HospedagemRepository;
 import com.example.hospedagem.repository.LocalRepository;
+import com.example.hospedagem.repository.RateioGastoRepository;
 import com.example.hospedagem.specification.GastoSpecifications;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,10 +53,17 @@ public class GastoService {
 
     private final GastoRepository repository;
     private final LocalRepository localRepository;
+    private final HospedagemRepository hospedagemRepository;
+    private final RateioGastoRepository rateioRepository;
 
-    public GastoService(GastoRepository repository, LocalRepository localRepository) {
+    public GastoService(GastoRepository repository,
+                        LocalRepository localRepository,
+                        HospedagemRepository hospedagemRepository,
+                        RateioGastoRepository rateioRepository) {
         this.repository = repository;
         this.localRepository = localRepository;
+        this.hospedagemRepository = hospedagemRepository;
+        this.rateioRepository = rateioRepository;
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +95,9 @@ public class GastoService {
                 .data(request.data())
                 .build();
 
-        return toResponse(repository.save(gasto));
+        Gasto salvo = repository.save(gasto);
+        recomputarRateio(salvo);
+        return toResponse(salvo);
     }
 
     @Transactional
@@ -87,7 +111,19 @@ public class GastoService {
         gasto.setValor(request.valor());
         gasto.setData(request.data());
 
-        return toResponse(repository.save(gasto));
+        Gasto salvo = repository.save(gasto);
+        recomputarRateio(salvo);
+        return toResponse(salvo);
+    }
+
+    /** Rateio (snapshot) de um gasto por EPC. */
+    @Transactional(readOnly = true)
+    public List<RateioGastoResponse> rateio(Long id) {
+        buscarEntidade(id);
+        return rateioRepository.findByGastoIdOrderByValorDescIdAsc(id).stream()
+                .map(r -> new RateioGastoResponse(
+                        r.getEpcId(), r.getEpcNome(), r.getPessoas(), r.getPercentual(), r.getValor()))
+                .toList();
     }
 
     @Transactional
@@ -99,6 +135,57 @@ public class GastoService {
     @Transactional(readOnly = true)
     public List<TotalGastoResponse> totais() {
         return repository.totaisPorLocal();
+    }
+
+    /** Relatório de gastos do local no período: itens com rateio por EPC + totais por EPC. */
+    @Transactional(readOnly = true)
+    public RelatorioGastosResponse relatorio(Long localId, LocalDate dataDe, LocalDate dataAte) {
+        Local local = carregarLocal(localId);
+        List<Gasto> gastos = repository.findAll(
+                GastoSpecifications.comFiltro(new GastoFiltro(localId, null, dataDe, dataAte)),
+                Sort.by(Sort.Direction.DESC, "data").and(Sort.by(Sort.Direction.ASC, "id")));
+
+        List<ItemRelatorioGasto> itens = new ArrayList<>();
+        Map<Long, BigDecimal> valorPorEpc = new LinkedHashMap<>();
+        Map<Long, String> nomePorEpc = new HashMap<>();
+        BigDecimal naoRateado = BigDecimal.ZERO;
+        BigDecimal totalGeral = BigDecimal.ZERO;
+
+        for (Gasto g : gastos) {
+            BigDecimal total = g.getQuantidade().multiply(g.getValor());
+            totalGeral = totalGeral.add(total);
+
+            List<RateioGasto> rr = rateioRepository.findByGastoIdOrderByValorDescIdAsc(g.getId());
+            List<RateioGastoResponse> rateio = rr.stream()
+                    .map(r -> new RateioGastoResponse(
+                            r.getEpcId(), r.getEpcNome(), r.getPessoas(), r.getPercentual(), r.getValor()))
+                    .toList();
+
+            if (rr.isEmpty()) {
+                naoRateado = naoRateado.add(total);
+            } else {
+                for (RateioGasto r : rr) {
+                    valorPorEpc.merge(r.getEpcId(), r.getValor(), BigDecimal::add);
+                    nomePorEpc.putIfAbsent(r.getEpcId(), r.getEpcNome());
+                }
+            }
+
+            itens.add(new ItemRelatorioGasto(
+                    g.getId(), g.getNome(), g.getData(),
+                    g.getQuantidade(), g.getValor(), total, rateio));
+        }
+
+        List<TotalEpcRelatorio> totais = new ArrayList<>();
+        valorPorEpc.entrySet().stream()
+                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .forEach(e -> totais.add(new TotalEpcRelatorio(e.getKey(), nomePorEpc.get(e.getKey()), e.getValue())));
+        if (naoRateado.signum() > 0) {
+            totais.add(new TotalEpcRelatorio(null, "Não rateado", naoRateado));
+        }
+
+        return new RelatorioGastosResponse(
+                new ResumoRef(local.getId(), local.getNome()),
+                dataDe, dataAte, LocalDateTime.now(), itens, totais, totalGeral);
     }
 
     @Transactional(readOnly = true)
@@ -118,6 +205,59 @@ public class GastoService {
     private Gasto buscarEntidade(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Gasto não encontrado."));
+    }
+
+    /**
+     * Recalcula (snapshot) o rateio do gasto por EPC, na proporção de colaboradores
+     * hospedados ativos no local. O total (qtd x valor) é distribuído por EPC; a última
+     * linha absorve o arredondamento para o somatório fechar com o total.
+     */
+    private void recomputarRateio(Gasto gasto) {
+        rateioRepository.deleteByGastoId(gasto.getId());
+
+        List<DistribuicaoEpcResponse> dist =
+                hospedagemRepository.distribuicaoEpcAtivaPorLocal(gasto.getLocal().getId());
+        long totalPessoas = dist.stream().mapToLong(DistribuicaoEpcResponse::pessoas).sum();
+        if (totalPessoas == 0) {
+            return; // sem hospedados no local -> sem rateio
+        }
+
+        BigDecimal total = gasto.getQuantidade().multiply(gasto.getValor()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalPessoasBd = BigDecimal.valueOf(totalPessoas);
+        BigDecimal cem = BigDecimal.valueOf(100);
+
+        BigDecimal valorAcumulado = BigDecimal.ZERO;
+        BigDecimal pctAcumulado = BigDecimal.ZERO;
+        List<RateioGasto> linhas = new ArrayList<>();
+
+        for (int i = 0; i < dist.size(); i++) {
+            DistribuicaoEpcResponse d = dist.get(i);
+            BigDecimal pessoasBd = BigDecimal.valueOf(d.pessoas());
+            boolean ultima = i == dist.size() - 1;
+
+            BigDecimal percentual;
+            BigDecimal valor;
+            if (ultima) {
+                percentual = cem.subtract(pctAcumulado);
+                valor = total.subtract(valorAcumulado);
+            } else {
+                percentual = pessoasBd.multiply(cem).divide(totalPessoasBd, 2, RoundingMode.HALF_UP);
+                valor = total.multiply(pessoasBd).divide(totalPessoasBd, 2, RoundingMode.HALF_UP);
+                pctAcumulado = pctAcumulado.add(percentual);
+                valorAcumulado = valorAcumulado.add(valor);
+            }
+
+            linhas.add(RateioGasto.builder()
+                    .gasto(gasto)
+                    .epcId(d.epcId())
+                    .epcNome(d.epcNome())
+                    .pessoas((int) d.pessoas())
+                    .percentual(percentual)
+                    .valor(valor)
+                    .build());
+        }
+
+        rateioRepository.saveAll(linhas);
     }
 
     private GastoResponse toResponse(Gasto gasto) {

@@ -20,6 +20,15 @@ export interface GastoRequest {
   data: string | null;
 }
 
+/** Linha do rateio de um gasto por EPC. */
+export interface RateioGasto {
+  epcId: number;
+  epcNome: string;
+  pessoas: number;
+  percentual: number;
+  valor: number;
+}
+
 export interface GastoFiltro {
   localId?: number | null;
   nome?: string | null;
@@ -28,6 +37,35 @@ export interface GastoFiltro {
   page: number;
   size: number;
   sort: string;
+}
+
+/** Item do relatório: a linha do gasto + suas divisões por EPC. */
+export interface RelatorioGastoItem {
+  id: number;
+  nome: string;
+  data: string;
+  quantidade: number;
+  valor: number;
+  total: number;
+  rateio: RateioGasto[];
+}
+
+/** Somatória por EPC no relatório (epcId nulo = "Não rateado"). */
+export interface TotalEpcRelatorio {
+  epcId: number | null;
+  epcNome: string;
+  valor: number;
+}
+
+/** Relatório de gastos de um local, respeitando o período do filtro. */
+export interface RelatorioGastos {
+  local: RefItem;
+  dataDe: string | null;
+  dataAte: string | null;
+  geradoEm: string;
+  itens: RelatorioGastoItem[];
+  totaisPorEpc: TotalEpcRelatorio[];
+  totalGeral: number;
 }
 
 /** Total gasto por local (card do mestre). */

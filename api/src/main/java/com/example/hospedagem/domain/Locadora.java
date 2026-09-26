@@ -30,4 +30,8 @@ public class Locadora {
 
     @Column(name = "nome", nullable = false, length = 120)
     private String nome;
+
+    /** Telefone de contato (apenas dígitos: 10 = fixo, 11 = celular). */
+    @Column(name = "telefone", nullable = false, length = 11)
+    private String telefone;
 }

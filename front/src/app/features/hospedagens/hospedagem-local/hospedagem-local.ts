@@ -16,15 +16,17 @@ import { LocalService } from '../../../core/services/local.service';
 import { HospedagemService } from '../../../core/services/hospedagem.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
+import { QrEntradaDialog } from '../../../core/components/qr-entrada-dialog/qr-entrada-dialog';
 import { HospedagemSaidaDialog } from '../hospedagem-saida-dialog/hospedagem-saida-dialog';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Hospedagem, StatusFiltro } from '../../../core/models/hospedagem.model';
+import { formatarDataHora } from '../../../core/util/format';
 
 /** Detalhe de um local: colaboradores hospedados + dar entrada / dar saída. */
 @Component({
   selector: 'app-hospedagem-local',
-  imports: [ConfirmDialog, HospedagemSaidaDialog, RouterLink],
+  imports: [ConfirmDialog, QrEntradaDialog, HospedagemSaidaDialog, RouterLink],
   templateUrl: './hospedagem-local.html',
   styleUrl: './hospedagem-local.css',
 })
@@ -58,6 +60,9 @@ export class HospedagemLocal {
   protected readonly resultado = signal<PageResponse<Hospedagem> | null>(null);
   protected readonly loading = signal(false);
   protected readonly erro = signal<string | null>(null);
+
+  // QR de autoatendimento
+  protected readonly qrAberto = signal(false);
 
   // Ações
   protected readonly aDarSaida = signal<Hospedagem | null>(null);
@@ -172,6 +177,14 @@ export class HospedagemLocal {
     this.buscar$.next();
   }
 
+  // ----- QR de autoatendimento -----
+  protected abrirQr(): void {
+    this.qrAberto.set(true);
+  }
+  protected fecharQr(): void {
+    this.qrAberto.set(false);
+  }
+
   // ----- Filtro de status -----
   protected selecionarStatus(valor: StatusFiltro): void {
     if (this.filtroStatus() === valor) return;
@@ -268,9 +281,7 @@ export class HospedagemLocal {
 
   // ----- Auxiliares -----
   protected fmtData(iso: string | null): string {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return y && m && d ? `${d}/${m}/${y}` : iso;
+    return formatarDataHora(iso);
   }
 
   protected mensagemExclusao(h: Hospedagem): string {

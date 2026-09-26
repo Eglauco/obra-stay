@@ -121,6 +121,10 @@ interface NavItem {
           @case ('locadoras') {
             <path d="M4 9.5 5.2 5.4A1.5 1.5 0 0 1 6.63 4.3h10.74a1.5 1.5 0 0 1 1.43 1.1L20 9.5M4 9.5v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9M4 9.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0M9.5 19.5v-4h5v4" />
           }
+          @case ('tipos-solicitacao') {
+            <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V16H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+            <path d="M8 9h8M8 12h5" />
+          }
           @case ('hospedagens') {
             <path d="M2 5v14M2 10h16a3 3 0 0 1 3 3v6M21 19v-3M2 16h19M6.5 10V8.5A1.5 1.5 0 0 1 8 7h3a1.5 1.5 0 0 1 1.5 1.5V10" />
           }
@@ -131,6 +135,9 @@ interface NavItem {
           @case ('gastos') {
             <path d="M6 3h12a1 1 0 0 1 1 1v16l-2.5-1.4L14 20l-2-1.4L10 20l-2.5-1.4L5 20V4a1 1 0 0 1 1-1Z" />
             <path d="M9 8h6M9 11h6M9 14h4" />
+          }
+          @case ('solicitacoes') {
+            <path d="M9 4.5h6M8 4.5a1 1 0 0 0-1 1V6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-.5a1 1 0 0 0-1-1M7 5.5H5.5A1.5 1.5 0 0 0 4 7v12a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19V7a1.5 1.5 0 0 0-1.5-1.5H17M8.5 13l1.75 1.75L14 11" />
           }
           @case ('obras') {
             <path d="M2.25 21h19.5M3.75 21V6.75A1.5 1.5 0 0 1 5.25 5.25h6a1.5 1.5 0 0 1 1.5 1.5V21M12.75 21V10.5a1.5 1.5 0 0 1 1.5-1.5h4.5a1.5 1.5 0 0 1 1.5 1.5V21M6.75 8.25h1.5m-1.5 3h1.5m-1.5 3h1.5m8.25-3h.75m-.75 3h.75" />
@@ -159,9 +166,11 @@ export class Sidebar {
     { key: 'gestoes', label: 'Gestão', route: '/gestoes' },
     { key: 'locais', label: 'Locais', route: '/locais' },
     { key: 'locadoras', label: 'Locadoras', route: '/locadoras' },
+    { key: 'tipos-solicitacao', label: 'Tipos de Solicitação', route: '/tipos-solicitacao' },
     { key: 'hospedagens', label: 'Hospedagens', route: '/hospedagens' },
     { key: 'contratos', label: 'Contratos', route: '/contratos' },
     { key: 'gastos', label: 'Gastos', route: '/gastos' },
+    { key: 'solicitacoes', label: 'Solicitações', route: '/solicitacoes' },
     { key: 'obras', label: 'Obras', route: null },
     { key: 'relatorios', label: 'Relatórios', route: null },
   ];

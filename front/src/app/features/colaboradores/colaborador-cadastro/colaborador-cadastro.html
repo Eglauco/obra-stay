@@ -1,4 +1,4 @@
-<section class="mx-auto flex max-w-2xl flex-col gap-6">
+<section class="mx-auto flex max-w-3xl flex-col gap-6">
   <!-- Cabeçalho -->
   <div class="flex items-center gap-3">
     <button
@@ -54,98 +54,200 @@
       (submit)="$event.preventDefault(); submit()"
       novalidate
     >
-      <!-- Nome -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-baseline justify-between">
-          <label for="cad-nome" class="text-sm font-medium text-fg">
-            Nome <span class="text-danger" aria-hidden="true">*</span>
-          </label>
-          <span class="tabular text-[0.75rem] text-faint">{{ nomeCount() }}/{{ nomeMax }}</span>
-        </div>
-        <input
-          id="cad-nome"
-          type="text"
-          [formField]="f.nome"
-          (input)="clearServerError('nome')"
-          autocomplete="off"
-          placeholder="Ex.: Ana Beatriz Souza"
-          class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-          [style.border-color]="nomeError() ? 'var(--color-danger)' : null"
-          [attr.aria-invalid]="nomeError() ? 'true' : null"
-          [attr.aria-describedby]="nomeError() ? 'cad-nome-error' : null"
-        />
-        @if (nomeError()) {
-          <p id="cad-nome-error" class="text-[0.8125rem] text-danger">{{ nomeError() }}</p>
-        }
-      </div>
-
-      <!-- Sexo -->
-      <fieldset class="flex flex-col gap-1.5">
-        <legend class="text-sm font-medium text-fg">
-          Sexo <span class="text-danger" aria-hidden="true">*</span>
-        </legend>
-        <div
-          class="grid grid-cols-2 gap-2"
-          role="radiogroup"
-          aria-label="Sexo"
-          [attr.aria-invalid]="sexoError() ? 'true' : null"
-          [attr.aria-describedby]="sexoError() ? 'cad-sexo-error' : null"
-        >
-          @for (opt of sexoOpcoes; track opt.value) {
-            <button
-              type="button"
-              role="radio"
-              [attr.aria-checked]="model().sexo === opt.value"
-              (click)="selectSexo(opt.value)"
-              class="flex h-11 items-center justify-center gap-2 rounded-control border px-3 text-sm font-medium transition-colors"
-              [style.border-color]="model().sexo === opt.value ? 'var(--color-accent)' : null"
-              [style.background-color]="model().sexo === opt.value ? 'var(--color-accent-soft)' : null"
-              [style.color]="model().sexo === opt.value ? 'var(--color-accent)' : 'var(--color-fg)'"
-            >
-              <span
-                class="grid size-4 place-items-center rounded-full border"
-                [style.border-color]="model().sexo === opt.value ? 'var(--color-accent)' : 'var(--color-border-strong)'"
-              >
-                @if (model().sexo === opt.value) {
-                  <span class="size-2 rounded-full" style="background-color: var(--color-accent)"></span>
-                }
-              </span>
-              {{ opt.label }}
-            </button>
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <!-- Nome -->
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <div class="flex items-baseline justify-between">
+            <label for="cad-nome" class="text-sm font-medium text-fg">
+              Nome <span class="text-danger" aria-hidden="true">*</span>
+            </label>
+            <span class="tabular text-[0.75rem] text-faint">{{ nomeCount() }}/{{ nomeMax }}</span>
+          </div>
+          <input
+            id="cad-nome"
+            type="text"
+            [formField]="f.nome"
+            (input)="clearServerError('nome')"
+            autocomplete="off"
+            placeholder="Ex.: Ana Beatriz Souza"
+            class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+            [style.border-color]="nomeError() ? 'var(--color-danger)' : null"
+            [attr.aria-invalid]="nomeError() ? 'true' : null"
+            [attr.aria-describedby]="nomeError() ? 'cad-nome-error' : null"
+          />
+          @if (nomeError()) {
+            <p id="cad-nome-error" class="text-[0.8125rem] text-danger">{{ nomeError() }}</p>
           }
         </div>
-        @if (sexoError()) {
-          <p id="cad-sexo-error" class="text-[0.8125rem] text-danger">{{ sexoError() }}</p>
-        }
-      </fieldset>
 
-      <!-- Função -->
-      <div class="flex flex-col gap-1.5">
-        <label for="cad-funcao" class="text-sm font-medium text-fg">
-          Função <span class="text-danger" aria-hidden="true">*</span>
-        </label>
-        <div class="relative">
-          <select
-            #funcaoSel
-            id="cad-funcao"
-            (change)="selectFuncao(funcaoSel.value)"
-            class="h-11 w-full appearance-none rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors focus:border-accent"
-            [style.border-color]="funcaoError() ? 'var(--color-danger)' : null"
-            [attr.aria-invalid]="funcaoError() ? 'true' : null"
-            [attr.aria-describedby]="funcaoError() ? 'cad-funcao-error' : null"
-          >
-            <option value="" disabled [selected]="model().funcaoId == null">Selecione a função…</option>
-            @for (op of funcoes(); track op.id) {
-              <option [value]="op.id" [selected]="op.id === model().funcaoId">{{ op.nome }}</option>
-            }
-          </select>
-          <svg viewBox="0 0 20 20" fill="none" class="pointer-events-none absolute right-3 top-1/2 size-4.5 -translate-y-1/2 text-faint" aria-hidden="true">
-            <path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
+        <!-- CPF -->
+        <div class="flex flex-col gap-1.5">
+          <label for="cad-cpf" class="text-sm font-medium text-fg">
+            CPF <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <input
+            #cpfInput
+            id="cad-cpf"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="14"
+            [value]="cpfDisplay()"
+            (input)="onCpfInput(cpfInput.value)"
+            placeholder="000.000.000-00"
+            class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+            [style.border-color]="cpfError() ? 'var(--color-danger)' : null"
+            [attr.aria-invalid]="cpfError() ? 'true' : null"
+            [attr.aria-describedby]="cpfError() ? 'cad-cpf-error' : null"
+          />
+          @if (cpfError()) {
+            <p id="cad-cpf-error" class="text-[0.8125rem] text-danger">{{ cpfError() }}</p>
+          }
         </div>
-        @if (funcaoError()) {
-          <p id="cad-funcao-error" class="text-[0.8125rem] text-danger">{{ funcaoError() }}</p>
-        }
+
+        <!-- E-mail -->
+        <div class="flex flex-col gap-1.5">
+          <label for="cad-email" class="text-sm font-medium text-fg">
+            E-mail <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="cad-email"
+            type="email"
+            [formField]="f.email"
+            (input)="clearServerError('email')"
+            autocomplete="off"
+            placeholder="Ex.: ana.souza@email.com"
+            class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+            [style.border-color]="emailError() ? 'var(--color-danger)' : null"
+            [attr.aria-invalid]="emailError() ? 'true' : null"
+            [attr.aria-describedby]="emailError() ? 'cad-email-error' : null"
+          />
+          @if (emailError()) {
+            <p id="cad-email-error" class="text-[0.8125rem] text-danger">{{ emailError() }}</p>
+          }
+        </div>
+
+        <!-- Sexo -->
+        <fieldset class="flex flex-col gap-1.5 sm:col-span-2">
+          <legend class="text-sm font-medium text-fg">
+            Sexo <span class="text-danger" aria-hidden="true">*</span>
+          </legend>
+          <div
+            class="grid grid-cols-2 gap-2"
+            role="radiogroup"
+            aria-label="Sexo"
+            [attr.aria-invalid]="sexoError() ? 'true' : null"
+            [attr.aria-describedby]="sexoError() ? 'cad-sexo-error' : null"
+          >
+            @for (opt of sexoOpcoes; track opt.value) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="model().sexo === opt.value"
+                (click)="selectSexo(opt.value)"
+                class="flex h-11 items-center justify-center gap-2 rounded-control border px-3 text-sm font-medium transition-colors"
+                [style.border-color]="model().sexo === opt.value ? 'var(--color-accent)' : null"
+                [style.background-color]="model().sexo === opt.value ? 'var(--color-accent-soft)' : null"
+                [style.color]="model().sexo === opt.value ? 'var(--color-accent)' : 'var(--color-fg)'"
+              >
+                <span
+                  class="grid size-4 place-items-center rounded-full border"
+                  [style.border-color]="model().sexo === opt.value ? 'var(--color-accent)' : 'var(--color-border-strong)'"
+                >
+                  @if (model().sexo === opt.value) {
+                    <span class="size-2 rounded-full" style="background-color: var(--color-accent)"></span>
+                  }
+                </span>
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+          @if (sexoError()) {
+            <p id="cad-sexo-error" class="text-[0.8125rem] text-danger">{{ sexoError() }}</p>
+          }
+        </fieldset>
+
+        <!-- Mão de obra (MDO) -->
+        <div class="flex flex-col gap-1.5">
+          <label for="cad-mdo" class="text-sm font-medium text-fg">
+            Mão de obra <span class="text-danger" aria-hidden="true">*</span>
+          </label>
+          <div class="relative">
+            <select
+              #mdoSel
+              id="cad-mdo"
+              (change)="selectMdo(mdoSel.value)"
+              class="h-11 w-full appearance-none rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors focus:border-accent"
+              [style.border-color]="mdoError() ? 'var(--color-danger)' : null"
+              [attr.aria-invalid]="mdoError() ? 'true' : null"
+              [attr.aria-describedby]="mdoError() ? 'cad-mdo-error' : null"
+            >
+              <option value="" disabled [selected]="model().mdo == null">Selecione…</option>
+              @for (opt of mdoOpcoes; track opt.value) {
+                <option [value]="opt.value" [selected]="opt.value === model().mdo">{{ opt.label }}</option>
+              }
+            </select>
+            <svg viewBox="0 0 20 20" fill="none" class="pointer-events-none absolute right-3 top-1/2 size-4.5 -translate-y-1/2 text-faint" aria-hidden="true">
+              <path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          @if (mdoError()) {
+            <p id="cad-mdo-error" class="text-[0.8125rem] text-danger">{{ mdoError() }}</p>
+          }
+        </div>
+
+        <!-- Função (busca no backend) -->
+        <app-busca-select
+          label="Função"
+          idBase="cad-funcao"
+          [obrigatorio]="true"
+          placeholder="Buscar função…"
+          [buscar]="buscarFuncao"
+          [inicial]="funcaoInicial()"
+          [erro]="funcaoError()"
+          (selecionadoChange)="onFuncao($event)"
+          (tocado)="f.funcaoId().markAsTouched()"
+        />
+
+        <!-- EPC (busca no backend) -->
+        <app-busca-select
+          label="EPC"
+          idBase="cad-epc"
+          [obrigatorio]="true"
+          placeholder="Buscar EPC…"
+          [buscar]="buscarEpc"
+          [inicial]="epcInicial()"
+          [erro]="epcError()"
+          (selecionadoChange)="onEpc($event)"
+          (tocado)="f.epcId().markAsTouched()"
+        />
+
+        <!-- Empresa (busca no backend) -->
+        <app-busca-select
+          label="Empresa"
+          idBase="cad-empresa"
+          [obrigatorio]="true"
+          placeholder="Buscar empresa…"
+          [buscar]="buscarEmpresa"
+          [inicial]="empresaInicial()"
+          [erro]="empresaError()"
+          (selecionadoChange)="onEmpresa($event)"
+          (tocado)="f.empresaId().markAsTouched()"
+        />
+
+        <!-- Gestão (busca no backend) -->
+        <app-busca-select
+          class="sm:col-span-2"
+          label="Gestão"
+          idBase="cad-gestao"
+          [obrigatorio]="true"
+          placeholder="Buscar gestão…"
+          [buscar]="buscarGestao"
+          [inicial]="gestaoInicial()"
+          [erro]="gestaoError()"
+          (selecionadoChange)="onGestao($event)"
+          (tocado)="f.gestaoId().markAsTouched()"
+        />
       </div>
 
       <!-- Ações -->

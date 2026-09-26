@@ -60,7 +60,7 @@ export class HospedagemEntrada {
   protected readonly dataError = computed(() => {
     const s = this.serverErrors()['dataEntrada'];
     if (s) return s;
-    return this.submetido() && !this.dataEntrada() ? 'Informe a data de entrada.' : null;
+    return this.submetido() && !this.dataEntrada() ? 'Informe a data e hora de entrada.' : null;
   });
   /** Erro de local (ex.: lotado) vem do backend no campo localId. */
   protected readonly localError = computed(() => this.serverErrors()['localId'] ?? null);
@@ -71,7 +71,7 @@ export class HospedagemEntrada {
         this.erroLocal.set('Local inválido.');
         return;
       }
-      this.dataEntrada.set(this.hoje());
+      this.dataEntrada.set(this.agora());
       this.carregarLocal(this.localId);
       this.carregarColaboradores();
     });
@@ -183,10 +183,10 @@ export class HospedagemEntrada {
     return body?.message ?? 'Ocorreu um erro inesperado ao falar com o servidor.';
   }
 
-  private hoje(): string {
+  private agora(): string {
     if (!this.isBrowser) return '';
     const d = new Date();
     const p = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 }

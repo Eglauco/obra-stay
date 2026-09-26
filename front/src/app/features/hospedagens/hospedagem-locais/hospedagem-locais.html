@@ -47,37 +47,51 @@
   } @else if (temItens()) {
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       @for (l of itens(); track l.id) {
-        <a
-          [routerLink]="['/hospedagens/local', l.id]"
-          class="group flex flex-col gap-4 rounded-card border bg-surface p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-pop"
+        <div
+          class="group flex flex-col rounded-card border bg-surface shadow-card transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-pop"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="truncate font-display text-base font-semibold text-fg">{{ l.nome }}</p>
-              <p class="mt-0.5 text-[0.8125rem] text-muted">{{ l.codigo }} · {{ l.cidade }}/{{ l.uf }}</p>
+          <a [routerLink]="['/hospedagens/local', l.id]" class="flex flex-1 flex-col gap-4 p-5 pb-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate font-display text-base font-semibold text-fg">{{ l.nome }}</p>
+                <p class="mt-0.5 text-[0.8125rem] text-muted">{{ l.codigo }} · {{ l.cidade }}/{{ l.uf }}</p>
+              </div>
+              @if (lotado(l)) {
+                <span class="shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: var(--color-danger-soft); color: var(--color-danger)">Lotado</span>
+              } @else {
+                <span class="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-semibold text-muted">{{ l.capacidade - ocupadosDe(l) }} vagas</span>
+              }
             </div>
-            @if (lotado(l)) {
-              <span class="shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: var(--color-danger-soft); color: var(--color-danger)">Lotado</span>
-            } @else {
-              <span class="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-semibold text-muted">{{ l.capacidade - ocupadosDe(l) }} vagas</span>
-            }
-          </div>
 
-          <div>
-            <div class="flex items-baseline justify-between text-[0.8125rem]">
-              <span class="text-muted">Ocupação</span>
-              <span class="tabular text-fg"><strong>{{ ocupadosDe(l) }}</strong>/{{ l.capacidade }}</span>
+            <div>
+              <div class="flex items-baseline justify-between text-[0.8125rem]">
+                <span class="text-muted">Ocupação</span>
+                <span class="tabular text-fg"><strong>{{ ocupadosDe(l) }}</strong>/{{ l.capacidade }}</span>
+              </div>
+              <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                <div class="h-full rounded-full transition-all" [style.width.%]="percentual(l)" [style.background-color]="lotado(l) ? 'var(--color-danger)' : 'var(--color-accent)'"></div>
+              </div>
             </div>
-            <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-2">
-              <div class="h-full rounded-full transition-all" [style.width.%]="percentual(l)" [style.background-color]="lotado(l) ? 'var(--color-danger)' : 'var(--color-accent)'"></div>
-            </div>
-          </div>
+          </a>
 
-          <span class="mt-auto inline-flex items-center gap-1 text-[0.8125rem] font-medium text-accent">
-            Gerenciar
-            <svg viewBox="0 0 20 20" fill="none" class="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          </span>
-        </a>
+          <div class="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
+            <button
+              type="button"
+              (click)="abrirQr(l)"
+              title="Gerar QR de autoatendimento"
+              class="inline-flex items-center gap-1.5 rounded-control text-[0.8125rem] font-medium text-muted transition-colors hover:text-accent"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-4.5" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 14v7M17 21h4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              QR de autoatendimento
+            </button>
+            <a [routerLink]="['/hospedagens/local', l.id]" class="inline-flex items-center gap-1 text-[0.8125rem] font-medium text-accent">
+              Gerenciar
+              <svg viewBox="0 0 20 20" fill="none" class="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+          </div>
+        </div>
       }
     </div>
   }
@@ -129,3 +143,7 @@
     </div>
   }
 </section>
+
+@if (qrLocal(); as l) {
+  <app-qr-entrada-dialog [local]="l" (fechar)="fecharQr()" />
+}

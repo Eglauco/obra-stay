@@ -2,11 +2,13 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   // Rotas com parâmetro: renderizadas sob demanda no servidor (sem prerender).
+  { path: 'auto-atendimento/:localId', renderMode: RenderMode.Server },
   { path: 'colaboradores/:id/editar', renderMode: RenderMode.Server },
   { path: 'funcoes/:id/editar', renderMode: RenderMode.Server },
   { path: 'epcs/:id/editar', renderMode: RenderMode.Server },
   { path: 'empresas/:id/editar', renderMode: RenderMode.Server },
   { path: 'gestoes/:id/editar', renderMode: RenderMode.Server },
+  { path: 'tipos-solicitacao/:id/editar', renderMode: RenderMode.Server },
   { path: 'locais/:id/editar', renderMode: RenderMode.Server },
   { path: 'locadoras/:id/editar', renderMode: RenderMode.Server },
   { path: 'hospedagens/local/:id', renderMode: RenderMode.Server },
@@ -17,6 +19,7 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'gastos/local/:id', renderMode: RenderMode.Server },
   { path: 'gastos/local/:id/novo', renderMode: RenderMode.Server },
   { path: 'gastos/editar/:id', renderMode: RenderMode.Server },
+  { path: 'solicitacoes/:id/editar', renderMode: RenderMode.Server },
   // Demais rotas (estáticas) continuam pré-renderizadas.
   { path: '**', renderMode: RenderMode.Prerender },
 ];

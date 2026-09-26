@@ -5,25 +5,28 @@ export interface RefItem {
 
 export type HospedagemStatus = 'ATIVA' | 'ENCERRADA';
 
+export type OrigemHospedagem = 'ADMINISTRACAO' | 'AUTOATENDIMENTO';
+
 export interface Hospedagem {
   id: number;
   colaborador: RefItem;
   local: RefItem;
-  dataEntrada: string; // ISO date "YYYY-MM-DD"
+  dataEntrada: string; // ISO datetime "YYYY-MM-DDTHH:mm:ss"
   dataSaida: string | null;
   status: HospedagemStatus;
   observacao: string | null;
+  origem: OrigemHospedagem;
 }
 
 export interface HospedagemEntradaRequest {
   colaboradorId: number | null;
   localId: number | null;
-  dataEntrada: string | null;
+  dataEntrada: string | null; // ISO datetime-local "YYYY-MM-DDTHH:mm"
   observacao: string | null;
 }
 
 export interface HospedagemSaidaRequest {
-  dataSaida: string | null;
+  dataSaida: string | null; // ISO datetime-local "YYYY-MM-DDTHH:mm"
 }
 
 export type HospedagemSortField = 'id' | 'dataEntrada' | 'dataSaida';

@@ -9,14 +9,16 @@ import {
 import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormField, form, maxLength, required } from '@angular/forms/signals';
+import { FormField, form, maxLength, required, validate } from '@angular/forms/signals';
 import { LocadoraService } from '../../../core/services/locadora.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ApiError } from '../../../core/models/colaborador.model';
 import { LocadoraRequest } from '../../../core/models/locadora.model';
+import { apenasDigitosTelefone, formatarTelefone, telefoneValido } from '../../../core/util/format';
 
 interface CadastroModel {
   nome: string;
+  telefone: string;
 }
 
 const NOME_MAX = 120;
@@ -46,20 +48,34 @@ export class LocadoraCadastro {
   protected readonly erroCarregar = signal<string | null>(null);
   protected readonly serverErrors = signal<Record<string, string>>({});
 
-  protected readonly model = signal<CadastroModel>({ nome: '' });
+  protected readonly model = signal<CadastroModel>({ nome: '', telefone: '' });
   protected readonly f = form(this.model, (p) => {
     required(p.nome, { message: 'O nome é obrigatório.' });
     maxLength(p.nome, NOME_MAX, {
       message: `Use no máximo ${NOME_MAX} caracteres.`,
     });
+    required(p.telefone, { message: 'O telefone de contato é obrigatório.' });
+    validate(p.telefone, ({ value }) => {
+      const v = value();
+      if (!v) return undefined;
+      return telefoneValido(v) ? undefined : { kind: 'telefone', message: 'Telefone inválido (use DDD + número).' };
+    });
   });
 
   protected readonly nomeCount = computed(() => this.model().nome.length);
+  protected readonly telefoneDisplay = computed(() => formatarTelefone(this.model().telefone));
 
   protected readonly nomeError = computed(() => {
     const server = this.serverErrors()['nome'];
     if (server) return server;
     const st = this.f.nome();
+    return st.touched() ? (st.errors()[0]?.message ?? null) : null;
+  });
+
+  protected readonly telefoneError = computed(() => {
+    const server = this.serverErrors()['telefone'];
+    if (server) return server;
+    const st = this.f.telefone();
     return st.touched() ? (st.errors()[0]?.message ?? null) : null;
   });
 
@@ -83,7 +99,10 @@ export class LocadoraCadastro {
     this.erroCarregar.set(null);
     this.service.obter(id).subscribe({
       next: (locadora) => {
-        this.model.set({ nome: locadora.nome });
+        this.model.set({
+          nome: locadora.nome,
+          telefone: apenasDigitosTelefone(locadora.telefone),
+        });
         this.carregando.set(false);
         queueMicrotask(() => document.getElementById('loc-nome')?.focus());
       },
@@ -94,6 +113,13 @@ export class LocadoraCadastro {
         );
       },
     });
+  }
+
+  protected onTelefoneInput(raw: string): void {
+    const dig = apenasDigitosTelefone(raw);
+    this.model.update((m) => ({ ...m, telefone: dig }));
+    this.f.telefone().markAsTouched();
+    this.clearServerError('telefone');
   }
 
   protected clearServerError(field: string): void {
@@ -108,11 +134,15 @@ export class LocadoraCadastro {
 
   protected submit(): void {
     this.f.nome().markAsTouched();
+    this.f.telefone().markAsTouched();
     this.serverErrors.set({});
 
     if (!this.f().valid() || this.saving()) return;
 
-    const req: LocadoraRequest = { nome: this.model().nome.trim() };
+    const req: LocadoraRequest = {
+      nome: this.model().nome.trim(),
+      telefone: this.model().telefone,
+    };
     const id = this.id();
     this.saving.set(true);
 

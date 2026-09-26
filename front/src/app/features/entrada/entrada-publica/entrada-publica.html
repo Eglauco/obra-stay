@@ -1,0 +1,311 @@
+<div class="flex min-h-dvh flex-col bg-canvas px-4 py-8">
+  <div class="mx-auto flex w-full max-w-md flex-1 flex-col gap-5">
+    <!-- Marca -->
+    <div class="flex items-center justify-center gap-2.5 pt-2">
+      <span class="grid size-9 place-items-center rounded-xl bg-accent font-display text-sm font-bold text-accent-fg" aria-hidden="true">OS</span>
+      <p class="font-display text-lg font-bold text-fg">Obra<span class="text-accent">Stay</span></p>
+    </div>
+
+    @if (carregandoLocal()) {
+      <div class="rounded-card border bg-surface p-10 text-center shadow-card">
+        <svg viewBox="0 0 24 24" fill="none" class="mx-auto size-8 animate-spin text-accent" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        </svg>
+        <p class="mt-3 text-sm text-muted">Carregando local…</p>
+      </div>
+    } @else if (erroLocal()) {
+      <div class="rounded-card border bg-surface p-10 text-center shadow-card">
+        <span class="mx-auto grid size-12 place-items-center rounded-full" style="background-color: var(--color-danger-soft); color: var(--color-danger)" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" class="size-6"><path d="M12 9v4m0 4h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </span>
+        <p class="mt-3 text-sm text-muted">{{ erroLocal() }}</p>
+      </div>
+    } @else if (local(); as l) {
+      <!-- Card do local (confirma endereço) -->
+      @if (etapa() !== 'ok') {
+        <div class="rounded-card border bg-surface p-5 shadow-card">
+          <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">Você está em</p>
+          <h1 class="mt-1 font-display text-xl font-semibold text-fg">{{ l.nome }}</h1>
+          <p class="mt-0.5 text-[0.8125rem] text-muted">Código {{ l.codigo }}</p>
+          <p class="mt-2 text-sm text-muted">{{ endereco() }}</p>
+          <span
+            class="mt-3 inline-flex items-center rounded-full px-2.5 py-1 text-[0.75rem] font-semibold"
+            [style.color]="l.temVaga ? 'var(--color-success)' : 'var(--color-danger)'"
+            [style.background-color]="l.temVaga ? 'var(--color-success-soft)' : 'var(--color-danger-soft)'"
+          >
+            {{ l.temVaga ? (vagasRestantes() === 1 ? '1 vaga disponível' : vagasRestantes() + ' vagas disponíveis') : 'Sem vagas' }}
+          </span>
+        </div>
+      }
+
+      @if (etapa() === 'cpf') {
+        <!-- Etapa 1: CPF -->
+        <div class="rounded-card border bg-surface p-5 shadow-card">
+          <label for="cpf" class="text-sm font-medium text-fg">Digite seu CPF para continuar</label>
+          <input
+            #cpfInput
+            id="cpf"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="14"
+            [value]="cpfDisplay()"
+            (input)="onCpfInput(cpfInput.value)"
+            (keydown.enter)="continuar()"
+            placeholder="000.000.000-00"
+            class="tabular mt-2 h-14 w-full rounded-control border bg-canvas px-4 text-center text-lg tracking-wider text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+          />
+          @if (erro()) {
+            <p class="mt-2 text-center text-sm text-danger">{{ erro() }}</p>
+          }
+          <button
+            type="button"
+            (click)="continuar()"
+            [disabled]="!cpfCompleto() || processando()"
+            class="mt-4 inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent text-base font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            @if (processando()) {
+              <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
+            }
+            Continuar
+          </button>
+        </div>
+      } @else if (etapa() === 'menu') {
+        <!-- Etapa 2: Menu do colaborador -->
+        <div class="rounded-card border bg-surface p-6 shadow-card">
+          <p class="text-sm text-muted">Olá,</p>
+          <h2 class="font-display text-2xl font-semibold text-fg">{{ nome() }}</h2>
+          <p class="mt-1 text-sm text-muted">O que você deseja fazer?</p>
+
+          @if (erro()) {
+            <p class="mt-3 text-sm text-danger">{{ erro() }}</p>
+          }
+
+          <div class="mt-4 flex flex-col gap-3">
+            @if (podeEntrada()) {
+              <button type="button" (click)="darEntradaSaida()" [disabled]="processando()"
+                class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent text-base font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:opacity-60">
+                @if (processando()) {
+                  <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
+                }
+                Dar entrada
+              </button>
+            } @else if (podeSaida()) {
+              <button type="button" (click)="darEntradaSaida()" [disabled]="processando()"
+                class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent text-base font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:opacity-60">
+                @if (processando()) {
+                  <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
+                }
+                Dar saída
+              </button>
+            } @else if (entradaSemVaga()) {
+              <div class="rounded-control border px-4 py-3 text-center text-sm text-danger" style="background-color: var(--color-danger-soft)">
+                Local sem vagas para entrada no momento.
+              </div>
+            } @else if (bloqueado()) {
+              <div class="rounded-control border px-4 py-3 text-center text-sm text-muted" style="background-color: var(--color-warning-soft); color: var(--color-warning)">
+                {{ consulta()?.mensagem }}
+              </div>
+            }
+
+            <button type="button" (click)="irSolicitacao()"
+              class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-control border border-border-strong text-base font-semibold text-fg transition-colors hover:bg-surface-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-5" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V16H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke-linejoin="round" /><path d="M8 9h8M8 12h5" stroke-linecap="round" /></svg>
+              Abrir solicitação
+            </button>
+
+            <button type="button" (click)="irAcompanhar()"
+              class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-control border border-border-strong text-base font-semibold text-fg transition-colors hover:bg-surface-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-5" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Acompanhar solicitação
+            </button>
+          </div>
+
+          <button type="button" (click)="trocarCpf()"
+            class="mt-4 inline-flex h-11 w-full items-center justify-center rounded-control text-sm font-medium text-muted transition-colors hover:text-fg">
+            Não é você? Trocar CPF
+          </button>
+        </div>
+      } @else if (etapa() === 'solicitacao') {
+        <!-- Etapa 2b: Abrir solicitação -->
+        <div class="rounded-card border bg-surface p-6 shadow-card">
+          <h2 class="font-display text-xl font-semibold text-fg">Abrir solicitação</h2>
+          <p class="mt-0.5 text-sm text-muted">{{ nome() }}</p>
+
+          <p class="mt-4 text-sm font-medium text-fg">Tipo de solicitação</p>
+          @if (carregandoTipos()) {
+            <p class="mt-2 text-sm text-muted">Carregando tipos…</p>
+          } @else {
+            <div class="mt-2 flex flex-col gap-2">
+              @for (t of tipos(); track t.id) {
+                <button
+                  type="button"
+                  (click)="selecionarTipo(t.id)"
+                  class="inline-flex h-12 w-full items-center justify-between rounded-control border px-4 text-sm font-medium transition-colors"
+                  [style.border-color]="solTipoId() === t.id ? 'var(--color-accent)' : null"
+                  [style.background-color]="solTipoId() === t.id ? 'var(--color-accent-soft)' : null"
+                  [style.color]="solTipoId() === t.id ? 'var(--color-accent)' : 'var(--color-fg)'"
+                >
+                  {{ t.nome }}
+                  @if (solTipoId() === t.id) {
+                    <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  }
+                </button>
+              }
+            </div>
+          }
+
+          <div class="mt-4">
+            <div class="flex items-baseline justify-between">
+              <label for="sol-obs" class="text-sm font-medium text-fg">Descrição</label>
+              <span class="tabular text-[0.75rem] text-faint">{{ obsCount() }}/{{ obsMax }}</span>
+            </div>
+            <textarea
+              #obsInput
+              id="sol-obs"
+              rows="4"
+              maxlength="1000"
+              [value]="solObs()"
+              (input)="onObsInput(obsInput.value)"
+              placeholder="Descreva o que você precisa…"
+              class="mt-1.5 w-full resize-y rounded-control border bg-canvas px-3.5 py-2.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+            ></textarea>
+          </div>
+
+          @if (solErro()) {
+            <p class="mt-2 text-sm text-danger">{{ solErro() }}</p>
+          }
+
+          <button
+            type="button"
+            (click)="enviarSolicitacao()"
+            [disabled]="!solValido() || enviandoSol()"
+            class="mt-4 inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent text-base font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            @if (enviandoSol()) {
+              <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
+            }
+            Abrir solicitação
+          </button>
+          <button type="button" (click)="voltarMenu()" [disabled]="enviandoSol()"
+            class="mt-3 inline-flex h-12 w-full items-center justify-center rounded-control border border-border-strong text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:opacity-50">
+            Voltar
+          </button>
+        </div>
+      } @else if (etapa() === 'acompanhar') {
+        <!-- Etapa 2c: Acompanhar solicitações -->
+        <div class="rounded-card border bg-surface p-6 shadow-card">
+          <h2 class="font-display text-xl font-semibold text-fg">Minhas solicitações</h2>
+          <p class="mt-0.5 text-sm text-muted">{{ nome() }}</p>
+
+          @if (carregandoAcomp()) {
+            <div class="mt-5 flex items-center justify-center gap-2 text-sm text-muted">
+              <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin text-accent" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
+              Carregando…
+            </div>
+          } @else if (acompErro()) {
+            <p class="mt-5 text-sm text-danger">{{ acompErro() }}</p>
+          } @else if (solicitacoes().length === 0) {
+            <div class="mt-5 rounded-control bg-surface-2 p-5 text-center text-sm text-muted">
+              Você ainda não tem solicitações.
+            </div>
+          } @else {
+            <ul class="mt-4 flex flex-col gap-3">
+              @for (s of solicitacoes(); track s.id) {
+                <li class="overflow-hidden rounded-card border">
+                  <button
+                    type="button"
+                    (click)="toggleHistorico(s)"
+                    [attr.aria-expanded]="expandidoId() === s.id"
+                    class="flex w-full flex-col gap-2 p-4 text-left transition-colors hover:bg-surface-2"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="font-medium text-fg">{{ s.tipoSolicitacao.nome }}</p>
+                        <p class="mt-0.5 text-[0.8125rem] text-muted">{{ s.local.nome }}</p>
+                      </div>
+                      <span
+                        class="shrink-0 rounded-full px-2.5 py-1 text-[0.75rem] font-semibold"
+                        [style.color]="badgeColor(s.status)"
+                        [style.background-color]="badgeBg(s.status)"
+                      >
+                        {{ statusLabel(s.status) }}
+                      </span>
+                    </div>
+                    <p class="line-clamp-2 text-[0.8125rem] text-muted">{{ s.observacao }}</p>
+                    <div class="flex items-center justify-between">
+                      <span class="text-[0.75rem] text-faint">Aberta em {{ fmtDataHora(s.dataHoraAbertura) }}</span>
+                      <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium text-accent">
+                        {{ expandidoId() === s.id ? 'Ocultar histórico' : 'Ver histórico' }}
+                        <svg viewBox="0 0 20 20" fill="none" class="size-4 transition-transform" [class.rotate-180]="expandidoId() === s.id" aria-hidden="true"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                    </div>
+                  </button>
+                  @if (expandidoId() === s.id) {
+                    <div class="border-t bg-surface-2/40 p-4">
+                      @if (carregandoHistId() === s.id) {
+                        <p class="text-sm text-muted">Carregando histórico…</p>
+                      } @else {
+                        <app-historico-timeline [itens]="historicoDe(s.id)" />
+                      }
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          <button
+            type="button"
+            (click)="voltarMenu()"
+            class="mt-5 inline-flex h-12 w-full items-center justify-center rounded-control border border-border-strong text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+          >
+            Voltar
+          </button>
+        </div>
+      } @else {
+        <!-- Etapa 3: Resultado -->
+        <div class="rounded-card border bg-surface p-8 text-center shadow-card">
+          @if (resultado(); as r) {
+            <span
+              class="mx-auto grid size-16 place-items-center rounded-full"
+              [style.color]="r.acao === 'ENTRADA' ? 'var(--color-success)' : 'var(--color-accent)'"
+              [style.background-color]="r.acao === 'ENTRADA' ? 'var(--color-success-soft)' : 'var(--color-accent-soft)'"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24" fill="none" class="size-8"><path d="m5 13 4 4 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+            <h2 class="mt-4 font-display text-xl font-semibold text-fg">
+              {{ r.acao === 'ENTRADA' ? 'Entrada registrada!' : 'Saída registrada!' }}
+            </h2>
+            <p class="mt-2 text-sm text-muted">{{ r.mensagem }}</p>
+            <div class="mt-4 rounded-card bg-surface-2 p-3 text-sm">
+              <p class="font-medium text-fg">{{ r.localNome }}</p>
+              <p class="text-muted">{{ r.acao === 'ENTRADA' ? 'Entrada' : 'Saída' }} em {{ formatarData(r.data) }}</p>
+            </div>
+          } @else if (solSucesso(); as s) {
+            <span class="mx-auto grid size-16 place-items-center rounded-full" style="color: var(--color-accent); background-color: var(--color-accent-soft)" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" class="size-8"><path d="m5 13 4 4 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+            <h2 class="mt-4 font-display text-xl font-semibold text-fg">Solicitação aberta!</h2>
+            <p class="mt-2 text-sm text-muted">Sua solicitação foi registrada e está <strong class="text-fg">aguardando análise</strong>.</p>
+            <div class="mt-4 rounded-card bg-surface-2 p-3 text-sm">
+              <p class="font-medium text-fg">{{ s.tipoNome }}</p>
+              <p class="text-muted">{{ nome() }}</p>
+            </div>
+          }
+          <button
+            type="button"
+            (click)="reiniciar()"
+            class="mt-6 inline-flex h-12 w-full items-center justify-center rounded-control border border-border-strong text-sm font-medium text-fg transition-colors hover:bg-surface-2"
+          >
+            Concluir
+          </button>
+        </div>
+      }
+    }
+
+    <p class="mt-auto pb-2 pt-4 text-center text-[0.75rem] text-faint">ObraStay · Autoatendimento</p>
+  </div>
+</div>

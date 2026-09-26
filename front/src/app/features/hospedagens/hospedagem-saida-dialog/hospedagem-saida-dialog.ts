@@ -3,6 +3,7 @@ import {
   ElementRef,
   PLATFORM_ID,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -43,13 +44,13 @@ import { isPlatformBrowser } from '@angular/common';
           </p>
 
           <div class="flex flex-col gap-1.5">
-            <label for="saida-data" class="text-sm font-medium text-fg">Data de saída <span class="text-danger" aria-hidden="true">*</span></label>
+            <label for="saida-data" class="text-sm font-medium text-fg">Data e hora de saída <span class="text-danger" aria-hidden="true">*</span></label>
             <input
               #dataInput
               id="saida-data"
-              type="date"
+              type="datetime-local"
               [value]="dataSaida()"
-              [min]="dataEntradaMin()"
+              [min]="minLocal()"
               (input)="onData(dataInput.value)"
               class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors focus:border-accent"
               [style.border-color]="erro() ? 'var(--color-danger)' : null"
@@ -105,10 +106,12 @@ export class HospedagemSaidaDialog {
 
   protected readonly titleId = 'saida-title';
   protected readonly dataSaida = signal('');
+  /** Min do input datetime-local (a partir da entrada), no formato "YYYY-MM-DDTHH:mm". */
+  protected readonly minLocal = computed(() => (this.dataEntradaMin() ?? '').slice(0, 16));
 
   constructor() {
     afterNextRender(() => {
-      this.dataSaida.set(this.hoje());
+      this.dataSaida.set(this.agora());
       this.confirmBtn().nativeElement.focus();
     });
     effect((onCleanup) => {
@@ -136,11 +139,11 @@ export class HospedagemSaidaDialog {
     if (e.target === e.currentTarget) this.onCancel();
   }
 
-  private hoje(): string {
+  private agora(): string {
     if (!this.isBrowser) return '';
     const d = new Date();
     const p = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 
   private trap(e: KeyboardEvent, root: HTMLElement): void {

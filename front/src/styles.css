@@ -31,6 +31,8 @@
   --color-danger-hover: #be123c;
   --color-danger-soft: #fff1f2;
   --color-danger-fg: #ffffff;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
 
   /* Chips de sexo */
   --color-chip-masc-fg: #4338ca;
@@ -71,6 +73,8 @@
   --color-danger-hover: #f43f5e;
   --color-danger-soft: rgba(244, 63, 94, 0.14);
   --color-danger-fg: #0b1120;
+  --color-warning: #fbbf24;
+  --color-warning-soft: rgba(245, 158, 11, 0.16);
 
   --color-chip-masc-fg: #a5b4fc;
   --color-chip-masc-bg: rgba(99, 102, 241, 0.16);
@@ -107,6 +111,8 @@
   --color-danger-hover: var(--color-danger-hover);
   --color-danger-soft: var(--color-danger-soft);
   --color-danger-fg: var(--color-danger-fg);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
 
   --color-chip-masc-fg: var(--color-chip-masc-fg);
   --color-chip-masc-bg: var(--color-chip-masc-bg);

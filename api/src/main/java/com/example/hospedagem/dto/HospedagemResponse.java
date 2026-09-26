@@ -1,18 +1,20 @@
 package com.example.hospedagem.dto;
 
-import java.time.LocalDate;
+import com.example.hospedagem.domain.OrigemHospedagem;
+import java.time.LocalDateTime;
 
 /**
- * Representação de saída de uma hospedagem, com colaborador e local aninhados ({id, nome})
- * e o status derivado ("ATIVA" quando não há data de saída, "ENCERRADA" caso contrário).
+ * Representação de saída de uma hospedagem, com colaborador e local aninhados ({id, nome}),
+ * data/hora de entrada e saída, o status derivado ("ATIVA"/"ENCERRADA") e a origem do registro.
  */
 public record HospedagemResponse(
         Long id,
         ResumoRef colaborador,
         ResumoRef local,
-        LocalDate dataEntrada,
-        LocalDate dataSaida,
+        LocalDateTime dataEntrada,
+        LocalDateTime dataSaida,
         String status,
-        String observacao
+        String observacao,
+        OrigemHospedagem origem
 ) {
 }

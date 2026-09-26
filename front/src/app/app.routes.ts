@@ -3,6 +3,12 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   { path: '', redirectTo: 'painel', pathMatch: 'full' },
   {
+    path: 'auto-atendimento/:localId',
+    title: 'Autoatendimento · ObraStay',
+    loadComponent: () =>
+      import('./features/entrada/entrada-publica/entrada-publica').then((m) => m.EntradaPublica),
+  },
+  {
     path: 'painel',
     title: 'Painel · ObraStay',
     loadComponent: () => import('./features/painel/painel').then((m) => m.Painel),
@@ -170,6 +176,30 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'tipos-solicitacao',
+    title: 'Tipos de Solicitação · ObraStay',
+    loadComponent: () =>
+      import(
+        './features/tipos-solicitacao/tipo-solicitacao-pesquisa/tipo-solicitacao-pesquisa'
+      ).then((m) => m.TipoSolicitacaoPesquisa),
+  },
+  {
+    path: 'tipos-solicitacao/novo',
+    title: 'Novo tipo de solicitação · ObraStay',
+    loadComponent: () =>
+      import(
+        './features/tipos-solicitacao/tipo-solicitacao-cadastro/tipo-solicitacao-cadastro'
+      ).then((m) => m.TipoSolicitacaoCadastro),
+  },
+  {
+    path: 'tipos-solicitacao/:id/editar',
+    title: 'Editar tipo de solicitação · ObraStay',
+    loadComponent: () =>
+      import(
+        './features/tipos-solicitacao/tipo-solicitacao-cadastro/tipo-solicitacao-cadastro'
+      ).then((m) => m.TipoSolicitacaoCadastro),
+  },
+  {
     path: 'hospedagens',
     title: 'Hospedagens · ObraStay',
     loadComponent: () =>
@@ -250,6 +280,30 @@ export const routes: Routes = [
     data: { modo: 'editar' },
     loadComponent: () =>
       import('./features/gastos/gasto-cadastro/gasto-cadastro').then((m) => m.GastoCadastro),
+  },
+  {
+    path: 'solicitacoes',
+    title: 'Solicitações · ObraStay',
+    loadComponent: () =>
+      import('./features/solicitacoes/solicitacao-pesquisa/solicitacao-pesquisa').then(
+        (m) => m.SolicitacaoPesquisa,
+      ),
+  },
+  {
+    path: 'solicitacoes/nova',
+    title: 'Nova solicitação · ObraStay',
+    loadComponent: () =>
+      import('./features/solicitacoes/solicitacao-cadastro/solicitacao-cadastro').then(
+        (m) => m.SolicitacaoCadastro,
+      ),
+  },
+  {
+    path: 'solicitacoes/:id/editar',
+    title: 'Editar solicitação · ObraStay',
+    loadComponent: () =>
+      import('./features/solicitacoes/solicitacao-cadastro/solicitacao-cadastro').then(
+        (m) => m.SolicitacaoCadastro,
+      ),
   },
   { path: '**', redirectTo: 'painel' },
 ];

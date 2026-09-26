@@ -5,6 +5,7 @@ package com.example.hospedagem.dto;
  */
 public record LocadoraResponse(
         Long id,
-        String nome
+        String nome,
+        String telefone
 ) {
 }

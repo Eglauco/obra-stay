@@ -1,10 +1,12 @@
 export interface Locadora {
   id: number;
   nome: string;
+  telefone: string;
 }
 
 export interface LocadoraRequest {
   nome: string;
+  telefone: string;
 }
 
 export type LocadoraSortField = 'id' | 'nome';

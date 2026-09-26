@@ -1,9 +1,14 @@
 package com.example.hospedagem.controller;
 
+import com.example.hospedagem.dto.ConsultaEntradaResponse;
+import com.example.hospedagem.dto.EntradaPublicaRequest;
+import com.example.hospedagem.dto.EntradaPublicaResultado;
 import com.example.hospedagem.dto.HospedagemEntradaRequest;
 import com.example.hospedagem.dto.HospedagemFiltro;
 import com.example.hospedagem.dto.HospedagemResponse;
 import com.example.hospedagem.dto.HospedagemSaidaRequest;
+import com.example.hospedagem.dto.LocaisColaboradorResponse;
+import com.example.hospedagem.dto.LocalEntradaResponse;
 import com.example.hospedagem.dto.OcupacaoResponse;
 import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.service.HospedagemService;
@@ -64,6 +69,35 @@ public class HospedagemController {
     @GetMapping("/ocupacao")
     public List<OcupacaoResponse> ocupacao() {
         return service.ocupacao();
+    }
+
+    /**
+     * Locais em que o colaborador está/esteve hospedado (para restringir/sugerir o local
+     * ao abrir uma solicitação). Declarado antes de "/{id}".
+     */
+    @GetMapping("/locais-colaborador/{colaboradorId}")
+    public LocaisColaboradorResponse locaisDoColaborador(@PathVariable Long colaboradorId) {
+        return service.locaisDoColaborador(colaboradorId);
+    }
+
+    // ----- Auto check-in público (tela por QR Code) -----
+
+    /** Dados do local + vagas para a tela pública de auto check-in. */
+    @GetMapping("/local-entrada/{localId}")
+    public LocalEntradaResponse infoEntrada(@PathVariable Long localId) {
+        return service.infoEntrada(localId);
+    }
+
+    /** Consulta pelo CPF a ação disponível (entrada/saída/bloqueado) no local. */
+    @PostMapping("/entrada-publica/consulta")
+    public ConsultaEntradaResponse consultarEntrada(@Valid @RequestBody EntradaPublicaRequest request) {
+        return service.consultarEntrada(request);
+    }
+
+    /** Efetiva o auto check-in (entrada ou saída) pelo CPF. */
+    @PostMapping("/entrada-publica/confirmar")
+    public EntradaPublicaResultado confirmarEntrada(@Valid @RequestBody EntradaPublicaRequest request) {
+        return service.confirmarEntrada(request);
     }
 
     /**

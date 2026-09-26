@@ -6,6 +6,8 @@ import {
   Gasto,
   GastoFiltro,
   GastoRequest,
+  RateioGasto,
+  RelatorioGastos,
   ResumoGasto,
   TotalGastoLocal,
 } from '../models/gasto.model';
@@ -39,6 +41,14 @@ export class GastoService {
     return this.http.get<TotalGastoLocal[]>(`${this.resource}/totais`);
   }
 
+  /** Relatório completo do local no período (itens com rateio + totais por EPC). */
+  relatorio(localId: number, dataDe?: string | null, dataAte?: string | null): Observable<RelatorioGastos> {
+    let params = new HttpParams().set('localId', String(localId));
+    if (dataDe) params = params.set('dataDe', dataDe);
+    if (dataAte) params = params.set('dataAte', dataAte);
+    return this.http.get<RelatorioGastos>(`${this.resource}/relatorio`, { params });
+  }
+
   /** Total geral e total do período de um local. */
   resumo(localId: number, dataDe?: string | null, dataAte?: string | null): Observable<ResumoGasto> {
     let params = new HttpParams().set('localId', String(localId));
@@ -49,6 +59,11 @@ export class GastoService {
 
   obter(id: number): Observable<Gasto> {
     return this.http.get<Gasto>(`${this.resource}/${id}`);
+  }
+
+  /** Rateio do gasto por EPC (lista de divisão do custo). */
+  rateio(id: number): Observable<RateioGasto[]> {
+    return this.http.get<RateioGasto[]>(`${this.resource}/${id}/rateio`);
   }
 
   criar(req: GastoRequest): Observable<Gasto> {

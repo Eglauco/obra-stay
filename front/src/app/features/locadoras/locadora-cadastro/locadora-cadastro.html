@@ -72,6 +72,31 @@
         }
       </div>
 
+      <!-- Telefone de contato -->
+      <div class="flex flex-col gap-1.5">
+        <label for="loc-telefone" class="text-sm font-medium text-fg">
+          Telefone de contato <span class="text-danger" aria-hidden="true">*</span>
+        </label>
+        <input
+          #telInput
+          id="loc-telefone"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="off"
+          maxlength="16"
+          [value]="telefoneDisplay()"
+          (input)="onTelefoneInput(telInput.value)"
+          placeholder="(00) 00000-0000"
+          class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+          [style.border-color]="telefoneError() ? 'var(--color-danger)' : null"
+          [attr.aria-invalid]="telefoneError() ? 'true' : null"
+          [attr.aria-describedby]="telefoneError() ? 'loc-telefone-error' : null"
+        />
+        @if (telefoneError()) {
+          <p id="loc-telefone-error" class="text-[0.8125rem] text-danger">{{ telefoneError() }}</p>
+        }
+      </div>
+
       <!-- Ações -->
       <div class="mt-1 flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
         <button

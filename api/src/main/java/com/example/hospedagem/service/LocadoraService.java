@@ -67,6 +67,7 @@ public class LocadoraService {
     public LocadoraResponse criar(LocadoraRequest request) {
         Locadora locadora = Locadora.builder()
                 .nome(request.nome().trim())
+                .telefone(normalizarTelefone(request.telefone()))
                 .build();
         return toResponse(repository.save(locadora));
     }
@@ -75,6 +76,7 @@ public class LocadoraService {
     public LocadoraResponse atualizar(Long id, LocadoraRequest request) {
         Locadora locadora = buscarEntidade(id);
         locadora.setNome(request.nome().trim());
+        locadora.setTelefone(normalizarTelefone(request.telefone()));
         return toResponse(repository.save(locadora));
     }
 
@@ -94,7 +96,13 @@ public class LocadoraService {
     private LocadoraResponse toResponse(Locadora locadora) {
         return new LocadoraResponse(
                 locadora.getId(),
-                locadora.getNome());
+                locadora.getNome(),
+                locadora.getTelefone());
+    }
+
+    /** Mantém apenas os dígitos do telefone (o front pode enviar com máscara). */
+    private String normalizarTelefone(String telefone) {
+        return telefone == null ? null : telefone.replaceAll("\\D", "");
     }
 
     /**

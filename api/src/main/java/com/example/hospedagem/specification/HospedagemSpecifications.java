@@ -42,11 +42,13 @@ public final class HospedagemSpecifications {
                 }
 
                 if (filtro.entradaDe() != null) {
-                    predicados.add(cb.greaterThanOrEqualTo(root.get("dataEntrada"), filtro.entradaDe()));
+                    predicados.add(cb.greaterThanOrEqualTo(
+                            root.get("dataEntrada"), filtro.entradaDe().atStartOfDay()));
                 }
 
                 if (filtro.entradaAte() != null) {
-                    predicados.add(cb.lessThanOrEqualTo(root.get("dataEntrada"), filtro.entradaAte()));
+                    predicados.add(cb.lessThan(
+                            root.get("dataEntrada"), filtro.entradaAte().plusDays(1).atStartOfDay()));
                 }
             }
 

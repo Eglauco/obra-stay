@@ -1,0 +1,290 @@
+<section class="flex flex-col gap-6">
+  <!-- Cabeçalho -->
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Solicitações</h2>
+      <p class="mt-1 text-sm text-muted">Demandas abertas pelos colaboradores sobre sua hospedagem.</p>
+    </div>
+    <a
+      routerLink="/solicitacoes/nova"
+      class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
+    >
+      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
+        <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      Nova solicitação
+    </a>
+  </div>
+
+  <!-- Console de filtros -->
+  <div class="rounded-card border bg-surface p-4 shadow-card sm:p-5">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+      <!-- Status -->
+      <div class="flex flex-col gap-1.5">
+        <label for="f-status" class="text-[0.8125rem] font-medium text-muted">Status</label>
+        <div class="relative">
+          <select
+            #statusSel
+            id="f-status"
+            (change)="onStatus(statusSel.value)"
+            class="h-11 w-full appearance-none rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors focus:border-accent"
+          >
+            @for (op of statusOpcoes; track op.value) {
+              <option [value]="op.value" [selected]="op.value === filtroStatus()">{{ op.label }}</option>
+            }
+          </select>
+          <svg viewBox="0 0 20 20" fill="none" class="pointer-events-none absolute right-3 top-1/2 size-4.5 -translate-y-1/2 text-faint" aria-hidden="true">
+            <path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Colaborador -->
+      <app-busca-select
+        label="Colaborador"
+        idBase="f-colaborador"
+        placeholder="Filtrar por colaborador…"
+        [buscar]="buscarColaborador"
+        (selecionadoChange)="onColaboradorFiltro($event)"
+      />
+
+      <!-- Abertura de -->
+      <div class="flex flex-col gap-1.5">
+        <label for="f-de" class="text-[0.8125rem] font-medium text-muted">Abertura de</label>
+        <input
+          #deInput
+          id="f-de"
+          type="date"
+          [value]="filtroDe()"
+          (change)="onDe(deInput.value)"
+          class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors focus:border-accent"
+        />
+      </div>
+
+      <!-- Abertura até + limpar -->
+      <div class="flex items-end gap-2">
+        <div class="flex flex-1 flex-col gap-1.5">
+          <label for="f-ate" class="text-[0.8125rem] font-medium text-muted">Abertura até</label>
+          <input
+            #ateInput
+            id="f-ate"
+            type="date"
+            [value]="filtroAte()"
+            (change)="onAte(ateInput.value)"
+            class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors focus:border-accent"
+          />
+        </div>
+        <button
+          type="button"
+          (click)="limpar()"
+          [disabled]="!filtrosAtivos()"
+          class="inline-flex h-11 items-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Limpar
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-3.5 flex items-center gap-2 text-[0.8125rem] text-muted" aria-live="polite">
+      @if (loading()) {
+        <svg viewBox="0 0 24 24" fill="none" class="size-3.5 animate-spin text-accent" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        </svg>
+        <span>Buscando…</span>
+      } @else {
+        <span>
+          <strong class="tabular text-fg">{{ total() }}</strong>
+          {{ total() === 1 ? 'solicitação encontrada' : 'solicitações encontradas' }}
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="overflow-hidden rounded-card border bg-surface shadow-card">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[52rem] border-collapse text-left text-sm">
+        <caption class="sr-only">Lista de solicitações</caption>
+        <thead>
+          <tr class="border-b bg-surface-2/50 text-[0.75rem] uppercase tracking-wide text-muted">
+            <th scope="col" class="px-4 py-3">Solicitante</th>
+            <th scope="col" class="px-4 py-3">Tipo</th>
+            <th scope="col" class="px-4 py-3">Local</th>
+            <th scope="col" class="px-4 py-3">Status</th>
+            <th scope="col" class="px-4 py-3">Abertura</th>
+            <th scope="col" class="px-4 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            @for (r of skeletonRows(); track r) {
+              <tr class="border-b border-border/70 last:border-0">
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-40 max-w-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-24"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-24"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-5 w-28 rounded-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-28"></span></td>
+                <td class="px-4 py-3.5"><span class="sk ml-auto block h-4 w-24"></span></td>
+              </tr>
+            }
+          } @else if (temItens()) {
+            @for (s of itens(); track s.id) {
+              <tr class="border-b border-border/70 align-top transition-colors last:border-0 hover:bg-surface-2/50">
+                <!-- Solicitante -->
+                <td class="px-4 py-3.5">
+                  <div class="font-medium text-fg">{{ s.colaborador.nome }}</div>
+                  <div class="tabular text-[0.75rem] text-faint">#{{ s.id }}</div>
+                </td>
+                <!-- Tipo -->
+                <td class="px-4 py-3.5 text-muted">{{ s.tipoSolicitacao.nome }}</td>
+                <!-- Local -->
+                <td class="px-4 py-3.5 text-muted">{{ s.local.nome }}</td>
+                <!-- Status -->
+                <td class="px-4 py-3.5">
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-1 text-[0.75rem] font-semibold"
+                    [style.color]="badgeColor(s.status)"
+                    [style.background-color]="badgeBg(s.status)"
+                  >
+                    {{ statusLabel(s.status) }}
+                  </span>
+                </td>
+                <!-- Abertura -->
+                <td class="px-4 py-3.5">
+                  <div class="tabular text-fg">{{ abertura(s) }}</div>
+                  @if (emAberto(s)) {
+                    <div
+                      class="text-[0.75rem]"
+                      [style.color]="alertaTempo(s) ? 'var(--color-warning)' : 'var(--color-faint)'"
+                    >
+                      aberta há {{ diasAberta(s) }} {{ diasAberta(s) === 1 ? 'dia' : 'dias' }}
+                    </div>
+                  }
+                </td>
+                <!-- Ações (troca de status fica na tela de edição) -->
+                <td class="px-4 py-3.5">
+                  <div class="flex items-center justify-end gap-1">
+                    <button type="button" (click)="abrirHistorico(s)" title="Histórico" aria-label="Ver histórico"
+                      class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-4.5" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                    <a [routerLink]="['/solicitacoes', s.id, 'editar']" title="Abrir / gerenciar" [attr.aria-label]="'Gerenciar solicitação #' + s.id"
+                      class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M13.5 4.5 15.5 6.5M4 16l.9-3.2 8-8 2.3 2.3-8 8L4 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </a>
+                    <button type="button" (click)="pedirExclusao(s)" title="Excluir" aria-label="Excluir"
+                      class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Estado vazio -->
+    @if (!loading() && !temItens()) {
+      <div class="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+        <span class="grid size-14 place-items-center rounded-2xl bg-surface-2 text-faint" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" class="size-7" stroke="currentColor" stroke-width="1.5">
+            <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V16H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <div class="max-w-sm">
+          <p class="font-display text-base font-semibold text-fg">Nenhuma solicitação encontrada</p>
+          <p class="mt-1 text-sm text-muted">
+            @if (filtrosAtivos()) {
+              Nenhum resultado para os filtros atuais. Ajuste ou limpe a busca.
+            } @else {
+              Abra a primeira solicitação de um colaborador.
+            }
+          </p>
+        </div>
+        @if (filtrosAtivos()) {
+          <button type="button" (click)="limpar()" class="inline-flex h-10 items-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+            Limpar filtros
+          </button>
+        } @else {
+          <a routerLink="/solicitacoes/nova" class="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            Nova solicitação
+          </a>
+        }
+      </div>
+    }
+
+    <!-- Erro -->
+    @if (erro() && !loading()) {
+      <div class="flex items-center gap-2 border-t px-4 py-3 text-sm text-danger">
+        <svg viewBox="0 0 20 20" fill="none" class="size-4 shrink-0" aria-hidden="true">
+          <path d="M10 6.5v4m0 3h.01M10 2.5 1.5 17h17L10 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        {{ erro() }}
+      </div>
+    }
+
+    <!-- Paginação -->
+    @if (!loading() && temItens()) {
+      <div class="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-[0.8125rem] text-muted">
+          @if (intervalo(); as iv) {
+            Mostrando <span class="tabular font-medium text-fg">{{ iv.ini }}–{{ iv.fim }}</span>
+            de <span class="tabular font-medium text-fg">{{ total() }}</span>
+          }
+        </p>
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-1.5 text-[0.8125rem] text-muted">
+            <span class="hidden sm:inline">Por página</span>
+            <select #sizeSel [value]="size()" (change)="mudarTamanho(sizeSel.value)" aria-label="Itens por página"
+              class="h-9 rounded-control border bg-canvas px-2 text-[0.8125rem] text-fg outline-none transition-colors focus:border-accent">
+              @for (t of tamanhos; track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </label>
+          <nav class="flex items-center gap-1" aria-label="Paginação">
+            <button type="button" (click)="anterior()" [disabled]="resultado()?.first" aria-label="Página anterior"
+              class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+              <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m12 5-5 5 5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            @for (p of paginasVisiveis(); track p) {
+              <button type="button" (click)="irPara(p)" [attr.aria-current]="p === paginaAtual() ? 'page' : null" [class]="pgClasses(p === paginaAtual())">
+                {{ p + 1 }}
+              </button>
+            }
+            <button type="button" (click)="proxima()" [disabled]="resultado()?.last" aria-label="Próxima página"
+              class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+              <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </nav>
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- Histórico -->
+@if (historicoAlvo(); as alvo) {
+  <app-solicitacao-historico-dialog
+    [solicitacaoId]="alvo.id"
+    [titulo]="alvo.colaborador.nome + ' · ' + alvo.tipoSolicitacao.nome"
+    (fechar)="fecharHistorico()"
+  />
+}
+
+<!-- Confirmação de exclusão -->
+@if (aExcluir(); as alvo) {
+  <app-confirm-dialog
+    title="Excluir solicitação"
+    [message]="mensagemExcluir(alvo)"
+    confirmLabel="Excluir"
+    cancelLabel="Cancelar"
+    [loading]="excluindo()"
+    (confirmed)="confirmarExclusao()"
+    (cancelled)="fecharExclusao()"
+  />
+}

@@ -17,11 +17,12 @@ import { HospedagemService } from '../../../core/services/hospedagem.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
+import { QrEntradaDialog } from '../../../core/components/qr-entrada-dialog/qr-entrada-dialog';
 
 /** Lista principal da Gestão de Hospedagem: os LOCAIS, com ocupação. Clicar abre o detalhe. */
 @Component({
   selector: 'app-hospedagem-locais',
-  imports: [RouterLink],
+  imports: [RouterLink, QrEntradaDialog],
   templateUrl: './hospedagem-locais.html',
   styleUrl: './hospedagem-locais.css',
 })
@@ -45,6 +46,9 @@ export class HospedagemLocais {
 
   /** localId -> ocupados (hospedagens ativas). */
   protected readonly ocupacaoMap = signal<Record<number, number>>({});
+
+  /** Local com o diálogo de QR de autoatendimento aberto (null = fechado). */
+  protected readonly qrLocal = signal<Local | null>(null);
 
   protected readonly total = computed(() => this.resultado()?.totalElements ?? 0);
   protected readonly totalPaginas = computed(() => this.resultado()?.totalPages ?? 0);
@@ -184,6 +188,14 @@ export class HospedagemLocais {
     this.size.set(s);
     this.page.set(0);
     this.aplicar();
+  }
+
+  // ----- QR de autoatendimento -----
+  protected abrirQr(local: Local): void {
+    this.qrLocal.set(local);
+  }
+  protected fecharQr(): void {
+    this.qrLocal.set(null);
   }
 
   // ----- Auxiliares de ocupação -----

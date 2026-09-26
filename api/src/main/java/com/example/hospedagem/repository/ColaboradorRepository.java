@@ -1,6 +1,7 @@
 package com.example.hospedagem.repository;
 
 import com.example.hospedagem.domain.Colaborador;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -14,4 +15,7 @@ public interface ColaboradorRepository
 
     /** Verifica duplicidade de CPF ignorando o próprio registro (para atualização). */
     boolean existsByCpfAndIdNot(String cpf, Long id);
+
+    /** Busca colaborador pelo CPF (auto check-in). */
+    Optional<Colaborador> findByCpf(String cpf);
 }
