@@ -1,5 +1,6 @@
 package com.example.hospedagem.service;
 
+import com.example.hospedagem.domain.Epc;
 import com.example.hospedagem.domain.Gasto;
 import com.example.hospedagem.domain.Local;
 import com.example.hospedagem.domain.RateioGasto;
@@ -16,6 +17,7 @@ import com.example.hospedagem.dto.ResumoRef;
 import com.example.hospedagem.dto.TotalEpcRelatorio;
 import com.example.hospedagem.dto.TotalGastoResponse;
 import com.example.hospedagem.exception.ResourceNotFoundException;
+import com.example.hospedagem.repository.EpcRepository;
 import com.example.hospedagem.repository.GastoRepository;
 import com.example.hospedagem.repository.HospedagemRepository;
 import com.example.hospedagem.repository.LocalRepository;
@@ -28,7 +30,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,20 +56,25 @@ public class GastoService {
     private static final int SIZE_MIN = 5;
     private static final int SIZE_MAX = 100;
     private static final Sort ORDENACAO_PADRAO = Sort.by(Sort.Direction.DESC, "data");
+    /** Rótulo quando o EPC de uma linha de rateio antiga não existe mais. */
+    private static final String EPC_REMOVIDO = "EPC removido";
 
     private final GastoRepository repository;
     private final LocalRepository localRepository;
     private final HospedagemRepository hospedagemRepository;
     private final RateioGastoRepository rateioRepository;
+    private final EpcRepository epcRepository;
 
     public GastoService(GastoRepository repository,
                         LocalRepository localRepository,
                         HospedagemRepository hospedagemRepository,
-                        RateioGastoRepository rateioRepository) {
+                        RateioGastoRepository rateioRepository,
+                        EpcRepository epcRepository) {
         this.repository = repository;
         this.localRepository = localRepository;
         this.hospedagemRepository = hospedagemRepository;
         this.rateioRepository = rateioRepository;
+        this.epcRepository = epcRepository;
     }
 
     @Transactional(readOnly = true)
@@ -118,13 +127,16 @@ public class GastoService {
         return toResponse(salvo);
     }
 
-    /** Rateio (snapshot) de um gasto por EPC. */
+    /** Rateio de um gasto por EPC (nome do EPC resolvido ao vivo pelo epc_id). */
     @Transactional(readOnly = true)
     public List<RateioGastoResponse> rateio(Long id) {
         buscarEntidade(id);
-        return rateioRepository.findByGastoIdOrderByValorDescIdAsc(id).stream()
+        List<RateioGasto> linhas = rateioRepository.findByGastoIdOrderByValorDescIdAsc(id);
+        Map<Long, String> nomes = nomesDosEpcs(linhas.stream().map(RateioGasto::getEpcId).toList());
+        return linhas.stream()
                 .map(r -> new RateioGastoResponse(
-                        r.getEpcId(), r.getEpcNome(), r.getPessoas(), r.getPercentual(), r.getValor()))
+                        r.getEpcId(), nomes.getOrDefault(r.getEpcId(), EPC_REMOVIDO),
+                        r.getPessoas(), r.getPercentual(), r.getValor()))
                 .toList();
     }
 
@@ -188,20 +200,31 @@ public class GastoService {
                 GastoSpecifications.comFiltro(new GastoFiltro(localId, null, dataDe, dataAte)),
                 Sort.by(Sort.Direction.DESC, "data").and(Sort.by(Sort.Direction.ASC, "id")));
 
+        // Carrega o rateio de cada gasto e junta os epcIds para resolver o nome de uma vez.
+        List<List<RateioGasto>> rateiosPorGasto = new ArrayList<>();
+        Set<Long> epcIds = new HashSet<>();
+        for (Gasto g : gastos) {
+            List<RateioGasto> rr = rateioRepository.findByGastoIdOrderByValorDescIdAsc(g.getId());
+            rateiosPorGasto.add(rr);
+            rr.forEach(r -> epcIds.add(r.getEpcId()));
+        }
+        Map<Long, String> nomes = nomesDosEpcs(epcIds);
+
         List<ItemRelatorioGasto> itens = new ArrayList<>();
         Map<Long, BigDecimal> valorPorEpc = new LinkedHashMap<>();
-        Map<Long, String> nomePorEpc = new HashMap<>();
         BigDecimal naoRateado = BigDecimal.ZERO;
         BigDecimal totalGeral = BigDecimal.ZERO;
 
-        for (Gasto g : gastos) {
+        for (int i = 0; i < gastos.size(); i++) {
+            Gasto g = gastos.get(i);
+            List<RateioGasto> rr = rateiosPorGasto.get(i);
             BigDecimal total = g.getQuantidade().multiply(g.getValor());
             totalGeral = totalGeral.add(total);
 
-            List<RateioGasto> rr = rateioRepository.findByGastoIdOrderByValorDescIdAsc(g.getId());
             List<RateioGastoResponse> rateio = rr.stream()
                     .map(r -> new RateioGastoResponse(
-                            r.getEpcId(), r.getEpcNome(), r.getPessoas(), r.getPercentual(), r.getValor()))
+                            r.getEpcId(), nomes.getOrDefault(r.getEpcId(), EPC_REMOVIDO),
+                            r.getPessoas(), r.getPercentual(), r.getValor()))
                     .toList();
 
             if (rr.isEmpty()) {
@@ -209,7 +232,6 @@ public class GastoService {
             } else {
                 for (RateioGasto r : rr) {
                     valorPorEpc.merge(r.getEpcId(), r.getValor(), BigDecimal::add);
-                    nomePorEpc.putIfAbsent(r.getEpcId(), r.getEpcNome());
                 }
             }
 
@@ -221,7 +243,8 @@ public class GastoService {
         List<TotalEpcRelatorio> totais = new ArrayList<>();
         valorPorEpc.entrySet().stream()
                 .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
-                .forEach(e -> totais.add(new TotalEpcRelatorio(e.getKey(), nomePorEpc.get(e.getKey()), e.getValue())));
+                .forEach(e -> totais.add(new TotalEpcRelatorio(
+                        e.getKey(), nomes.getOrDefault(e.getKey(), EPC_REMOVIDO), e.getValue())));
         if (naoRateado.signum() > 0) {
             totais.add(new TotalEpcRelatorio(null, "Não rateado", naoRateado));
         }
@@ -293,7 +316,6 @@ public class GastoService {
             linhas.add(RateioGasto.builder()
                     .gasto(gasto)
                     .epcId(d.epcId())
-                    .epcNome(d.epcNome())
                     .pessoas((int) d.pessoas())
                     .percentual(percentual)
                     .valor(valor)
@@ -301,6 +323,18 @@ public class GastoService {
         }
 
         rateioRepository.saveAll(linhas);
+    }
+
+    /** Nome atual de cada EPC pelos ids (resolvido ao vivo; ids sem EPC ficam de fora). */
+    private Map<Long, String> nomesDosEpcs(Collection<Long> ids) {
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, String> nomes = new HashMap<>();
+        for (Epc e : epcRepository.findAllById(ids)) {
+            nomes.put(e.getId(), e.getNome());
+        }
+        return nomes;
     }
 
     private GastoResponse toResponse(Gasto gasto) {

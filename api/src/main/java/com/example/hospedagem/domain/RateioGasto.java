@@ -17,8 +17,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Linha de rateio de um {@link Gasto} por EPC (snapshot no lançamento):
- * quantas pessoas daquele EPC estavam hospedadas no local, o percentual e o valor rateado.
+ * Linha de rateio de um {@link Gasto} por EPC: quantas pessoas daquele EPC estavam
+ * hospedadas no local, o percentual e o valor rateado (snapshot dos números no lançamento).
+ * Guarda apenas o {@code epcId}; o nome do EPC é resolvido a partir da tabela epc na
+ * consulta, para refletir renomeações (não é copiado aqui).
  */
 @Entity
 @Table(name = "gasto_rateio")
@@ -39,9 +41,6 @@ public class RateioGasto {
 
     @Column(name = "epc_id", nullable = false)
     private Long epcId;
-
-    @Column(name = "epc_nome", nullable = false, length = 120)
-    private String epcNome;
 
     @Column(name = "pessoas", nullable = false)
     private Integer pessoas;
