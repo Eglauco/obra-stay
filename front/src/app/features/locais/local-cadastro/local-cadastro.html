@@ -47,148 +47,406 @@
       (submit)="$event.preventDefault(); submit()"
       novalidate
     >
-      <!-- Identificação -->
-      <fieldset class="flex flex-col gap-3">
-        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Identificação</legend>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <!-- Nome -->
-          <div class="flex flex-col gap-1.5 sm:col-span-2">
-            <label for="loc-nome" class="text-sm font-medium text-fg">Nome <span class="text-danger" aria-hidden="true">*</span></label>
-            <input id="loc-nome" [formField]="f.nome" autocomplete="off" placeholder="Ex.: Alojamento Central"
-              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-              [style.border-color]="nomeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="nomeError() ? 'true' : null" />
-            @if (nomeError()) { <p class="text-[0.8125rem] text-danger">{{ nomeError() }}</p> }
-          </div>
-          <!-- Código -->
-          <div class="flex flex-col gap-1.5">
-            <label for="loc-codigo" class="text-sm font-medium text-fg">Código <span class="text-danger" aria-hidden="true">*</span></label>
-            <input id="loc-codigo" [formField]="f.codigo" (input)="clearServerError('codigo')" autocomplete="off" placeholder="Ex.: ALJ-001"
-              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-              [style.border-color]="codigoError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="codigoError() ? 'true' : null" />
-            @if (codigoError()) { <p class="text-[0.8125rem] text-danger">{{ codigoError() }}</p> }
-          </div>
-          <!-- Capacidade -->
-          <div class="flex flex-col gap-1.5">
-            <label for="loc-capacidade" class="text-sm font-medium text-fg">Capacidade <span class="text-danger" aria-hidden="true">*</span></label>
-            <input id="loc-capacidade" type="number" [formField]="f.capacidade" (input)="clearServerError('capacidade')" placeholder="Ex.: 40"
-              class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-              [style.border-color]="capacidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="capacidadeError() ? 'true' : null" />
-            @if (capacidadeError()) { <p class="text-[0.8125rem] text-danger">{{ capacidadeError() }}</p> }
-            @else { <p class="text-[0.8125rem] text-faint">Quantos colaboradores cabem.</p> }
-          </div>
-        </div>
-      </fieldset>
+      <!-- Abas -->
+      <div class="flex gap-1 overflow-x-auto border-b border-border" role="tablist" aria-label="Seções do local" (keydown)="onTabKeydown($event)">
+        <button type="button" role="tab" id="tab-dados" aria-controls="panel-dados" [attr.aria-selected]="aba() === 'dados'" [attr.tabindex]="aba() === 'dados' ? 0 : -1" (click)="irParaAba('dados')" [class]="abaCls('dados')">Dados gerais</button>
+        <button type="button" role="tab" id="tab-status" aria-controls="panel-status" [attr.aria-selected]="aba() === 'status'" [attr.tabindex]="aba() === 'status' ? 0 : -1" (click)="irParaAba('status')" [class]="abaCls('status')">Status</button>
+        <button type="button" role="tab" id="tab-mobilia" aria-controls="panel-mobilia" [attr.aria-selected]="aba() === 'mobilia'" [attr.tabindex]="aba() === 'mobilia' ? 0 : -1" (click)="irParaAba('mobilia')" [class]="abaCls('mobilia')">
+          Mobiliário
+          @if (itensMobilia().length > 0) {
+            <span class="rounded-full bg-surface-2 px-1.5 py-0.5 text-[0.625rem] font-semibold text-muted tabular">{{ itensMobilia().length }}</span>
+          }
+        </button>
+        <button type="button" role="tab" id="tab-resumo" aria-controls="panel-resumo" [attr.aria-selected]="aba() === 'resumo'" [attr.tabindex]="aba() === 'resumo' ? 0 : -1" (click)="irParaAba('resumo')" [class]="abaCls('resumo')">Resumo Financeiro</button>
+      </div>
 
-      <!-- Foto -->
-      <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
-        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Foto do local</legend>
-        <input #fotoInput type="file" accept="image/png,image/jpeg,image/webp" class="hidden" (change)="onFotoSelecionada(fotoInput)" />
-        @if (fotoPreview()) {
-          <div class="flex flex-wrap items-center gap-4">
-            <img [src]="fotoPreview()!" alt="Prévia da foto do local" class="size-28 rounded-card border border-border object-cover" />
-            <div class="flex flex-col gap-2">
-              <button type="button" (click)="fotoInput.click()"
-                class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
-                <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 13.5V16h2.5l7-7L11 6.5l-7 7ZM12.5 5l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                Trocar foto
-              </button>
-              <button type="button" (click)="removerFotoAtual()"
-                class="inline-flex h-10 items-center gap-2 rounded-control px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger-soft">
-                <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                Remover
-              </button>
+      <!-- ABA: DADOS GERAIS -->
+      <div id="panel-dados" role="tabpanel" aria-labelledby="tab-dados" [hidden]="aba() !== 'dados'" class="flex flex-col gap-6">
+        <!-- Identificação -->
+        <fieldset class="flex flex-col gap-3">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Identificação</legend>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label for="loc-nome" class="text-sm font-medium text-fg">Nome <span class="text-danger" aria-hidden="true">*</span></label>
+              <input id="loc-nome" [formField]="f.nome" autocomplete="off" placeholder="Ex.: Alojamento Central"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="nomeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="nomeError() ? 'true' : null" />
+              @if (nomeError()) { <p class="text-[0.8125rem] text-danger">{{ nomeError() }}</p> }
             </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="loc-codigo" class="text-sm font-medium text-fg">Código <span class="text-danger" aria-hidden="true">*</span></label>
+              <input id="loc-codigo" [formField]="f.codigo" (input)="clearServerError('codigo')" autocomplete="off" placeholder="Ex.: ALJ-001"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="codigoError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="codigoError() ? 'true' : null" />
+              @if (codigoError()) { <p class="text-[0.8125rem] text-danger">{{ codigoError() }}</p> }
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="loc-capacidade" class="text-sm font-medium text-fg">Capacidade <span class="text-danger" aria-hidden="true">*</span></label>
+              <input id="loc-capacidade" type="number" [formField]="f.capacidade" (input)="clearServerError('capacidade')" placeholder="Ex.: 40"
+                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="capacidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="capacidadeError() ? 'true' : null" />
+              @if (capacidadeError()) { <p class="text-[0.8125rem] text-danger">{{ capacidadeError() }}</p> }
+              @else { <p class="text-[0.8125rem] text-faint">Quantos colaboradores cabem.</p> }
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="loc-quartos" class="text-sm font-medium text-fg">Quartos <span class="text-danger" aria-hidden="true">*</span></label>
+              <input #quartosInput id="loc-quartos" type="number" inputmode="numeric" min="1" step="1" [value]="quartos() ?? ''" (input)="setQuartos(quartosInput.value)" placeholder="Ex.: 3"
+                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="quartosError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="quartosError() ? 'true' : null" [attr.aria-describedby]="quartosError() ? 'loc-quartos-erro' : null" />
+              @if (quartosError()) { <p id="loc-quartos-erro" class="text-[0.8125rem] text-danger">{{ quartosError() }}</p> }
+              @else { <p class="text-[0.8125rem] text-faint">Usado no cálculo de mobiliário.</p> }
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="loc-aluguel" class="text-sm font-medium text-fg">Valor do aluguel (R$/mês)</label>
+              <input #aluguelInput id="loc-aluguel" type="number" inputmode="decimal" min="0" step="0.01" [value]="valorAluguel() ?? ''" (input)="setValorAluguel(aluguelInput.value)" placeholder="0,00"
+                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="valorAluguelError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="valorAluguelError() ? 'true' : null" [attr.aria-describedby]="valorAluguelError() ? 'loc-aluguel-erro' : null" />
+              @if (valorAluguelError()) { <p id="loc-aluguel-erro" class="text-[0.8125rem] text-danger">{{ valorAluguelError() }}</p> }
+              @else { <p class="text-[0.8125rem] text-faint">Opcional. Usado no Resumo Financeiro.</p> }
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Endereço -->
+        <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Endereço</legend>
+          <div class="grid gap-4 sm:grid-cols-6">
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label for="loc-cep" class="text-sm font-medium text-fg">CEP <span class="text-danger" aria-hidden="true">*</span></label>
+              <div class="relative">
+                <input #cepInput id="loc-cep" inputmode="numeric" maxlength="9" [value]="model().cep" (input)="onCepInput(cepInput.value)" placeholder="00000-000"
+                  class="h-11 w-full rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                  [style.border-color]="cepErro() ? 'var(--color-danger)' : null" [attr.aria-invalid]="cepErro() ? 'true' : null" aria-describedby="loc-cep-msg" />
+                @if (cepBuscando()) {
+                  <svg viewBox="0 0 24 24" fill="none" class="absolute right-3 top-1/2 size-4.5 -translate-y-1/2 animate-spin text-accent" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                  </svg>
+                }
+              </div>
+              <p id="loc-cep-msg" class="text-[0.8125rem]" [style.color]="cepErro() ? 'var(--color-danger)' : 'var(--color-faint)'">
+                {{ cepErro() ?? 'Preenche o endereço automaticamente.' }}
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-1.5 sm:col-span-4">
+              <label for="loc-logradouro" class="text-sm font-medium text-fg">Logradouro <span class="text-danger" aria-hidden="true">*</span></label>
+              <input id="loc-logradouro" [formField]="f.logradouro" autocomplete="off" placeholder="Rua, avenida…"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="logradouroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="logradouroError() ? 'true' : null" />
+              @if (logradouroError()) { <p class="text-[0.8125rem] text-danger">{{ logradouroError() }}</p> }
+            </div>
+
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label for="loc-numero" class="text-sm font-medium text-fg">Número <span class="text-danger" aria-hidden="true">*</span></label>
+              <input id="loc-numero" [formField]="f.numero" autocomplete="off" placeholder="Ex.: 100"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="numeroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="numeroError() ? 'true' : null" />
+              @if (numeroError()) { <p class="text-[0.8125rem] text-danger">{{ numeroError() }}</p> }
+            </div>
+
+            <div class="flex flex-col gap-1.5 sm:col-span-4">
+              <label for="loc-complemento" class="text-sm font-medium text-fg">Complemento</label>
+              <input id="loc-complemento" [formField]="f.complemento" autocomplete="off" placeholder="Apto, bloco, referência…"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent" />
+            </div>
+
+            <div class="flex flex-col gap-1.5 sm:col-span-3">
+              <label for="loc-bairro" class="text-sm font-medium text-fg">Bairro <span class="text-danger" aria-hidden="true">*</span></label>
+              <input id="loc-bairro" [formField]="f.bairro" autocomplete="off" placeholder="Bairro"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [style.border-color]="bairroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="bairroError() ? 'true' : null" />
+              @if (bairroError()) { <p class="text-[0.8125rem] text-danger">{{ bairroError() }}</p> }
+            </div>
+
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label for="loc-cidade" class="flex items-center gap-1 text-sm font-medium text-fg">
+                Cidade
+                <svg viewBox="0 0 20 20" fill="none" class="size-3.5 text-faint" aria-hidden="true"><path d="M6 9V6.5a4 4 0 0 1 8 0V9M5 9h10a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </label>
+              <input id="loc-cidade" [value]="model().cidade" readonly tabindex="-1" placeholder="Vem do CEP"
+                class="h-11 w-full cursor-not-allowed rounded-control border bg-surface-2 px-3.5 text-sm text-muted outline-none placeholder:text-faint"
+                [style.border-color]="cidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="cidadeError() ? 'true' : null" />
+              @if (cidadeError()) { <p class="text-[0.8125rem] text-danger">{{ cidadeError() }}</p> }
+            </div>
+
+            <div class="flex flex-col gap-1.5 sm:col-span-1">
+              <label for="loc-uf" class="text-sm font-medium text-fg">UF</label>
+              <input id="loc-uf" [value]="model().uf" readonly tabindex="-1" placeholder="—"
+                class="h-11 w-full cursor-not-allowed rounded-control border bg-surface-2 px-3.5 text-center text-sm uppercase text-muted outline-none placeholder:text-faint"
+                [style.border-color]="ufError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="ufError() ? 'true' : null" />
+              @if (ufError()) { <p class="text-[0.8125rem] text-danger">{{ ufError() }}</p> }
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Foto -->
+        <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Foto do local</legend>
+          <input #fotoInput type="file" accept="image/png,image/jpeg,image/webp" class="hidden" (change)="onFotoSelecionada(fotoInput)" />
+          @if (fotoPreview()) {
+            <div class="flex flex-wrap items-center gap-4">
+              <img [src]="fotoPreview()!" alt="Prévia da foto do local" class="size-28 rounded-card border border-border object-cover" />
+              <div class="flex flex-col gap-2">
+                <button type="button" (click)="fotoInput.click()"
+                  class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+                  <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 13.5V16h2.5l7-7L11 6.5l-7 7ZM12.5 5l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  Trocar foto
+                </button>
+                <button type="button" (click)="removerFotoAtual()"
+                  class="inline-flex h-10 items-center gap-2 rounded-control px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger-soft">
+                  <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  Remover
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button type="button" (click)="fotoInput.click()"
+              class="flex h-32 w-full max-w-xs flex-col items-center justify-center gap-1.5 rounded-card border border-dashed border-border-strong text-muted transition-colors hover:bg-surface-2 hover:text-fg">
+              <svg viewBox="0 0 24 24" fill="none" class="size-7" aria-hidden="true"><path d="M4 16l4-4 3 3 4-5 5 6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              <span class="text-sm font-medium">Adicionar foto</span>
+              <span class="text-[0.75rem] text-faint">JPG, PNG ou WebP · até 5 MB</span>
+            </button>
+          }
+          @if (fotoError()) { <p class="text-[0.8125rem] text-danger">{{ fotoError() }}</p> }
+        </fieldset>
+      </div>
+
+      <!-- ABA: STATUS -->
+      <div id="panel-status" role="tabpanel" aria-labelledby="tab-status" [hidden]="aba() !== 'status'" class="flex flex-col gap-3">
+        @if (!editMode()) {
+          <div class="flex flex-col gap-1.5 sm:max-w-xs">
+            <label for="loc-status" class="text-sm font-medium text-fg">Status do local <span class="text-danger" aria-hidden="true">*</span></label>
+            <select #statusSel id="loc-status" [value]="model().statusId ?? ''" (change)="setStatus(statusSel.value)"
+              class="h-11 w-full rounded-control border bg-canvas px-3 text-sm text-fg outline-none transition-colors focus:border-accent"
+              [style.border-color]="statusError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="statusError() ? 'true' : null">
+              <option value="" disabled>Selecione…</option>
+              @for (o of statusOpcoes(); track o.id) {
+                <option [value]="o.id">{{ o.nome }}{{ o.hospedagemLiberada ? '' : ' (bloqueia hospedagem)' }}</option>
+              }
+            </select>
+            @if (statusError()) { <p class="text-[0.8125rem] text-danger">{{ statusError() }}</p> }
+            @else { <p class="text-[0.8125rem] text-faint">Só é possível liberar hospedagens em locais cujo status permite.</p> }
           </div>
         } @else {
-          <button type="button" (click)="fotoInput.click()"
-            class="flex h-32 w-full max-w-xs flex-col items-center justify-center gap-1.5 rounded-card border border-dashed border-border-strong text-muted transition-colors hover:bg-surface-2 hover:text-fg">
-            <svg viewBox="0 0 24 24" fill="none" class="size-7" aria-hidden="true"><path d="M4 16l4-4 3 3 4-5 5 6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            <span class="text-sm font-medium">Adicionar foto</span>
-            <span class="text-[0.75rem] text-faint">JPG, PNG ou WebP · até 5 MB</span>
-          </button>
-        }
-        @if (fotoError()) { <p class="text-[0.8125rem] text-danger">{{ fotoError() }}</p> }
-      </fieldset>
-
-      <!-- Endereço -->
-      <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
-        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Endereço</legend>
-        <div class="grid gap-4 sm:grid-cols-6">
-          <!-- CEP -->
-          <div class="flex flex-col gap-1.5 sm:col-span-2">
-            <label for="loc-cep" class="text-sm font-medium text-fg">CEP <span class="text-danger" aria-hidden="true">*</span></label>
-            <div class="relative">
-              <input #cepInput id="loc-cep" inputmode="numeric" maxlength="9" [value]="model().cep" (input)="onCepInput(cepInput.value)" placeholder="00000-000"
-                class="h-11 w-full rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-                [style.border-color]="cepErro() ? 'var(--color-danger)' : null" [attr.aria-invalid]="cepErro() ? 'true' : null" aria-describedby="loc-cep-msg" />
-              @if (cepBuscando()) {
-                <svg viewBox="0 0 24 24" fill="none" class="absolute right-3 top-1/2 size-4.5 -translate-y-1/2 animate-spin text-accent" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
-                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-                </svg>
-              }
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-card border bg-canvas p-4">
+            <div class="min-w-0">
+              <p class="text-[0.75rem] text-faint">Status atual</p>
+              <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-fg">{{ statusInfo()?.nome ?? '—' }}</span>
+                @if (statusInfo(); as s) {
+                  @if (s.hospedagemLiberada) {
+                    <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: var(--color-success-soft); color: var(--color-success)">Hospedagem liberada</span>
+                  } @else {
+                    <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold" style="background-color: var(--color-danger-soft); color: var(--color-danger)">Hospedagem bloqueada</span>
+                  }
+                }
+              </div>
             </div>
-            <p id="loc-cep-msg" class="text-[0.8125rem]" [style.color]="cepErro() ? 'var(--color-danger)' : 'var(--color-faint)'">
-              {{ cepErro() ?? 'Preenche o endereço automaticamente.' }}
-            </p>
+            <button type="button" (click)="abrirTrocaStatus()"
+              class="inline-flex h-10 shrink-0 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+              <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 7h9m0 0-3-3m3 3-3 3M16 13H7m0 0 3-3m-3 3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Trocar status
+            </button>
           </div>
 
-          <!-- Logradouro -->
-          <div class="flex flex-col gap-1.5 sm:col-span-4">
-            <label for="loc-logradouro" class="text-sm font-medium text-fg">Logradouro <span class="text-danger" aria-hidden="true">*</span></label>
-            <input id="loc-logradouro" [formField]="f.logradouro" autocomplete="off" placeholder="Rua, avenida…"
-              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-              [style.border-color]="logradouroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="logradouroError() ? 'true' : null" />
-            @if (logradouroError()) { <p class="text-[0.8125rem] text-danger">{{ logradouroError() }}</p> }
+          <div class="mt-2">
+            <p class="text-sm font-medium text-fg">Histórico de status</p>
+            @if (carregandoHistorico()) {
+              <p class="mt-2 text-sm text-muted">Carregando histórico…</p>
+            } @else if (historico().length === 0) {
+              <p class="mt-2 text-sm text-muted">Nenhuma mudança registrada ainda.</p>
+            } @else {
+              <ol class="mt-3 flex flex-col">
+                @for (h of historico(); track h.id; let last = $last) {
+                  <li class="flex gap-3">
+                    <div class="flex flex-col items-center">
+                      <span class="mt-1 size-3 shrink-0 rounded-full bg-accent" aria-hidden="true"></span>
+                      @if (!last) { <span class="w-px flex-1 bg-border" aria-hidden="true"></span> }
+                    </div>
+                    <div [class]="last ? 'pb-0' : 'pb-5'">
+                      <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span class="text-sm font-semibold text-fg">
+                          @if (h.statusAnteriorNome) {
+                            {{ h.statusAnteriorNome }} → {{ h.statusNovoNome }}
+                          } @else {
+                            {{ h.statusNovoNome }} <span class="font-normal text-faint">(inicial)</span>
+                          }
+                        </span>
+                        <span class="tabular text-[0.75rem] text-faint">{{ fmtData(h.criadoEm) }}</span>
+                      </div>
+                      @if (h.usuarioNome) { <p class="text-[0.75rem] text-muted">por {{ h.usuarioNome }}</p> }
+                      @if (h.observacao) { <p class="mt-1 whitespace-pre-line text-[0.8125rem] text-muted">{{ h.observacao }}</p> }
+                    </div>
+                  </li>
+                }
+              </ol>
+            }
           </div>
+        }
+      </div>
 
-          <!-- Número -->
-          <div class="flex flex-col gap-1.5 sm:col-span-2">
-            <label for="loc-numero" class="text-sm font-medium text-fg">Número <span class="text-danger" aria-hidden="true">*</span></label>
-            <input id="loc-numero" [formField]="f.numero" autocomplete="off" placeholder="Ex.: 100"
-              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-              [style.border-color]="numeroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="numeroError() ? 'true' : null" />
-            @if (numeroError()) { <p class="text-[0.8125rem] text-danger">{{ numeroError() }}</p> }
+      <!-- ABA: MOBILIÁRIO -->
+      <div id="panel-mobilia" role="tabpanel" aria-labelledby="tab-mobilia" [hidden]="aba() !== 'mobilia'" class="flex flex-col gap-4">
+        <!-- Copiar de um orçamento -->
+        <div class="flex flex-col gap-3 rounded-card border bg-canvas p-4">
+          <p class="text-sm font-medium text-fg">Começar a partir de um orçamento</p>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select #orcSel [value]="orcamentoSelId() ?? ''" (change)="setOrcamentoSel(orcSel.value)" aria-label="Orçamento de mobiliário"
+              class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent sm:max-w-xs">
+              <option value="" disabled>Selecione um orçamento…</option>
+              @for (o of orcamentoOpcoes(); track o.id) { <option [value]="o.id">{{ o.nome }}</option> }
+            </select>
+            <button type="button" (click)="aplicarOrcamento()" [disabled]="aplicandoOrcamento()"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-70">
+              @if (aplicandoOrcamento()) { <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg> }
+              Copiar itens
+            </button>
           </div>
-
-          <!-- Complemento -->
-          <div class="flex flex-col gap-1.5 sm:col-span-4">
-            <label for="loc-complemento" class="text-sm font-medium text-fg">Complemento</label>
-            <input id="loc-complemento" [formField]="f.complemento" autocomplete="off" placeholder="Apto, bloco, referência…"
-              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent" />
-          </div>
-
-          <!-- Bairro -->
-          <div class="flex flex-col gap-1.5 sm:col-span-3">
-            <label for="loc-bairro" class="text-sm font-medium text-fg">Bairro <span class="text-danger" aria-hidden="true">*</span></label>
-            <input id="loc-bairro" [formField]="f.bairro" autocomplete="off" placeholder="Bairro"
-              class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-              [style.border-color]="bairroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="bairroError() ? 'true' : null" />
-            @if (bairroError()) { <p class="text-[0.8125rem] text-danger">{{ bairroError() }}</p> }
-          </div>
-
-          <!-- Cidade (travado) -->
-          <div class="flex flex-col gap-1.5 sm:col-span-2">
-            <label for="loc-cidade" class="flex items-center gap-1 text-sm font-medium text-fg">
-              Cidade
-              <svg viewBox="0 0 20 20" fill="none" class="size-3.5 text-faint" aria-hidden="true"><path d="M6 9V6.5a4 4 0 0 1 8 0V9M5 9h10a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            </label>
-            <input id="loc-cidade" [value]="model().cidade" readonly tabindex="-1" placeholder="Vem do CEP"
-              class="h-11 w-full cursor-not-allowed rounded-control border bg-surface-2 px-3.5 text-sm text-muted outline-none placeholder:text-faint"
-              [style.border-color]="cidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="cidadeError() ? 'true' : null" />
-            @if (cidadeError()) { <p class="text-[0.8125rem] text-danger">{{ cidadeError() }}</p> }
-          </div>
-
-          <!-- UF (travado) -->
-          <div class="flex flex-col gap-1.5 sm:col-span-1">
-            <label for="loc-uf" class="text-sm font-medium text-fg">UF</label>
-            <input id="loc-uf" [value]="model().uf" readonly tabindex="-1" placeholder="—"
-              class="h-11 w-full cursor-not-allowed rounded-control border bg-surface-2 px-3.5 text-center text-sm uppercase text-muted outline-none placeholder:text-faint"
-              [style.border-color]="ufError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="ufError() ? 'true' : null" />
-            @if (ufError()) { <p class="text-[0.8125rem] text-danger">{{ ufError() }}</p> }
-          </div>
+          <p class="text-[0.8125rem] text-muted">Copia os itens do orçamento para este local. Depois você pode adicionar, remover e alterar livremente — não afeta o orçamento original.</p>
         </div>
-      </fieldset>
+
+        <!-- Resumo -->
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-control border bg-surface-2/40 px-4 py-3">
+          <span class="text-sm text-muted">
+            <strong class="tabular text-fg">{{ quartos() ?? 0 }}</strong> quarto(s) ·
+            <strong class="tabular text-fg">{{ itensMobilia().length }}</strong> item(ns)
+          </span>
+          <span class="text-sm text-muted">Total estimado: <strong class="tabular text-fg">{{ brl(totalMobilia()) }}</strong></span>
+        </div>
+
+        <!-- Cabeçalho da lista -->
+        <div class="flex items-center justify-between">
+          <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Itens de mobília</p>
+          <button type="button" (click)="adicionarMobilia()"
+            class="inline-flex h-9 items-center gap-2 rounded-control border border-border-strong px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+            <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            Adicionar item
+          </button>
+        </div>
+
+        <p class="text-[0.8125rem] text-muted">
+          Ao copiar de um orçamento, a quantidade é calculada pelo nº de quartos ({{ quartos() ?? 0 }}). Depois você ajusta a quantidade livremente.
+        </p>
+
+        @if (itensMobiliaServerError()) {
+          <p class="rounded-control border px-3 py-2 text-[0.8125rem] text-danger" style="border-color: var(--color-danger); background-color: var(--color-danger-soft)">{{ itensMobiliaServerError() }}</p>
+        }
+
+        @if (itensMobilia().length === 0) {
+          <p class="rounded-control border border-dashed border-border-strong px-4 py-6 text-center text-sm text-muted">Nenhum item. Copie de um orçamento acima ou clique em “Adicionar item”.</p>
+        }
+
+        @for (row of itensMobilia(); track row.key; let i = $index) {
+          <div class="rounded-control border bg-canvas p-3.5">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <span class="text-[0.75rem] font-semibold uppercase tracking-wide text-faint">Item {{ i + 1 }}</span>
+              <div class="flex items-center gap-3">
+                <span class="text-[0.8125rem] text-muted">Subtotal <strong class="tabular text-fg">{{ brl(subtotalMobilia(row)) }}</strong></span>
+                <button type="button" (click)="removerMobilia(row.key)" [attr.aria-label]="'Remover item ' + (i + 1)" title="Remover item"
+                  class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
+                  <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+              </div>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-12">
+              <div class="flex flex-col gap-1 sm:col-span-6">
+                <label class="text-[0.8125rem] font-medium text-muted" [for]="'m-nome-' + row.key">Item <span class="text-danger" aria-hidden="true">*</span></label>
+                <input [id]="'m-nome-' + row.key" type="text" autocomplete="off" [value]="row.nome" (input)="atualizarMobilia(row.key, 'nome', $event)"
+                  placeholder="Ex.: Geladeira 332L"
+                  class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                  [style.border-color]="submetido() && !row.nome.trim() ? 'var(--color-danger)' : null"
+                  [attr.aria-invalid]="submetido() && !row.nome.trim() ? 'true' : null"
+                  [attr.aria-describedby]="erroLinhaMobilia(row) ? 'm-erro-' + row.key : null" />
+              </div>
+              <div class="flex flex-col gap-1 sm:col-span-3">
+                <label class="text-[0.8125rem] font-medium text-muted" [for]="'m-preco-' + row.key">Preço unit. (R$) <span class="text-danger" aria-hidden="true">*</span></label>
+                <input [id]="'m-preco-' + row.key" type="number" inputmode="decimal" min="0" step="0.01" [value]="row.preco" (input)="atualizarMobilia(row.key, 'preco', $event)"
+                  placeholder="0,00"
+                  class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                  [style.border-color]="submetido() && !precoMobiliaValido(row) ? 'var(--color-danger)' : null"
+                  [attr.aria-invalid]="submetido() && !precoMobiliaValido(row) ? 'true' : null"
+                  [attr.aria-describedby]="erroLinhaMobilia(row) ? 'm-erro-' + row.key : null" />
+              </div>
+              <div class="flex flex-col gap-1 sm:col-span-3">
+                <label class="text-[0.8125rem] font-medium text-muted" [for]="'m-qtd-' + row.key">Quantidade <span class="text-danger" aria-hidden="true">*</span></label>
+                <input [id]="'m-qtd-' + row.key" type="number" inputmode="numeric" min="1" step="1" [value]="row.quantidade" (input)="atualizarMobilia(row.key, 'quantidade', $event)"
+                  class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent"
+                  [style.border-color]="submetido() && !qtdMobiliaValida(row) ? 'var(--color-danger)' : null"
+                  [attr.aria-invalid]="submetido() && !qtdMobiliaValida(row) ? 'true' : null"
+                  [attr.aria-describedby]="erroLinhaMobilia(row) ? 'm-erro-' + row.key : null" />
+              </div>
+            </div>
+            @if (erroLinhaMobilia(row); as e) { <p [id]="'m-erro-' + row.key" class="mt-1.5 text-[0.8125rem] text-danger">{{ e }}</p> }
+          </div>
+        }
+      </div>
+
+      <!-- ABA: RESUMO FINANCEIRO -->
+      <div id="panel-resumo" role="tabpanel" aria-labelledby="tab-resumo" [hidden]="aba() !== 'resumo'" class="flex flex-col gap-4">
+        <!-- Valor por residente (mobília): ANO = total; MÊS = total ÷ moradores ÷ 12 -->
+        @if (cenariosMoradores().length > 0) {
+          <div class="overflow-hidden rounded-card border">
+            <table class="w-full border-collapse text-sm">
+              <caption class="sr-only">Valor de mobiliário por residente</caption>
+              <thead>
+                <tr class="bg-accent text-accent-fg">
+                  <th scope="col" class="px-4 py-2.5 text-left font-semibold uppercase tracking-wide">Casa de {{ quartos() ?? 0 }} quarto(s)</th>
+                  <th scope="colgroup" colspan="2" class="border-l border-white/20 px-4 py-2.5 text-center font-semibold uppercase tracking-wide">Valor por residente (mobília)</th>
+                </tr>
+                <tr class="bg-surface-2 text-[0.6875rem] uppercase tracking-wide text-muted">
+                  <th scope="col" class="px-4 py-2 text-left font-semibold">Moradores</th>
+                  <th scope="col" class="px-4 py-2 text-right font-semibold">Mês</th>
+                  <th scope="col" class="px-4 py-2 text-right font-semibold">Ano</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of cenariosMoradores(); track c.moradores) {
+                  <tr class="border-t border-border/70">
+                    <td class="tabular px-4 py-3 font-semibold text-fg">{{ c.moradores }}</td>
+                    <td class="tabular px-4 py-3 text-right font-semibold text-fg">{{ brl(c.mes) }}</td>
+                    <td class="tabular px-4 py-3 text-right text-muted">{{ brl(c.ano) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="rounded-control border border-dashed border-border-strong px-4 py-6 text-center text-sm text-muted">Informe a capacidade (nº de moradores) e adicione itens de mobília para ver os valores.</p>
+        }
+
+        <!-- Custo total: aluguel + mobiliário -->
+        <div class="overflow-hidden rounded-card border">
+          <div class="border-b bg-surface-2/60 px-4 py-2.5">
+            <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted">Custo mensal (aluguel + mobiliário)</p>
+          </div>
+          <dl class="text-sm">
+            <div class="flex items-center justify-between border-b border-border/70 px-4 py-2.5">
+              <dt class="text-muted">Aluguel / mês</dt>
+              <dd class="tabular font-medium text-fg">{{ brl(valorAluguel() ?? 0) }}</dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-border/70 px-4 py-2.5">
+              <dt class="text-muted">Mobiliário / mês <span class="text-faint">(total ÷ 12)</span></dt>
+              <dd class="tabular font-medium text-fg">{{ brl(mobiliarioMensal()) }}</dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-border/70 bg-surface-2/40 px-4 py-2.5">
+              <dt class="font-semibold text-fg">Custo da casa / mês</dt>
+              <dd class="tabular font-semibold text-fg">{{ brl(custoMensalCasa()) }}</dd>
+            </div>
+            <div class="flex items-center justify-between border-b border-border/70 px-4 py-2.5">
+              <dt class="text-muted">Custo por morador / mês <span class="text-faint">({{ moradoresFinanceiro() }} morador(es))</span></dt>
+              <dd class="tabular font-semibold text-fg">{{ brl(custoMensalPorMorador()) }}</dd>
+            </div>
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <dt class="text-muted">Custo por morador / dia <span class="text-faint">(÷ 30)</span></dt>
+              <dd class="tabular font-semibold" style="color: var(--color-accent)">{{ brl(custoDiarioPorMorador()) }}</dd>
+            </div>
+          </dl>
+          @if (moradoresFinanceiro() <= 0) {
+            <p class="border-t px-4 py-2 text-[0.8125rem] text-muted">Informe a capacidade (nº de moradores) na aba “Dados gerais” para o custo por morador.</p>
+          }
+        </div>
+      </div>
 
       <!-- Ações -->
       <div class="flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
@@ -206,5 +464,27 @@
         </button>
       </div>
     </form>
+
+    @if (mostrarTrocaStatus() && localIdAtual() !== null) {
+      <app-trocar-status-dialog
+        [localId]="localIdAtual()!"
+        [statusAtualId]="statusAtualId()"
+        [opcoes]="statusOpcoes()"
+        (trocado)="onStatusTrocado($event)"
+        (fechar)="fecharTrocaStatus()"
+      />
+    }
+
+    @if (confirmarAplicar(); as op) {
+      <app-confirm-dialog
+        title="Substituir itens de mobília"
+        [message]="'Isto vai substituir os itens atuais pelos do orçamento &quot;' + op.nome + '&quot;. Deseja continuar?'"
+        confirmLabel="Substituir"
+        cancelLabel="Cancelar"
+        [loading]="aplicandoOrcamento()"
+        (confirmed)="confirmarAplicarSim()"
+        (cancelled)="cancelarAplicar()"
+      />
+    }
   }
 </section>

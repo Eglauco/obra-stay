@@ -1,10 +1,15 @@
 package com.example.hospedagem.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Payload de entrada para criação e atualização de local.
@@ -48,6 +53,20 @@ public record LocalRequest(
 
         @NotBlank(message = "A UF é obrigatória.")
         @Size(min = 2, max = 2, message = "UF inválida.")
-        String uf
+        String uf,
+
+        @NotNull(message = "O status é obrigatório.")
+        Long statusId,
+
+        @NotNull(message = "Informe o número de quartos.")
+        @Min(value = 1, message = "O número de quartos deve ser ao menos 1.")
+        Integer quartos,
+
+        @DecimalMin(value = "0.0", inclusive = true, message = "O aluguel não pode ser negativo.")
+        @Digits(integer = 10, fraction = 2, message = "Valor de aluguel inválido.")
+        BigDecimal valorAluguel,
+
+        @Valid
+        List<ItemMobiliaLocalRequest> itensMobilia
 ) {
 }

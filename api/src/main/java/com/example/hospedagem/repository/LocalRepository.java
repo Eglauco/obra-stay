@@ -12,4 +12,7 @@ public interface LocalRepository
     boolean existsByCodigoIgnoreCase(String codigo);
 
     boolean existsByCodigoIgnoreCaseAndIdNot(String codigo, Long id);
+
+    /** Há algum local usando este status? (bloqueia a exclusão do status). */
+    boolean existsByStatusId(Long statusId);
 }

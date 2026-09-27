@@ -1,23 +1,35 @@
 package com.example.hospedagem.service;
 
+import com.example.hospedagem.domain.ItemMobiliaLocal;
 import com.example.hospedagem.domain.Local;
+import com.example.hospedagem.domain.LocalStatusHistorico;
+import com.example.hospedagem.domain.StatusLocal;
+import com.example.hospedagem.dto.ItemMobiliaLocalRequest;
+import com.example.hospedagem.dto.ItemMobiliaLocalResponse;
 import com.example.hospedagem.dto.LocalFiltro;
 import com.example.hospedagem.dto.LocalRequest;
 import com.example.hospedagem.dto.LocalResponse;
+import com.example.hospedagem.dto.LocalStatusHistoricoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.TrocarStatusLocalRequest;
 import com.example.hospedagem.exception.DuplicateCodigoException;
 import com.example.hospedagem.exception.RegraNegocioException;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.exception.StorageException;
 import com.example.hospedagem.repository.LocalRepository;
+import com.example.hospedagem.repository.LocalStatusHistoricoRepository;
+import com.example.hospedagem.repository.StatusLocalRepository;
+import com.example.hospedagem.repository.UsuarioRepository;
 import com.example.hospedagem.specification.LocalSpecifications;
 import com.example.hospedagem.util.PlanilhaExcel;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import org.springframework.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -28,6 +40,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.math.BigDecimal;
 
 /**
  * Regras de negócio do módulo Locais.
@@ -54,13 +67,22 @@ public class LocalService {
     private static final Duration URL_TTL = Duration.ofHours(1);
 
     private final LocalRepository repository;
+    private final StatusLocalRepository statusRepository;
+    private final LocalStatusHistoricoRepository historicoRepository;
+    private final UsuarioRepository usuarioRepository;
     private final ObjectProvider<StorageService> storageProvider;
     private final ProcessadorImagem processador;
 
     public LocalService(LocalRepository repository,
+                        StatusLocalRepository statusRepository,
+                        LocalStatusHistoricoRepository historicoRepository,
+                        UsuarioRepository usuarioRepository,
                         ObjectProvider<StorageService> storageProvider,
                         ProcessadorImagem processador) {
         this.repository = repository;
+        this.statusRepository = statusRepository;
+        this.historicoRepository = historicoRepository;
+        this.usuarioRepository = usuarioRepository;
         this.storageProvider = storageProvider;
         this.processador = processador;
     }
@@ -71,8 +93,9 @@ public class LocalService {
         Page<Local> pagina = repository.findAll(
                 LocalSpecifications.comFiltro(filtro), saneado);
 
+        // Lista não carrega os itens de mobília (evita N+1 e payload pesado).
         List<LocalResponse> conteudo = pagina.getContent().stream()
-                .map(this::toResponse)
+                .map(l -> toResponse(l, false))
                 .toList();
 
         return PageResponse.of(pagina, conteudo);
@@ -84,11 +107,13 @@ public class LocalService {
     }
 
     @Transactional
-    public LocalResponse criar(LocalRequest request, MultipartFile foto) {
+    public LocalResponse criar(LocalRequest request, MultipartFile foto, String usuarioEmail) {
         String codigo = request.codigo().trim();
         if (repository.existsByCodigoIgnoreCase(codigo)) {
             throw new DuplicateCodigoException("Já existe um local com este código.");
         }
+
+        StatusLocal status = carregarStatus(request.statusId());
 
         Local local = Local.builder()
                 .codigo(codigo)
@@ -101,13 +126,20 @@ public class LocalService {
                 .bairro(request.bairro().trim())
                 .cidade(request.cidade().trim())
                 .uf(request.uf().trim().toUpperCase())
+                .quartos(request.quartos())
+                .valorAluguel(request.valorAluguel() != null ? request.valorAluguel() : BigDecimal.ZERO)
+                .status(status)
                 .build();
+        aplicarItensMobilia(local, request.itensMobilia());
 
         if (temFoto(foto)) {
             local.setFotoKey(subirFoto(foto));
         }
 
-        return toResponse(repository.save(local));
+        Local salvo = repository.save(local);
+        // Registro inicial do histórico (sem status anterior).
+        registrarHistorico(salvo, null, status, null, usuarioEmail);
+        return toResponse(salvo);
     }
 
     @Transactional
@@ -129,6 +161,11 @@ public class LocalService {
         local.setBairro(request.bairro().trim());
         local.setCidade(request.cidade().trim());
         local.setUf(request.uf().trim().toUpperCase());
+        local.setQuartos(request.quartos());
+        local.setValorAluguel(request.valorAluguel() != null ? request.valorAluguel() : BigDecimal.ZERO);
+        // Substitui a lista de itens de mobília do local (orphanRemoval apaga os antigos).
+        local.limparItensMobilia();
+        aplicarItensMobilia(local, request.itensMobilia());
 
         String keyAntiga = local.getFotoKey();
         boolean apagarAntiga = false;
@@ -158,22 +195,57 @@ public class LocalService {
         }
     }
 
+    /**
+     * Troca o status atual do local e registra a mudança no histórico (aplicação imediata).
+     * A observação é opcional; o autor é o usuário logado.
+     */
+    @Transactional
+    public LocalResponse trocarStatus(Long id, TrocarStatusLocalRequest request, String usuarioEmail) {
+        Local local = buscarEntidade(id);
+        StatusLocal novo = carregarStatus(request.statusId());
+        StatusLocal atual = local.getStatus();
+
+        if (atual != null && atual.getId().equals(novo.getId())) {
+            throw new RegraNegocioException("statusId", "O local já está com este status.");
+        }
+
+        local.setStatus(novo);
+        Local salvo = repository.save(local);
+        registrarHistorico(salvo, atual, novo, request.observacao(), usuarioEmail);
+        return toResponse(salvo);
+    }
+
+    /** Histórico de mudanças de status do local (mais recente primeiro). */
+    @Transactional(readOnly = true)
+    public List<LocalStatusHistoricoResponse> historicoStatus(Long id) {
+        buscarEntidade(id);
+        return historicoRepository.findByLocalIdOrderByCriadoEmDescIdDesc(id).stream()
+                .map(h -> new LocalStatusHistoricoResponse(
+                        h.getId(), h.getStatusAnteriorNome(), h.getStatusNovoNome(),
+                        h.getObservacao(), h.getUsuarioNome(), h.getCriadoEm()))
+                .toList();
+    }
+
     /** Exporta os locais filtrados (sem paginação) para Excel (.xlsx). */
     @Transactional(readOnly = true)
     public byte[] exportar(LocalFiltro filtro) {
         List<Local> lista = repository.findAll(
                 LocalSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.ASC, "nome"));
 
-        List<String> cabecalhos = List.of("ID", "Código", "Nome", "Capacidade", "CEP",
-                "Logradouro", "Número", "Complemento", "Bairro", "Cidade", "UF", "Tem foto");
+        List<String> cabecalhos = List.of("ID", "Código", "Nome", "Capacidade", "Quartos", "Valor aluguel",
+                "CEP", "Logradouro", "Número", "Complemento", "Bairro", "Cidade", "UF",
+                "Status", "Hospedagem liberada", "Tem foto");
 
         List<List<Object>> linhas = new ArrayList<>();
         for (Local l : lista) {
+            StatusLocal status = l.getStatus();
             linhas.add(Arrays.asList(
                     l.getId(),
                     l.getCodigo(),
                     l.getNome(),
                     l.getCapacidade(),
+                    l.getQuartos(),
+                    l.getValorAluguel(),
                     l.getCep(),
                     l.getLogradouro(),
                     l.getNumero(),
@@ -181,6 +253,8 @@ public class LocalService {
                     l.getBairro(),
                     l.getCidade(),
                     l.getUf(),
+                    status != null ? status.getNome() : "",
+                    status != null && status.isHospedagemLiberada() ? "Sim" : "Não",
                     l.getFotoKey() != null));
         }
         return PlanilhaExcel.gerar("Locais", cabecalhos, linhas);
@@ -244,7 +318,48 @@ public class LocalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Local não encontrado."));
     }
 
+    private StatusLocal carregarStatus(Long statusId) {
+        return statusRepository.findById(statusId)
+                .orElseThrow(() -> new ResourceNotFoundException("Status não encontrado."));
+    }
+
+    /** Grava uma linha de auditoria no histórico de status (snapshot de nomes e autor). */
+    private void registrarHistorico(Local local, StatusLocal anterior, StatusLocal novo,
+                                    String observacao, String usuarioEmail) {
+        historicoRepository.save(LocalStatusHistorico.builder()
+                .local(local)
+                .statusAnteriorId(anterior != null ? anterior.getId() : null)
+                .statusAnteriorNome(anterior != null ? anterior.getNome() : null)
+                .statusNovoId(novo.getId())
+                .statusNovoNome(novo.getNome())
+                .observacao(normalizarOpcional(observacao))
+                .usuarioNome(resolverNomeUsuario(usuarioEmail))
+                .criadoEm(LocalDateTime.now())
+                .build());
+    }
+
+    /** Nome do usuário logado a partir do e-mail (para snapshot no histórico). */
+    private String resolverNomeUsuario(String email) {
+        if (!StringUtils.hasText(email)) {
+            return null;
+        }
+        return usuarioRepository.findByEmailIgnoreCase(email)
+                .map(u -> u.getNome())
+                .orElse(email);
+    }
+
     private LocalResponse toResponse(Local local) {
+        return toResponse(local, true);
+    }
+
+    private LocalResponse toResponse(Local local, boolean incluirMobilia) {
+        StatusLocal status = local.getStatus();
+        List<ItemMobiliaLocalResponse> mobilia = incluirMobilia
+                ? local.getItensMobilia().stream()
+                        .map(i -> new ItemMobiliaLocalResponse(
+                                i.getId(), i.getNome(), i.getPrecoUnitario(), i.getQuantidade()))
+                        .toList()
+                : List.of();
         return new LocalResponse(
                 local.getId(),
                 local.getCodigo(),
@@ -257,7 +372,29 @@ public class LocalService {
                 local.getBairro(),
                 local.getCidade(),
                 local.getUf(),
-                urlFoto(local.getFotoKey()));
+                urlFoto(local.getFotoKey()),
+                status != null ? status.getId() : null,
+                status != null ? status.getNome() : null,
+                status != null && status.isHospedagemLiberada(),
+                local.getQuartos(),
+                local.getValorAluguel(),
+                mobilia);
+    }
+
+    /** Copia os itens de mobília do request para o local (define a ordem pela posição). */
+    private void aplicarItensMobilia(Local local, List<ItemMobiliaLocalRequest> itens) {
+        if (itens == null) {
+            return;
+        }
+        int ordem = 0;
+        for (ItemMobiliaLocalRequest it : itens) {
+            local.addItemMobilia(ItemMobiliaLocal.builder()
+                    .nome(it.nome().trim())
+                    .precoUnitario(it.precoUnitario())
+                    .quantidade(it.quantidade())
+                    .ordem(ordem++)
+                    .build());
+        }
     }
 
     /** URL pré-assinada (válida por 1h) da foto, ou null quando não há foto/storage. */

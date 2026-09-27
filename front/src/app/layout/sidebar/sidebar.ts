@@ -118,6 +118,12 @@ interface NavItem {
           @case ('locais') {
             <path d="M4 21V6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v15M14 21V10a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v11M3 21h18M7.5 8.5h.01M10.5 8.5h.01M7.5 12h.01M10.5 12h.01M8 21v-3h2v3" />
           }
+          @case ('status-locais') {
+            <path d="M5 3v18M5 4.5h11l-2.2 3.25L16 11H5" />
+          }
+          @case ('orcamentos-mobiliario') {
+            <path d="M5 11V7.5A1.5 1.5 0 0 1 6.5 6h11A1.5 1.5 0 0 1 19 7.5V11M3 15v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1ZM6 16v2M18 16v2" />
+          }
           @case ('locadoras') {
             <path d="M4 9.5 5.2 5.4A1.5 1.5 0 0 1 6.63 4.3h10.74a1.5 1.5 0 0 1 1.43 1.1L20 9.5M4 9.5v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9M4 9.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0M9.5 19.5v-4h5v4" />
           }
@@ -168,6 +174,8 @@ export class Sidebar {
     { key: 'empresas', label: 'Empresas', route: '/empresas' },
     { key: 'gestoes', label: 'Gestão', route: '/gestoes' },
     { key: 'locais', label: 'Locais', route: '/locais' },
+    { key: 'status-locais', label: 'Status dos Locais', route: '/status-locais' },
+    { key: 'orcamentos-mobiliario', label: 'Orçamento de Mobiliário', route: '/orcamentos-mobiliario' },
     { key: 'locadoras', label: 'Locadoras', route: '/locadoras' },
     { key: 'tipos-solicitacao', label: 'Tipos de Solicitação', route: '/tipos-solicitacao' },
     { key: 'hospedagens', label: 'Hospedagens', route: '/hospedagens' },

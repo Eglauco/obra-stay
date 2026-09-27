@@ -3,11 +3,15 @@ package com.example.hospedagem.controller;
 import com.example.hospedagem.dto.LocalFiltro;
 import com.example.hospedagem.dto.LocalRequest;
 import com.example.hospedagem.dto.LocalResponse;
+import com.example.hospedagem.dto.LocalStatusHistoricoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.TrocarStatusLocalRequest;
 import com.example.hospedagem.service.LocalService;
 import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.security.Principal;
+import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -85,9 +90,10 @@ public class LocalController {
     public ResponseEntity<LocalResponse> criar(
             @Valid @RequestPart("dados") LocalRequest request,
             @RequestPart(value = "foto", required = false) MultipartFile foto,
+            Principal principal,
             UriComponentsBuilder uriBuilder) {
 
-        LocalResponse criado = service.criar(request, foto);
+        LocalResponse criado = service.criar(request, foto, nome(principal));
         URI location = uriBuilder.path("/api/locais/{id}")
                 .buildAndExpand(criado.id())
                 .toUri();
@@ -114,5 +120,28 @@ public class LocalController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
+    }
+
+    /**
+     * Troca o status do local (aplicação imediata) e registra a mudança no histórico.
+     */
+    @PostMapping("/{id}/status")
+    public LocalResponse trocarStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody TrocarStatusLocalRequest request,
+            Principal principal) {
+        return service.trocarStatus(id, request, nome(principal));
+    }
+
+    /**
+     * Histórico de mudanças de status do local (mais recente primeiro).
+     */
+    @GetMapping("/{id}/status-historico")
+    public List<LocalStatusHistoricoResponse> historicoStatus(@PathVariable Long id) {
+        return service.historicoStatus(id);
+    }
+
+    private String nome(Principal principal) {
+        return principal != null ? principal.getName() : null;
     }
 }

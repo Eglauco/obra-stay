@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PageResponse } from '../models/colaborador.model';
-import { Local, LocalFiltro, LocalRequest } from '../models/local.model';
+import {
+  Local,
+  LocalFiltro,
+  LocalRequest,
+  LocalStatusHistorico,
+  TrocarStatusRequest,
+} from '../models/local.model';
 
 import { environment } from '../../../environments/environment';
 
@@ -61,6 +67,16 @@ export class LocalService {
 
   excluir(id: number): Observable<void> {
     return this.http.delete<void>(`${this.resource}/${id}`);
+  }
+
+  /** Troca o status do local (aplicação imediata) e registra no histórico. */
+  trocarStatus(id: number, req: TrocarStatusRequest): Observable<Local> {
+    return this.http.post<Local>(`${this.resource}/${id}/status`, req);
+  }
+
+  /** Histórico de mudanças de status do local (mais recente primeiro). */
+  historicoStatus(id: number): Observable<LocalStatusHistorico[]> {
+    return this.http.get<LocalStatusHistorico[]>(`${this.resource}/${id}/status-historico`);
   }
 
   /** Monta o multipart: parte "dados" (JSON) + "foto" (opcional). */

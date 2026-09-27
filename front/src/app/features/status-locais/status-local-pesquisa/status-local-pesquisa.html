@@ -2,28 +2,28 @@
   <!-- Cabeçalho da página -->
   <div class="flex flex-wrap items-end justify-between gap-4">
     <div>
-      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Locais</h2>
-      <p class="mt-1 text-sm text-muted">Alojamentos, casas e hotéis para acomodação.</p>
+      <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Status dos Locais</h2>
+      <p class="mt-1 text-sm text-muted">Situações que definem se um local pode liberar hospedagens.</p>
     </div>
     <div class="flex items-center gap-2">
-      <app-exportar-excel nome="locais" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+      <app-exportar-excel nome="status-locais" [acao]="exportarExcel" [desabilitado]="!temItens()" />
       <a
-        routerLink="/locais/novo"
+        routerLink="/status-locais/novo"
         class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
       >
         <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
           <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
-        Novo local
+        Novo status
       </a>
     </div>
   </div>
 
   <!-- Console de busca -->
   <div class="rounded-card border bg-surface p-4 shadow-card sm:p-5">
-    <div class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[7.5rem_minmax(0,1fr)_auto] lg:items-end">
       <!-- ID -->
-      <div class="flex flex-col gap-1.5 lg:w-20">
+      <div class="flex flex-col gap-1.5">
         <label for="f-id" class="text-[0.8125rem] font-medium text-muted">ID</label>
         <input
           #idInput
@@ -39,24 +39,8 @@
         />
       </div>
 
-      <!-- Código -->
-      <div class="flex flex-col gap-1.5 lg:w-40">
-        <label for="f-codigo" class="text-[0.8125rem] font-medium text-muted">Código</label>
-        <input
-          #codigoInput
-          id="f-codigo"
-          type="text"
-          autocomplete="off"
-          [value]="filtroCodigo()"
-          (input)="onCodigoInput(codigoInput.value)"
-          (keydown.enter)="buscar()"
-          placeholder="Ex.: ALJ-001"
-          class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-        />
-      </div>
-
       <!-- Nome -->
-      <div class="flex min-w-0 flex-col gap-1.5 lg:flex-1">
+      <div class="flex flex-col gap-1.5">
         <label for="f-nome" class="text-[0.8125rem] font-medium text-muted">Nome</label>
         <div class="relative">
           <svg
@@ -80,22 +64,6 @@
             class="h-11 w-full rounded-control border bg-canvas pl-9 pr-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
           />
         </div>
-      </div>
-
-      <!-- Cidade -->
-      <div class="flex flex-col gap-1.5 lg:w-44">
-        <label for="f-cidade" class="text-[0.8125rem] font-medium text-muted">Cidade</label>
-        <input
-          #cidadeInput
-          id="f-cidade"
-          type="text"
-          autocomplete="off"
-          [value]="filtroCidade()"
-          (input)="onCidadeInput(cidadeInput.value)"
-          (keydown.enter)="buscar()"
-          placeholder="Ex.: São Paulo"
-          class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
-        />
       </div>
 
       <!-- Ações -->
@@ -129,7 +97,7 @@
       } @else {
         <span>
           <strong class="tabular text-fg">{{ total() }}</strong>
-          {{ total() === 1 ? 'local encontrado' : 'locais encontrados' }}
+          {{ total() === 1 ? 'status encontrado' : 'status encontrados' }}
         </span>
       }
     </div>
@@ -138,24 +106,14 @@
   <!-- Tabela -->
   <div class="overflow-hidden rounded-card border bg-surface shadow-card">
     <div class="overflow-x-auto">
-      <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
-        <caption class="sr-only">Lista de locais de acomodação</caption>
+      <table class="w-full min-w-[34rem] border-collapse text-left text-sm">
+        <caption class="sr-only">Lista de status dos locais</caption>
         <thead>
           <tr class="border-b bg-surface-2/50 text-[0.75rem] uppercase tracking-wide text-muted">
-            <th scope="col" class="w-20 px-4 py-3" [attr.aria-sort]="ariaSort('id')">
+            <th scope="col" class="w-24 px-4 py-3" [attr.aria-sort]="ariaSort('id')">
               <button type="button" (click)="ordenarPor('id')" class="inline-flex items-center gap-1 font-semibold uppercase tracking-wide transition-colors hover:text-fg">
                 ID
                 @if (sortField() === 'id') {
-                  <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-accent" aria-hidden="true"><path [attr.d]="sortDir() === 'asc' ? 'm4 10 4-4 4 4' : 'm4 6 4 4 4-4'" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                } @else {
-                  <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-faint" aria-hidden="true"><path d="M5.5 6.5 8 4l2.5 2.5M5.5 9.5 8 12l2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                }
-              </button>
-            </th>
-            <th scope="col" class="w-36 px-4 py-3" [attr.aria-sort]="ariaSort('codigo')">
-              <button type="button" (click)="ordenarPor('codigo')" class="inline-flex items-center gap-1 font-semibold uppercase tracking-wide transition-colors hover:text-fg">
-                Código
-                @if (sortField() === 'codigo') {
                   <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-accent" aria-hidden="true"><path [attr.d]="sortDir() === 'asc' ? 'm4 10 4-4 4 4' : 'm4 6 4 4 4-4'" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 } @else {
                   <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-faint" aria-hidden="true"><path d="M5.5 6.5 8 4l2.5 2.5M5.5 9.5 8 12l2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -172,27 +130,7 @@
                 }
               </button>
             </th>
-            <th scope="col" class="w-32 px-4 py-3" [attr.aria-sort]="ariaSort('capacidade')">
-              <button type="button" (click)="ordenarPor('capacidade')" class="inline-flex items-center gap-1 font-semibold uppercase tracking-wide transition-colors hover:text-fg">
-                Capacidade
-                @if (sortField() === 'capacidade') {
-                  <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-accent" aria-hidden="true"><path [attr.d]="sortDir() === 'asc' ? 'm4 10 4-4 4 4' : 'm4 6 4 4 4-4'" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                } @else {
-                  <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-faint" aria-hidden="true"><path d="M5.5 6.5 8 4l2.5 2.5M5.5 9.5 8 12l2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                }
-              </button>
-            </th>
-            <th scope="col" class="w-52 px-4 py-3" [attr.aria-sort]="ariaSort('cidade')">
-              <button type="button" (click)="ordenarPor('cidade')" class="inline-flex items-center gap-1 font-semibold uppercase tracking-wide transition-colors hover:text-fg">
-                Cidade / UF
-                @if (sortField() === 'cidade') {
-                  <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-accent" aria-hidden="true"><path [attr.d]="sortDir() === 'asc' ? 'm4 10 4-4 4 4' : 'm4 6 4 4 4-4'" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                } @else {
-                  <svg viewBox="0 0 16 16" fill="none" class="size-3.5 text-faint" aria-hidden="true"><path d="M5.5 6.5 8 4l2.5 2.5M5.5 9.5 8 12l2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                }
-              </button>
-            </th>
-            <th scope="col" class="w-44 px-4 py-3 font-semibold uppercase tracking-wide">Status</th>
+            <th scope="col" class="w-44 px-4 py-3">Hospedagem liberada</th>
             <th scope="col" class="w-28 px-4 py-3 text-right">Ações</th>
           </tr>
         </thead>
@@ -200,61 +138,33 @@
           @if (loading()) {
             @for (r of skeletonRows(); track r) {
               <tr class="border-b border-border/70 last:border-0">
-                <td class="px-4 py-3.5"><span class="sk block h-4 w-8"></span></td>
-                <td class="px-4 py-3.5"><span class="sk block h-4 w-20"></span></td>
-                <td class="px-4 py-3.5"><span class="sk block h-4 w-44 max-w-full"></span></td>
-                <td class="px-4 py-3.5"><span class="sk block h-6 w-20 rounded-full"></span></td>
-                <td class="px-4 py-3.5"><span class="sk block h-4 w-32"></span></td>
-                <td class="px-4 py-3.5"><span class="sk block h-6 w-24 rounded-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-10"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-4 w-48 max-w-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-6 w-16 rounded-full"></span></td>
                 <td class="px-4 py-3.5"><span class="sk ml-auto block h-4 w-16"></span></td>
               </tr>
             }
           } @else if (temItens()) {
-            @for (l of itens(); track l.id) {
+            @for (e of itens(); track e.id) {
               <tr class="border-b border-border/70 transition-colors last:border-0 hover:bg-surface-2/50">
-                <td class="tabular px-4 py-3.5 text-muted">{{ l.id }}</td>
-                <td class="px-4 py-3.5 font-medium text-fg">{{ l.codigo }}</td>
-                <td class="px-4 py-3.5 text-fg">
-                  <div class="flex items-center gap-3">
-                    @if (l.fotoUrl) {
-                      <img [src]="l.fotoUrl" alt="" loading="lazy" class="size-9 shrink-0 rounded-control border border-border object-cover" />
-                    } @else {
-                      <span class="grid size-9 shrink-0 place-items-center rounded-control border border-border bg-surface-2 text-faint" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" class="size-4.5"><path d="M4 16l4-4 3 3 4-5 5 6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                      </span>
-                    }
-                    <span>{{ l.nome }}</span>
-                  </div>
-                </td>
+                <td class="tabular px-4 py-3.5 text-muted">{{ e.id }}</td>
+                <td class="px-4 py-3.5 font-medium text-fg">{{ e.nome }}</td>
                 <td class="px-4 py-3.5">
-                  <span class="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted">
-                    <svg viewBox="0 0 20 20" fill="none" class="size-3.5" aria-hidden="true">
-                      <path d="M7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM3 15v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1M13 8h4M13 11h4M13 14h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <span class="tabular">{{ l.capacidade }}</span> vagas
-                  </span>
-                </td>
-                <td class="px-4 py-3.5 text-muted">{{ l.cidade }} · <span class="font-medium text-fg">{{ l.uf }}</span></td>
-                <td class="px-4 py-3.5">
-                  @if (l.statusNome) {
-                    <span
-                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-medium"
-                      [style.background-color]="l.hospedagemLiberada ? 'var(--color-success-soft)' : 'var(--color-danger-soft)'"
-                      [style.color]="l.hospedagemLiberada ? 'var(--color-success)' : 'var(--color-danger)'"
-                      [title]="l.hospedagemLiberada ? 'Hospedagem liberada' : 'Hospedagem bloqueada'"
-                    >
-                      <span class="size-1.5 rounded-full" style="background-color: currentColor" aria-hidden="true"></span>
-                      {{ l.statusNome }}
+                  @if (e.hospedagemLiberada) {
+                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-medium" style="background-color: var(--color-success-soft); color: var(--color-success)">
+                      <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span> Sim
                     </span>
                   } @else {
-                    <span class="text-faint">—</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted">
+                      <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span> Não
+                    </span>
                   }
                 </td>
                 <td class="px-4 py-3.5">
                   <div class="flex items-center justify-end gap-1">
                     <a
-                      [routerLink]="['/locais', l.id, 'editar']"
-                      [attr.aria-label]="'Editar ' + l.nome"
+                      [routerLink]="['/status-locais', e.id, 'editar']"
+                      [attr.aria-label]="'Editar ' + e.nome"
                       class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent"
                     >
                       <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
@@ -263,8 +173,8 @@
                     </a>
                     <button
                       type="button"
-                      (click)="pedirExclusao(l)"
-                      [attr.aria-label]="'Excluir ' + l.nome"
+                      (click)="pedirExclusao(e)"
+                      [attr.aria-label]="'Excluir ' + e.nome"
                       class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger"
                     >
                       <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
@@ -290,12 +200,12 @@
           </svg>
         </span>
         <div class="max-w-sm">
-          <p class="font-display text-base font-semibold text-fg">Nenhum local encontrado</p>
+          <p class="font-display text-base font-semibold text-fg">Nenhum status encontrado</p>
           <p class="mt-1 text-sm text-muted">
             @if (filtrosAtivos()) {
               Nenhum resultado para os filtros atuais. Ajuste ou limpe a busca.
             } @else {
-              Cadastre o primeiro local de acomodação (alojamento, casa ou hotel).
+              Cadastre o primeiro status.
             }
           </p>
         </div>
@@ -309,13 +219,13 @@
           </button>
         } @else {
           <a
-            routerLink="/locais/novo"
+            routerLink="/status-locais/novo"
             class="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
           >
             <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true">
               <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
-            Novo local
+            Novo status
           </a>
         }
       </div>
@@ -402,7 +312,7 @@
 <!-- Confirmação de exclusão -->
 @if (aExcluir(); as alvo) {
   <app-confirm-dialog
-    title="Excluir local"
+    title="Excluir status"
     [message]="mensagemExclusao(alvo.nome)"
     confirmLabel="Excluir"
     cancelLabel="Cancelar"

@@ -104,6 +104,13 @@ public class HospedagemService {
                     "Este colaborador já possui uma hospedagem ativa.");
         }
 
+        // R3: o status atual do local precisa liberar novas hospedagens.
+        if (hospedagemBloqueada(local)) {
+            throw new RegraNegocioException("localId",
+                    "Hospedagem bloqueada: o status atual do local ("
+                            + local.getStatus().getNome() + ") não libera novas entradas.");
+        }
+
         // R2: o local não pode ultrapassar sua capacidade de vagas.
         if (repository.countByLocalIdAndDataSaidaIsNull(local.getId()) >= local.getCapacidade()) {
             throw new RegraNegocioException("localId",
@@ -334,6 +341,13 @@ public class HospedagemService {
                     null, null, false);
         }
 
+        if (hospedagemBloqueada(local)) {
+            return new ConsultaEntradaResponse(colaborador.getId(), colaborador.getNome(),
+                    AcaoEntrada.BLOQUEADO,
+                    "Local indisponível para entrada no momento. Procure a administração.",
+                    null, null, false);
+        }
+
         long ocupados = repository.countByLocalIdAndDataSaidaIsNull(local.getId());
         boolean temVaga = ocupados < local.getCapacidade();
         String mensagem = temVaga
@@ -365,6 +379,11 @@ public class HospedagemService {
             }
             throw new RegraNegocioException(null, "Você já está hospedado em "
                     + ativa.getLocal().getNome() + ". Dê saída lá antes de entrar aqui.");
+        }
+
+        if (hospedagemBloqueada(local)) {
+            throw new RegraNegocioException(null,
+                    "Local indisponível para novas entradas no momento. Procure a administração.");
         }
 
         if (repository.countByLocalIdAndDataSaidaIsNull(local.getId()) >= local.getCapacidade()) {
@@ -463,6 +482,11 @@ public class HospedagemService {
                 .orElse(null);
         colaborador.setHospedagemAtiva(ativa);
         colaboradorRepository.save(colaborador);
+    }
+
+    /** True quando o status atual do local NÃO libera novas hospedagens. */
+    private boolean hospedagemBloqueada(Local local) {
+        return local.getStatus() != null && !local.getStatus().isHospedagemLiberada();
     }
 
     private Hospedagem buscarEntidade(Long id) {

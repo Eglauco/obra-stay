@@ -1,5 +1,8 @@
 package com.example.hospedagem.dto;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 /**
  * Representação de saída de um local.
  */
@@ -15,6 +18,12 @@ public record LocalResponse(
         String bairro,
         String cidade,
         String uf,
-        String fotoUrl
+        String fotoUrl,
+        Long statusId,
+        String statusNome,
+        boolean hospedagemLiberada,
+        Integer quartos,
+        BigDecimal valorAluguel,
+        List<ItemMobiliaLocalResponse> itensMobilia
 ) {
 }

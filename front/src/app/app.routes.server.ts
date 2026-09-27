@@ -10,6 +10,8 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'gestoes/:id/editar', renderMode: RenderMode.Server },
   { path: 'tipos-solicitacao/:id/editar', renderMode: RenderMode.Server },
   { path: 'locais/:id/editar', renderMode: RenderMode.Server },
+  { path: 'status-locais/:id/editar', renderMode: RenderMode.Server },
+  { path: 'orcamentos-mobiliario/:id/editar', renderMode: RenderMode.Server },
   { path: 'locadoras/:id/editar', renderMode: RenderMode.Server },
   { path: 'hospedagens/local/:id', renderMode: RenderMode.Server },
   { path: 'hospedagens/local/:id/entrada', renderMode: RenderMode.Server },

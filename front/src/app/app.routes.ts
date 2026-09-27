@@ -331,6 +331,54 @@ export const routes: Routes = [
             (m) => m.UsuarioCadastro,
           ),
       },
+      {
+        path: 'status-locais',
+        title: 'Status dos Locais · ObraStay',
+        loadComponent: () =>
+          import('./features/status-locais/status-local-pesquisa/status-local-pesquisa').then(
+            (m) => m.StatusLocalPesquisa,
+          ),
+      },
+      {
+        path: 'status-locais/novo',
+        title: 'Novo status · ObraStay',
+        loadComponent: () =>
+          import('./features/status-locais/status-local-cadastro/status-local-cadastro').then(
+            (m) => m.StatusLocalCadastro,
+          ),
+      },
+      {
+        path: 'status-locais/:id/editar',
+        title: 'Editar status · ObraStay',
+        loadComponent: () =>
+          import('./features/status-locais/status-local-cadastro/status-local-cadastro').then(
+            (m) => m.StatusLocalCadastro,
+          ),
+      },
+      {
+        path: 'orcamentos-mobiliario',
+        title: 'Orçamentos de Mobiliário · ObraStay',
+        loadComponent: () =>
+          import('./features/orcamentos-mobiliario/orcamento-pesquisa/orcamento-pesquisa').then(
+            (m) => m.OrcamentoPesquisa,
+          ),
+      },
+      {
+        path: 'orcamentos-mobiliario/novo',
+        title: 'Novo orçamento · ObraStay',
+        loadComponent: () =>
+          import('./features/orcamentos-mobiliario/orcamento-cadastro/orcamento-cadastro').then(
+            (m) => m.OrcamentoCadastro,
+          ),
+      },
+      {
+        path: 'orcamentos-mobiliario/:id/editar',
+        title: 'Editar orçamento · ObraStay',
+        loadComponent: () =>
+          import('./features/orcamentos-mobiliario/orcamento-cadastro/orcamento-cadastro').then(
+            (m) => m.OrcamentoCadastro,
+          ),
+      },
       { path: '**', redirectTo: 'painel' },
     ],
   },
