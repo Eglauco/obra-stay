@@ -9,7 +9,7 @@ import {
 import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FormField, email, form, maxLength, required, validate } from '@angular/forms/signals';
+import { FormField, email, form, maxLength, readonly, required, validate } from '@angular/forms/signals';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ColaboradorService } from '../../../core/services/colaborador.service';
@@ -82,6 +82,7 @@ export class ColaboradorCadastro {
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
+  protected readonly somenteLeitura = signal(this.route.snapshot.data['modo'] === 'visualizar');
 
   protected readonly saving = signal(false);
   protected readonly carregando = signal(false);
@@ -105,6 +106,9 @@ export class ColaboradorCadastro {
   });
 
   protected readonly f = form(this.model, (p) => {
+    // Modo somente-leitura (Visualizar): trava os campos ligados ao Signal Form.
+    readonly(p.nome, { when: () => this.somenteLeitura() });
+    readonly(p.email, { when: () => this.somenteLeitura() });
     required(p.nome, { message: 'O nome é obrigatório.' });
     maxLength(p.nome, NOME_MAX, { message: `Use no máximo ${NOME_MAX} caracteres.` });
     required(p.sexo, { message: 'Selecione o sexo.' });
@@ -115,7 +119,8 @@ export class ColaboradorCadastro {
       if (!v) return undefined;
       return cpfValido(v) ? undefined : { kind: 'cpf', message: 'CPF inválido.' };
     });
-    required(p.email, { message: 'O e-mail é obrigatório.' });
+    // E-mail é opcional: valida o formato somente quando preenchido (o validador
+    // 'email' ignora valores vazios), então salvar sem e-mail é permitido.
     email(p.email, { message: 'E-mail inválido.' });
     maxLength(p.email, EMAIL_MAX, { message: `Use no máximo ${EMAIL_MAX} caracteres.` });
     required(p.funcaoId, { message: 'Selecione a função.' });
@@ -180,7 +185,7 @@ export class ColaboradorCadastro {
           sexo: c.sexo,
           mdo: c.mdo,
           cpf: apenasDigitosCpf(c.cpf),
-          email: c.email,
+          email: c.email ?? '',
           funcaoId: c.funcao?.id ?? null,
           epcId: c.epc?.id ?? null,
           empresaId: c.empresa?.id ?? null,
@@ -268,6 +273,7 @@ export class ColaboradorCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     this.f.nome().markAsTouched();
     this.f.sexo().markAsTouched();
     this.f.mdo().markAsTouched();

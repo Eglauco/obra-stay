@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { permissaoGuard } from './core/guards/permissao.guard';
 
 export const routes: Routes = [
   {
@@ -16,6 +17,7 @@ export const routes: Routes = [
   {
     path: '',
     canActivate: [authGuard],
+    canActivateChild: [permissaoGuard],
     children: [
       { path: '', redirectTo: 'painel', pathMatch: 'full' },
       {
@@ -332,6 +334,46 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'usuarios/:id/editar',
+        title: 'Editar usuário · ObraStay',
+        loadComponent: () =>
+          import('./features/usuarios/usuario-cadastro/usuario-cadastro').then(
+            (m) => m.UsuarioCadastro,
+          ),
+      },
+      {
+        path: 'perfis',
+        title: 'Perfis · ObraStay',
+        loadComponent: () =>
+          import('./features/perfis/perfil-pesquisa/perfil-pesquisa').then(
+            (m) => m.PerfilPesquisa,
+          ),
+      },
+      {
+        path: 'perfis/novo',
+        title: 'Novo perfil · ObraStay',
+        loadComponent: () =>
+          import('./features/perfis/perfil-cadastro/perfil-cadastro').then(
+            (m) => m.PerfilCadastro,
+          ),
+      },
+      {
+        path: 'perfis/:id/editar',
+        title: 'Editar perfil · ObraStay',
+        loadComponent: () =>
+          import('./features/perfis/perfil-cadastro/perfil-cadastro').then(
+            (m) => m.PerfilCadastro,
+          ),
+      },
+      {
+        path: 'logs-acesso',
+        title: 'Logs de Acesso · ObraStay',
+        loadComponent: () =>
+          import('./features/logs-acesso/log-acesso-pesquisa/log-acesso-pesquisa').then(
+            (m) => m.LogAcessoPesquisa,
+          ),
+      },
+      {
         path: 'status-locais',
         title: 'Status dos Locais · ObraStay',
         loadComponent: () =>
@@ -377,6 +419,130 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/orcamentos-mobiliario/orcamento-cadastro/orcamento-cadastro').then(
             (m) => m.OrcamentoCadastro,
+          ),
+      },
+      // Modo somente-leitura (Visualizar) — acessível a quem tem a ação "Ver".
+      {
+        path: 'colaboradores/:id/visualizar',
+        title: 'Visualizar colaborador · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/colaboradores/colaborador-cadastro/colaborador-cadastro').then(
+            (m) => m.ColaboradorCadastro,
+          ),
+      },
+      {
+        path: 'funcoes/:id/visualizar',
+        title: 'Visualizar função · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/funcoes/funcao-cadastro/funcao-cadastro').then((m) => m.FuncaoCadastro),
+      },
+      {
+        path: 'epcs/:id/visualizar',
+        title: 'Visualizar EPC · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/epc/epc-cadastro/epc-cadastro').then((m) => m.EpcCadastro),
+      },
+      {
+        path: 'empresas/:id/visualizar',
+        title: 'Visualizar empresa · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/empresas/empresa-cadastro/empresa-cadastro').then(
+            (m) => m.EmpresaCadastro,
+          ),
+      },
+      {
+        path: 'gestoes/:id/visualizar',
+        title: 'Visualizar gestão · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/gestoes/gestao-cadastro/gestao-cadastro').then((m) => m.GestaoCadastro),
+      },
+      {
+        path: 'locais/:id/visualizar',
+        title: 'Visualizar local · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/locais/local-cadastro/local-cadastro').then((m) => m.LocalCadastro),
+      },
+      {
+        path: 'status-locais/:id/visualizar',
+        title: 'Visualizar status · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/status-locais/status-local-cadastro/status-local-cadastro').then(
+            (m) => m.StatusLocalCadastro,
+          ),
+      },
+      {
+        path: 'orcamentos-mobiliario/:id/visualizar',
+        title: 'Visualizar orçamento · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/orcamentos-mobiliario/orcamento-cadastro/orcamento-cadastro').then(
+            (m) => m.OrcamentoCadastro,
+          ),
+      },
+      {
+        path: 'locadoras/:id/visualizar',
+        title: 'Visualizar locadora · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/locadoras/locadora-cadastro/locadora-cadastro').then(
+            (m) => m.LocadoraCadastro,
+          ),
+      },
+      {
+        path: 'tipos-solicitacao/:id/visualizar',
+        title: 'Visualizar tipo de solicitação · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import(
+            './features/tipos-solicitacao/tipo-solicitacao-cadastro/tipo-solicitacao-cadastro'
+          ).then((m) => m.TipoSolicitacaoCadastro),
+      },
+      {
+        path: 'usuarios/:id/visualizar',
+        title: 'Visualizar usuário · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/usuarios/usuario-cadastro/usuario-cadastro').then(
+            (m) => m.UsuarioCadastro,
+          ),
+      },
+      {
+        path: 'perfis/:id/visualizar',
+        title: 'Visualizar perfil · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/perfis/perfil-cadastro/perfil-cadastro').then((m) => m.PerfilCadastro),
+      },
+      {
+        path: 'contratos/visualizar/:id',
+        title: 'Visualizar contrato · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/contratos/contrato-cadastro/contrato-cadastro').then(
+            (m) => m.ContratoCadastro,
+          ),
+      },
+      {
+        path: 'gastos/visualizar/:id',
+        title: 'Visualizar gasto · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/gastos/gasto-cadastro/gasto-cadastro').then((m) => m.GastoCadastro),
+      },
+      {
+        path: 'solicitacoes/:id/visualizar',
+        title: 'Visualizar solicitação · ObraStay',
+        data: { modo: 'visualizar' },
+        loadComponent: () =>
+          import('./features/solicitacoes/solicitacao-cadastro/solicitacao-cadastro').then(
+            (m) => m.SolicitacaoCadastro,
           ),
       },
       { path: '**', redirectTo: 'painel' },

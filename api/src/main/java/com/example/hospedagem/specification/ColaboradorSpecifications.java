@@ -42,6 +42,11 @@ public final class ColaboradorSpecifications {
                 if (funcaoId != null) {
                     predicados.add(cb.equal(root.get("funcao").get("id"), funcaoId));
                 }
+
+                Long epcId = filtro.epcId();
+                if (epcId != null) {
+                    predicados.add(cb.equal(root.get("epc").get("id"), epcId));
+                }
             }
 
             return cb.and(predicados.toArray(new jakarta.persistence.criteria.Predicate[0]));

@@ -4,7 +4,7 @@
       <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Gastos</h2>
       <p class="mt-1 text-sm text-muted">Selecione um local para gerenciar os gastos.</p>
     </div>
-    <app-exportar-excel nome="gastos-locais" [acao]="exportarLocaisExcel" [desabilitado]="!temItens()" />
+    <app-exportar-excel *appPode="'gastos:EXPORTAR'" nome="gastos-locais" [acao]="exportarLocaisExcel" [desabilitado]="!temItens()" />
   </div>
 
   <!-- Busca -->

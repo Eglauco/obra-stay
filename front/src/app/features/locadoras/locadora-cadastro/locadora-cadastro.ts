@@ -9,7 +9,7 @@ import {
 import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormField, form, maxLength, required, validate } from '@angular/forms/signals';
+import { FormField, form, maxLength, readonly, required, validate } from '@angular/forms/signals';
 import { LocadoraService } from '../../../core/services/locadora.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ApiError } from '../../../core/models/colaborador.model';
@@ -42,6 +42,7 @@ export class LocadoraCadastro {
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
+  protected readonly somenteLeitura = signal(this.route.snapshot.data['modo'] === 'visualizar');
 
   protected readonly saving = signal(false);
   protected readonly carregando = signal(false);
@@ -54,6 +55,7 @@ export class LocadoraCadastro {
     maxLength(p.nome, NOME_MAX, {
       message: `Use no máximo ${NOME_MAX} caracteres.`,
     });
+    readonly(p.nome, () => this.somenteLeitura());
     required(p.telefone, { message: 'O telefone de contato é obrigatório.' });
     validate(p.telefone, ({ value }) => {
       const v = value();
@@ -133,6 +135,7 @@ export class LocadoraCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     this.f.nome().markAsTouched();
     this.f.telefone().markAsTouched();
     this.serverErrors.set({});

@@ -13,10 +13,10 @@
     </button>
     <div>
       <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">
-        {{ editMode() ? 'Gerenciar' : 'Nova' }}
+        {{ somenteLeitura() ? 'Visualizar' : (editMode() ? 'Gerenciar' : 'Nova') }}
       </p>
       <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">
-        {{ editMode() ? 'Solicitação' : 'Nova solicitação' }}
+        {{ somenteLeitura() ? 'Solicitação' : (editMode() ? 'Solicitação' : 'Nova solicitação') }}
       </h2>
     </div>
   </div>
@@ -61,8 +61,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-4" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round" /></svg>
             Histórico
           </button>
-          @if (podeIniciar()) {
+          @if (podeIniciar() && !somenteLeitura()) {
             <button
+              *appPode="'solicitacoes:MUDAR_STATUS'"
               type="button"
               (click)="pedirIniciar()"
               [disabled]="acaoStatus()"
@@ -72,8 +73,9 @@
               Iniciar
             </button>
           }
-          @if (podeFinalizar()) {
+          @if (podeFinalizar() && !somenteLeitura()) {
             <button
+              *appPode="'solicitacoes:MUDAR_STATUS'"
               type="button"
               (click)="pedirFinalizar()"
               [disabled]="acaoStatus()"
@@ -83,8 +85,9 @@
               Finalizar
             </button>
           }
-          @if (podeReabrir()) {
+          @if (podeReabrir() && !somenteLeitura()) {
             <button
+              *appPode="'solicitacoes:MUDAR_STATUS'"
               type="button"
               (click)="pedirReabrir()"
               [disabled]="acaoStatus()"
@@ -94,8 +97,9 @@
               Reabrir
             </button>
           }
-          @if (podeCancelar()) {
+          @if (podeCancelar() && !somenteLeitura()) {
             <button
+              *appPode="'solicitacoes:MUDAR_STATUS'"
               type="button"
               (click)="pedirCancelar()"
               [disabled]="acaoStatus()"
@@ -251,7 +255,11 @@
         }
         <div class="flex items-center justify-between gap-3 border-t border-border pt-5">
           <p class="text-[0.75rem] text-faint">
-            A solicitação não pode ser editada — use as ações de status acima.
+            @if (somenteLeitura()) {
+              Somente leitura — você pode visualizar e copiar todos os dados.
+            } @else {
+              A solicitação não pode ser editada — use as ações de status acima.
+            }
           </p>
           <button
             type="button"

@@ -27,8 +27,8 @@ interface ItemRow {
           <svg viewBox="0 0 20 20" fill="none" class="size-5" aria-hidden="true"><path d="M12 5l-5 5 5 5M7 10h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
         <div>
-          <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">{{ editMode() ? 'Editar' : 'Novo' }}</p>
-          <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">{{ editMode() ? 'Editar orçamento' : 'Novo orçamento' }}</h2>
+          <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">{{ somenteLeitura() ? 'Visualizar' : (editMode() ? 'Editar' : 'Novo') }}</p>
+          <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">{{ somenteLeitura() ? 'Visualizar orçamento' : (editMode() ? 'Editar orçamento' : 'Novo orçamento') }}</h2>
         </div>
       </div>
 
@@ -51,7 +51,8 @@ interface ItemRow {
               <label for="orc-nome" class="text-sm font-medium text-fg">Nome <span class="text-danger" aria-hidden="true">*</span></label>
               <input #nomeInput id="orc-nome" type="text" autocomplete="off" [value]="nome()" (input)="nome.set(nomeInput.value); clearServerError('nome')"
                 placeholder="Ex.: Padrão econômico"
-                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [attr.readonly]="somenteLeitura() ? '' : null"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="nomeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="nomeError() ? 'true' : null" />
               @if (nomeError()) { <p class="text-[0.8125rem] text-danger">{{ nomeError() }}</p> }
             </div>
@@ -59,7 +60,8 @@ interface ItemRow {
               <label for="orc-desc" class="text-sm font-medium text-fg">Descrição</label>
               <textarea #descInput id="orc-desc" rows="2" [value]="descricao()" (input)="descricao.set(descInput.value); clearServerError('descricao')"
                 placeholder="Opcional"
-                class="w-full resize-y rounded-control border bg-canvas px-3.5 py-2.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                [attr.readonly]="somenteLeitura() ? '' : null"
+                class="w-full resize-y rounded-control border bg-canvas px-3.5 py-2.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="descricaoError() ? 'var(--color-danger)' : null"
                 [attr.aria-invalid]="descricaoError() ? 'true' : null"
                 [attr.aria-describedby]="descricaoError() ? 'orc-desc-erro' : null"></textarea>
@@ -71,8 +73,8 @@ interface ItemRow {
           <fieldset class="form-card flex flex-col gap-4 rounded-card border bg-surface p-6 shadow-card sm:p-7">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Itens</legend>
-              <button type="button" (click)="adicionarItem()"
-                class="inline-flex h-9 items-center gap-2 rounded-control border border-border-strong px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+              <button type="button" (click)="adicionarItem()" [attr.disabled]="somenteLeitura() ? '' : null"
+                class="inline-flex h-9 items-center gap-2 rounded-control border border-border-strong px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:opacity-70">
                 <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
                 Adicionar item
               </button>
@@ -90,8 +92,8 @@ interface ItemRow {
               <div class="rounded-control border bg-canvas p-3.5">
                 <div class="mb-2 flex items-center justify-between">
                   <span class="text-[0.75rem] font-semibold uppercase tracking-wide text-faint">Item {{ i + 1 }}</span>
-                  <button type="button" (click)="removerItem(row.key)" [attr.aria-label]="'Remover item ' + (i + 1)" title="Remover item"
-                    class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
+                  <button type="button" (click)="removerItem(row.key)" [attr.disabled]="somenteLeitura() ? '' : null" [attr.aria-label]="'Remover item ' + (i + 1)" title="Remover item"
+                    class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-70">
                     <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                   </button>
                 </div>
@@ -100,7 +102,8 @@ interface ItemRow {
                     <label class="text-[0.8125rem] font-medium text-muted" [for]="'it-nome-' + row.key">Item <span class="text-danger" aria-hidden="true">*</span></label>
                     <input [id]="'it-nome-' + row.key" type="text" autocomplete="off" [value]="row.nome" (input)="atualizarItem(row.key, 'nome', $event)"
                       placeholder="Ex.: Geladeira 332L"
-                      class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                      [attr.readonly]="somenteLeitura() ? '' : null"
+                      class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                       [style.border-color]="submetido() && !row.nome.trim() ? 'var(--color-danger)' : null"
                       [attr.aria-invalid]="submetido() && !row.nome.trim() ? 'true' : null"
                       [attr.aria-describedby]="erroLinha(row) ? 'it-erro-' + row.key : null" />
@@ -109,7 +112,8 @@ interface ItemRow {
                     <label class="text-[0.8125rem] font-medium text-muted" [for]="'it-preco-' + row.key">Preço unit. (R$) <span class="text-danger" aria-hidden="true">*</span></label>
                     <input [id]="'it-preco-' + row.key" type="number" inputmode="decimal" min="0" step="0.01" [value]="row.preco" (input)="atualizarItem(row.key, 'preco', $event)"
                       placeholder="0,00"
-                      class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                      [attr.readonly]="somenteLeitura() ? '' : null"
+                      class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                       [style.border-color]="submetido() && !precoValido(row) ? 'var(--color-danger)' : null"
                       [attr.aria-invalid]="submetido() && !precoValido(row) ? 'true' : null"
                       [attr.aria-describedby]="erroLinha(row) ? 'it-erro-' + row.key : null" />
@@ -118,7 +122,8 @@ interface ItemRow {
                     <div class="flex flex-col gap-1">
                       <label class="text-[0.8125rem] font-medium text-muted" [for]="'it-fixa-' + row.key">Fixa</label>
                       <input [id]="'it-fixa-' + row.key" type="number" inputmode="numeric" min="0" step="1" [value]="row.fixa" (input)="atualizarItem(row.key, 'fixa', $event)"
-                        class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent"
+                        [attr.readonly]="somenteLeitura() ? '' : null"
+                        class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent read-only:opacity-70"
                         [style.border-color]="submetido() && !qtdValida(row) ? 'var(--color-danger)' : null"
                         [attr.aria-invalid]="submetido() && !qtdValida(row) ? 'true' : null"
                         [attr.aria-describedby]="erroLinha(row) ? 'it-erro-' + row.key : null" />
@@ -126,7 +131,8 @@ interface ItemRow {
                     <div class="flex flex-col gap-1">
                       <label class="text-[0.8125rem] font-medium text-muted" [for]="'it-pq-' + row.key">Por quarto</label>
                       <input [id]="'it-pq-' + row.key" type="number" inputmode="numeric" min="0" step="1" [value]="row.porQuarto" (input)="atualizarItem(row.key, 'porQuarto', $event)"
-                        class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent"
+                        [attr.readonly]="somenteLeitura() ? '' : null"
+                        class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent read-only:opacity-70"
                         [style.border-color]="submetido() && !qtdValida(row) ? 'var(--color-danger)' : null"
                         [attr.aria-invalid]="submetido() && !qtdValida(row) ? 'true' : null"
                         [attr.aria-describedby]="erroLinha(row) ? 'it-erro-' + row.key : null" />
@@ -141,13 +147,18 @@ interface ItemRow {
           </fieldset>
 
           <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button type="button" (click)="voltar()" [disabled]="saving()"
-              class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">Cancelar</button>
-            <button type="submit" [disabled]="saving()"
-              class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70">
-              @if (saving()) { <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg> }
-              {{ editMode() ? 'Salvar alterações' : 'Cadastrar' }}
-            </button>
+            @if (somenteLeitura()) {
+              <button type="button" (click)="voltar()"
+                class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">Voltar</button>
+            } @else {
+              <button type="button" (click)="voltar()" [disabled]="saving()"
+                class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">Cancelar</button>
+              <button type="submit" [disabled]="saving()"
+                class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70">
+                @if (saving()) { <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg> }
+                {{ editMode() ? 'Salvar alterações' : 'Cadastrar' }}
+              </button>
+            }
           </div>
         </form>
       }
@@ -164,6 +175,7 @@ export class OrcamentoCadastro {
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
+  protected readonly somenteLeitura = signal(this.route.snapshot.data['modo'] === 'visualizar');
 
   protected readonly nome = signal('');
   protected readonly descricao = signal('');
@@ -287,6 +299,7 @@ export class OrcamentoCadastro {
   }
 
   protected salvar(): void {
+    if (this.somenteLeitura()) return;
     this.submetido.set(true);
     this.serverErrors.set({});
 

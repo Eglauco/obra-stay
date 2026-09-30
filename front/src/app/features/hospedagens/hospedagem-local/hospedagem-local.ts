@@ -19,6 +19,7 @@ import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-d
 import { QrEntradaDialog } from '../../../core/components/qr-entrada-dialog/qr-entrada-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import { HospedagemSaidaDialog } from '../hospedagem-saida-dialog/hospedagem-saida-dialog';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Hospedagem, StatusFiltro } from '../../../core/models/hospedagem.model';
@@ -28,7 +29,7 @@ import { gerarRelatorioHospedagensPdf } from '../../../core/util/relatorio-hospe
 /** Detalhe de um local: colaboradores hospedados + dar entrada / dar saída. */
 @Component({
   selector: 'app-hospedagem-local',
-  imports: [ConfirmDialog, QrEntradaDialog, HospedagemSaidaDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, QrEntradaDialog, HospedagemSaidaDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './hospedagem-local.html',
   styleUrl: './hospedagem-local.css',
 })

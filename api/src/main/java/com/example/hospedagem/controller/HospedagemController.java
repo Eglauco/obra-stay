@@ -23,6 +23,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,6 +53,7 @@ public class HospedagemController {
      * Lista hospedagens com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('hospedagens','VER')")
     public PageResponse<HospedagemResponse> listar(
             @RequestParam(required = false) Long colaboradorId,
             @RequestParam(required = false) Long localId,
@@ -75,6 +77,7 @@ public class HospedagemController {
 
     /** Exporta as hospedagens do local (detalhe) para Excel, respeitando os filtros. */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('hospedagens','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long colaboradorId,
             @RequestParam(required = false) Long localId,
@@ -89,6 +92,7 @@ public class HospedagemController {
 
     /** Exporta a grade de locais com a ocupação atual (respeita o filtro de nome). */
     @GetMapping("/exportar-locais")
+    @PreAuthorize("@perm.can('hospedagens','EXPORTAR')")
     public ResponseEntity<byte[]> exportarLocais(@RequestParam(required = false) String nome) {
         return PlanilhaExcel.resposta(service.exportarLocais(nome), "hospedagens-locais");
     }
@@ -98,6 +102,7 @@ public class HospedagemController {
      * o filtro de status e período. Declarado antes de "/{id}" para não virar path variable.
      */
     @GetMapping("/relatorio")
+    @PreAuthorize("@perm.can('hospedagens','EXPORTAR')")
     public RelatorioHospedagensResponse relatorio(
             @RequestParam Long localId,
             @RequestParam(required = false) String status,
@@ -111,6 +116,7 @@ public class HospedagemController {
      * ao abrir uma solicitação). Declarado antes de "/{id}".
      */
     @GetMapping("/locais-colaborador/{colaboradorId}")
+    @PreAuthorize("@perm.can('hospedagens','VER')")
     public LocaisColaboradorResponse locaisDoColaborador(@PathVariable Long colaboradorId) {
         return service.locaisDoColaborador(colaboradorId);
     }
@@ -139,6 +145,7 @@ public class HospedagemController {
      * Busca uma hospedagem por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('hospedagens','VER')")
     public HospedagemResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -147,6 +154,7 @@ public class HospedagemController {
      * Registra a entrada de um colaborador em um local.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('hospedagens','DAR_ENTRADA')")
     public ResponseEntity<HospedagemResponse> darEntrada(
             @Valid @RequestBody HospedagemEntradaRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -162,6 +170,7 @@ public class HospedagemController {
      * Registra a saída (encerra) de uma hospedagem ativa.
      */
     @PutMapping("/{id}/saida")
+    @PreAuthorize("@perm.can('hospedagens','DAR_SAIDA')")
     public HospedagemResponse darSaida(
             @PathVariable Long id,
             @Valid @RequestBody HospedagemSaidaRequest request) {
@@ -173,6 +182,7 @@ public class HospedagemController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('hospedagens','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

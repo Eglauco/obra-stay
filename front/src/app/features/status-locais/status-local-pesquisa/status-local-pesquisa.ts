@@ -16,6 +16,7 @@ import { StatusLocalService } from '../../../core/services/status-local.service'
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse, SortDir } from '../../../core/models/colaborador.model';
 import {
   StatusLocal,
@@ -25,7 +26,7 @@ import {
 
 @Component({
   selector: 'app-status-local-pesquisa',
-  imports: [ConfirmDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './status-local-pesquisa.html',
   styleUrl: './status-local-pesquisa.css',
 })

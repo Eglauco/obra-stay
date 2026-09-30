@@ -107,7 +107,7 @@ public class ColaboradorService {
                 .sexo(request.sexo())
                 .mdo(request.mdo())
                 .cpf(cpf)
-                .email(request.email().trim().toLowerCase())
+                .email(normalizarEmail(request.email()))
                 .funcao(buscarFuncao(request.funcaoId()))
                 .epc(buscarEpc(request.epcId()))
                 .empresa(buscarEmpresa(request.empresaId()))
@@ -127,7 +127,7 @@ public class ColaboradorService {
         colaborador.setSexo(request.sexo());
         colaborador.setMdo(request.mdo());
         colaborador.setCpf(cpf);
-        colaborador.setEmail(request.email().trim().toLowerCase());
+        colaborador.setEmail(normalizarEmail(request.email()));
         colaborador.setFuncao(buscarFuncao(request.funcaoId()));
         colaborador.setEpc(buscarEpc(request.epcId()));
         colaborador.setEmpresa(buscarEmpresa(request.empresaId()));
@@ -225,6 +225,15 @@ public class ColaboradorService {
     /** Mantém apenas os dígitos do CPF (o front pode enviar com máscara). */
     private String normalizarCpf(String cpf) {
         return cpf == null ? null : cpf.replaceAll("\\D", "");
+    }
+
+    /** Normaliza o e-mail (opcional): apara espaços e minúsculas; grava null quando vazio/em branco. */
+    private String normalizarEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        String limpo = email.trim();
+        return limpo.isEmpty() ? null : limpo.toLowerCase();
     }
 
     private ColaboradorResponse toResponse(Colaborador colaborador) {

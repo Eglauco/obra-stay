@@ -1,8 +1,16 @@
+import { Permissao } from './perfil.model';
+
 export interface Usuario {
   id: number;
   nome: string;
   email: string;
   criadoEm?: string;
+  ultimoLogin?: string | null;
+  perfilId?: number | null;
+  perfilNome?: string | null;
+  /** Concede tudo (perfil Administrador). Quando true, ignora a lista de permissões. */
+  acessoTotal?: boolean;
+  permissoes?: Permissao[];
 }
 
 export interface LoginResponse {
@@ -21,4 +29,10 @@ export interface RegistrarUsuarioRequest {
   email: string;
   senha: string;
   repetirSenha: string;
+  perfilId: number;
+}
+
+export interface AtualizarUsuarioRequest {
+  nome: string;
+  perfilId: number;
 }

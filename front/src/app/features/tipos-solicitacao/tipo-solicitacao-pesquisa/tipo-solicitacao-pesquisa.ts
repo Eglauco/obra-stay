@@ -16,12 +16,13 @@ import { TipoSolicitacaoService } from '../../../core/services/tipo-solicitacao.
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse, SortDir } from '../../../core/models/colaborador.model';
 import { TipoSolicitacao, TipoSolicitacaoFiltro, TipoSolicitacaoSortField } from '../../../core/models/tipo-solicitacao.model';
 
 @Component({
   selector: 'app-tipo-solicitacao-pesquisa',
-  imports: [ConfirmDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './tipo-solicitacao-pesquisa.html',
   styleUrl: './tipo-solicitacao-pesquisa.css',
 })

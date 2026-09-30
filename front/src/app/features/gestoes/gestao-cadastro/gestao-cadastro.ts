@@ -9,7 +9,7 @@ import {
 import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormField, form, maxLength, required } from '@angular/forms/signals';
+import { FormField, form, maxLength, readonly, required } from '@angular/forms/signals';
 import { GestaoService } from '../../../core/services/gestao.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ApiError } from '../../../core/models/colaborador.model';
@@ -40,6 +40,7 @@ export class GestaoCadastro {
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
+  protected readonly somenteLeitura = signal(this.route.snapshot.data['modo'] === 'visualizar');
 
   protected readonly saving = signal(false);
   protected readonly carregando = signal(false);
@@ -52,6 +53,7 @@ export class GestaoCadastro {
     maxLength(p.nome, NOME_MAX, {
       message: `Use no máximo ${NOME_MAX} caracteres.`,
     });
+    readonly(p.nome, () => this.somenteLeitura());
   });
 
   protected readonly nomeCount = computed(() => this.model().nome.length);
@@ -107,6 +109,7 @@ export class GestaoCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     this.f.nome().markAsTouched();
     this.serverErrors.set({});
 

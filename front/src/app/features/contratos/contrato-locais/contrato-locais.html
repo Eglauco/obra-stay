@@ -5,7 +5,7 @@
       <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Contratos</h2>
       <p class="mt-1 text-sm text-muted">Selecione um local para gerenciar seus contratos de locação.</p>
     </div>
-    <app-exportar-excel nome="contratos-locais" [acao]="exportarLocaisExcel" [desabilitado]="!temItens()" />
+    <app-exportar-excel *appPode="'contratos:EXPORTAR'" nome="contratos-locais" [acao]="exportarLocaisExcel" [desabilitado]="!temItens()" />
   </div>
 
   <!-- Busca -->

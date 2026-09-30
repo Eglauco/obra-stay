@@ -22,6 +22,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,6 +49,7 @@ public class SolicitacaoController {
     }
 
     @GetMapping
+    @PreAuthorize("@perm.can('solicitacoes','VER')")
     public PageResponse<SolicitacaoResponse> listar(
             @RequestParam(required = false) StatusSolicitacao status,
             @RequestParam(required = false) Long tipoSolicitacaoId,
@@ -67,6 +69,7 @@ public class SolicitacaoController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('solicitacoes','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) StatusSolicitacao status,
             @RequestParam(required = false) Long tipoSolicitacaoId,
@@ -81,11 +84,13 @@ public class SolicitacaoController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('solicitacoes','VER')")
     public SolicitacaoResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
 
     @PostMapping
+    @PreAuthorize("@perm.can('solicitacoes','CRIAR')")
     public ResponseEntity<SolicitacaoResponse> criar(
             @Valid @RequestBody SolicitacaoRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -98,6 +103,7 @@ public class SolicitacaoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('solicitacoes','EDITAR')")
     public SolicitacaoResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody SolicitacaoRequest request) {
@@ -127,6 +133,7 @@ public class SolicitacaoController {
     // ----- transições de status (observação opcional -> histórico) -----
 
     @PutMapping("/{id}/iniciar")
+    @PreAuthorize("@perm.can('solicitacoes','MUDAR_STATUS')")
     public SolicitacaoResponse iniciar(
             @PathVariable Long id,
             @Valid @RequestBody(required = false) TransicaoStatusRequest request) {
@@ -134,6 +141,7 @@ public class SolicitacaoController {
     }
 
     @PutMapping("/{id}/finalizar")
+    @PreAuthorize("@perm.can('solicitacoes','MUDAR_STATUS')")
     public SolicitacaoResponse finalizar(
             @PathVariable Long id,
             @Valid @RequestBody(required = false) TransicaoStatusRequest request) {
@@ -141,6 +149,7 @@ public class SolicitacaoController {
     }
 
     @PutMapping("/{id}/cancelar")
+    @PreAuthorize("@perm.can('solicitacoes','MUDAR_STATUS')")
     public SolicitacaoResponse cancelar(
             @PathVariable Long id,
             @Valid @RequestBody(required = false) TransicaoStatusRequest request) {
@@ -148,6 +157,7 @@ public class SolicitacaoController {
     }
 
     @PutMapping("/{id}/reabrir")
+    @PreAuthorize("@perm.can('solicitacoes','MUDAR_STATUS')")
     public SolicitacaoResponse reabrir(
             @PathVariable Long id,
             @Valid @RequestBody(required = false) TransicaoStatusRequest request) {
@@ -161,6 +171,7 @@ public class SolicitacaoController {
     // ----- histórico (linha do tempo) -----
 
     @GetMapping("/{id}/historico")
+    @PreAuthorize("@perm.can('solicitacoes','VER')")
     public List<HistoricoResponse> historico(@PathVariable Long id) {
         return service.historico(id);
     }
@@ -172,6 +183,7 @@ public class SolicitacaoController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('solicitacoes','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

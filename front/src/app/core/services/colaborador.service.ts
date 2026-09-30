@@ -36,6 +36,9 @@ export class ColaboradorService {
     if (filtro.funcaoId != null && !Number.isNaN(filtro.funcaoId)) {
       params = params.set('funcaoId', String(filtro.funcaoId));
     }
+    if (filtro.epcId != null && !Number.isNaN(filtro.epcId)) {
+      params = params.set('epcId', String(filtro.epcId));
+    }
 
     return this.http.get<PageResponse<Colaborador>>(this.resource, { params });
   }
@@ -54,6 +57,9 @@ export class ColaboradorService {
     if (filtro.sexo) params = params.set('sexo', filtro.sexo);
     if (filtro.funcaoId != null && !Number.isNaN(filtro.funcaoId)) {
       params = params.set('funcaoId', String(filtro.funcaoId));
+    }
+    if (filtro.epcId != null && !Number.isNaN(filtro.epcId)) {
+      params = params.set('epcId', String(filtro.epcId));
     }
     return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
   }

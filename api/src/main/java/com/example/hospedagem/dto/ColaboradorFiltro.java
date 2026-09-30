@@ -10,6 +10,7 @@ public record ColaboradorFiltro(
         Long id,
         String nome,
         Sexo sexo,
-        Long funcaoId
+        Long funcaoId,
+        Long epcId
 ) {
 }

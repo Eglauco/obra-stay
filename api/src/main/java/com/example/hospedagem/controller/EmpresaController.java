@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class EmpresaController {
      * Lista empresas com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('empresas','VER')")
     public PageResponse<EmpresaResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -57,6 +59,7 @@ public class EmpresaController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/opcoes")
+    @PreAuthorize("@perm.can('empresas','VER')")
     public List<EmpresaResponse> opcoes() {
         return service.listarOpcoes();
     }
@@ -66,6 +69,7 @@ public class EmpresaController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('empresas','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome) {
@@ -78,6 +82,7 @@ public class EmpresaController {
      * Busca uma empresa por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('empresas','VER')")
     public EmpresaResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -86,6 +91,7 @@ public class EmpresaController {
      * Cria uma empresa.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('empresas','CRIAR')")
     public ResponseEntity<EmpresaResponse> criar(
             @Valid @RequestBody EmpresaRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -101,6 +107,7 @@ public class EmpresaController {
      * Atualiza uma empresa existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('empresas','EDITAR')")
     public EmpresaResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody EmpresaRequest request) {
@@ -112,6 +119,7 @@ public class EmpresaController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('empresas','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

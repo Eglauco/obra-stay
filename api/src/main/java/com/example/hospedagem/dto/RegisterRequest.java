@@ -2,6 +2,7 @@ package com.example.hospedagem.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
@@ -19,5 +20,8 @@ public record RegisterRequest(
         String senha,
 
         @NotBlank(message = "Repita a senha.")
-        String repetirSenha) {
+        String repetirSenha,
+
+        @NotNull(message = "Selecione um perfil.")
+        Long perfilId) {
 }

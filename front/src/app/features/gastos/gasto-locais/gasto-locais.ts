@@ -19,11 +19,12 @@ import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { formatarBRL } from '../../../core/util/format';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 
 /** Lista principal da gestão de Gastos: os LOCAIS, com o total já gasto em cada um. */
 @Component({
   selector: 'app-gasto-locais',
-  imports: [RouterLink, ExportarExcel],
+  imports: [RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './gasto-locais.html',
   styleUrl: './gasto-locais.css',
 })

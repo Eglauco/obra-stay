@@ -56,7 +56,8 @@ export interface BuscaOpcao {
           (focus)="onFocus()"
           (blur)="onBlur()"
           (keydown)="onKeydown($event)"
-          class="h-11 w-full rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+          [attr.readonly]="desabilitado() ? '' : null"
+          class="h-11 w-full rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
           [style.border-color]="erro() ? 'var(--color-danger)' : null"
           [attr.aria-invalid]="erro() ? 'true' : null"
           [attr.aria-describedby]="erro() ? idBase() + '-error' : null"
@@ -69,7 +70,7 @@ export interface BuscaOpcao {
               <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
             </svg>
           </span>
-        } @else if (selecionadoId() != null) {
+        } @else if (selecionadoId() != null && !desabilitado()) {
           <button
             type="button"
             (click)="limpar()"
@@ -129,6 +130,8 @@ export class BuscaSelect {
   readonly placeholder = input('Digite para buscar…');
   readonly idBase = input('busca');
   readonly obrigatorio = input(false);
+  /** Somente leitura: mantém o valor visível/copiável, mas bloqueia busca e edição. */
+  readonly desabilitado = input(false);
   readonly erro = input<string | null>(null);
   /** Valor inicial (modo edição): mostra o rótulo sem nova consulta. */
   readonly inicial = input<BuscaOpcao | null>(null);
@@ -164,6 +167,7 @@ export class BuscaSelect {
   }
 
   protected onFocus(): void {
+    if (this.desabilitado()) return;
     this.aberto.set(true);
     if (this.opcoes().length === 0) {
       this.termo$.next(this.selecionado() ? '' : this.texto().trim());
@@ -171,6 +175,7 @@ export class BuscaSelect {
   }
 
   protected onInput(valor: string): void {
+    if (this.desabilitado()) return;
     this.texto.set(valor);
     if (this.selecionado()) {
       this.selecionado.set(null);
@@ -208,6 +213,7 @@ export class BuscaSelect {
   }
 
   protected onKeydown(e: KeyboardEvent): void {
+    if (this.desabilitado()) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       this.aberto.set(true);

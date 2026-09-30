@@ -11,7 +11,7 @@ const API_BASE = environment.apiBase;
 const TOKEN_KEY = 'obrastay.token';
 const USER_KEY = 'obrastay.usuario';
 
-/** Sessão do usuário: login, logout, token e troca de senha. Estado em signals + localStorage. */
+/** Sessão do usuário: login, logout, token, troca de senha e permissões (RBAC). */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -21,6 +21,21 @@ export class AuthService {
   readonly usuario = signal<Usuario | null>(this.carregarUsuario());
   readonly autenticado = computed(() => this.usuario() !== null);
 
+  /** Estado de permissões derivado do usuário logado. */
+  private readonly permissoesInfo = computed(() => {
+    const u = this.usuario();
+    if (!u) {
+      return { legacy: false, total: false, chaves: new Set<string>() };
+    }
+    // Sessão iniciada antes do RBAC (objeto sem os campos): libera tudo até o /me atualizar.
+    const legacy = u.acessoTotal === undefined && u.permissoes === undefined;
+    return {
+      legacy,
+      total: u.acessoTotal === true,
+      chaves: new Set((u.permissoes ?? []).map((p) => `${p.tela}:${p.acao}`)),
+    };
+  });
+
   login(email: string, senha: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${API_BASE}/auth/login`, { email, senha })
@@ -28,12 +43,38 @@ export class AuthService {
   }
 
   logout(): void {
+    // Registra o logout na auditoria (best-effort; o token ainda é anexado pelo interceptor
+    // neste momento, antes de encerrarSessao limpar o localStorage).
+    if (this.isBrowser && this.token()) {
+      this.http.post<void>(`${API_BASE}/auth/logout`, {}).subscribe({ next: () => {}, error: () => {} });
+    }
     this.encerrarSessao();
     this.router.navigateByUrl('/login');
   }
 
   trocarSenha(req: TrocarSenhaRequest): Observable<void> {
     return this.http.post<void>(`${API_BASE}/auth/trocar-senha`, req);
+  }
+
+  /** Recarrega os dados do usuário (inclui perfil e permissões) a partir do /me. */
+  refreshUsuario(): Observable<Usuario> {
+    return this.http
+      .get<Usuario>(`${API_BASE}/auth/me`)
+      .pipe(tap((u) => this.atualizarUsuario(u)));
+  }
+
+  /** Tem a permissão tela:acao? Acesso total ou sessão legada liberam tudo. */
+  pode(tela: string, acao: string): boolean {
+    const info = this.permissoesInfo();
+    if (info.legacy || info.total) {
+      return true;
+    }
+    return info.chaves.has(`${tela}:${acao}`);
+  }
+
+  /** A tela está liberada (tem a ação VER)? */
+  podeVer(tela: string): boolean {
+    return this.pode(tela, 'VER');
   }
 
   token(): string | null {
@@ -68,6 +109,17 @@ export class AuthService {
       }
     }
     this.usuario.set(res.usuario);
+  }
+
+  private atualizarUsuario(u: Usuario): void {
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(USER_KEY, JSON.stringify(u));
+      } catch {
+        /* ignore */
+      }
+    }
+    this.usuario.set(u);
   }
 
   private carregarUsuario(): Usuario | null {

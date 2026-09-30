@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,6 +45,7 @@ public class OrcamentoMobiliarioController {
      * Lista orçamentos com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('orcamentos-mobiliario','VER')")
     public PageResponse<OrcamentoMobiliarioResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -58,6 +60,7 @@ public class OrcamentoMobiliarioController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('orcamentos-mobiliario','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome) {
@@ -71,6 +74,7 @@ public class OrcamentoMobiliarioController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/opcoes")
+    @PreAuthorize("@perm.can('orcamentos-mobiliario','VER')")
     public List<ResumoRef> opcoes() {
         return service.listarOpcoes();
     }
@@ -79,6 +83,7 @@ public class OrcamentoMobiliarioController {
      * Busca um orçamento por id (com seus itens).
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('orcamentos-mobiliario','VER')")
     public OrcamentoMobiliarioResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -87,6 +92,7 @@ public class OrcamentoMobiliarioController {
      * Cria um orçamento com seus itens.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('orcamentos-mobiliario','CRIAR')")
     public ResponseEntity<OrcamentoMobiliarioResponse> criar(
             @Valid @RequestBody OrcamentoMobiliarioRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -102,6 +108,7 @@ public class OrcamentoMobiliarioController {
      * Atualiza um orçamento existente (substitui a lista de itens).
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('orcamentos-mobiliario','EDITAR')")
     public OrcamentoMobiliarioResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody OrcamentoMobiliarioRequest request) {
@@ -113,6 +120,7 @@ public class OrcamentoMobiliarioController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('orcamentos-mobiliario','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

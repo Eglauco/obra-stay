@@ -6,8 +6,9 @@
       <p class="mt-1 text-sm text-muted">Demandas abertas pelos colaboradores sobre sua hospedagem.</p>
     </div>
     <div class="flex items-center gap-2">
-      <app-exportar-excel nome="solicitacoes" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+      <app-exportar-excel *appPode="'solicitacoes:EXPORTAR'" nome="solicitacoes" [acao]="exportarExcel" [desabilitado]="!temItens()" />
       <a
+        *appPode="'solicitacoes:CRIAR'"
         routerLink="/solicitacoes/nova"
         class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
       >
@@ -172,11 +173,15 @@
                       class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="size-4.5" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </button>
-                    <a [routerLink]="['/solicitacoes', s.id, 'editar']" title="Abrir / gerenciar" [attr.aria-label]="'Gerenciar solicitação #' + s.id"
+                    <a *appPode="'solicitacoes:VER'" [routerLink]="['/solicitacoes', s.id, 'visualizar']" title="Visualizar" [attr.aria-label]="'Visualizar solicitação de ' + s.colaborador.nome"
+                      class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10Z" stroke="currentColor" stroke-width="1.5" /><circle cx="10" cy="10" r="2.25" stroke="currentColor" stroke-width="1.5" /></svg>
+                    </a>
+                    <a *appPode="'solicitacoes:EDITAR'" [routerLink]="['/solicitacoes', s.id, 'editar']" title="Abrir / gerenciar" [attr.aria-label]="'Gerenciar solicitação #' + s.id"
                       class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
                       <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M13.5 4.5 15.5 6.5M4 16l.9-3.2 8-8 2.3 2.3-8 8L4 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </a>
-                    <button type="button" (click)="pedirExclusao(s)" title="Excluir" aria-label="Excluir"
+                    <button *appPode="'solicitacoes:EXCLUIR'" type="button" (click)="pedirExclusao(s)" title="Excluir" aria-label="Excluir"
                       class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
                       <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </button>
@@ -212,7 +217,7 @@
             Limpar filtros
           </button>
         } @else {
-          <a routerLink="/solicitacoes/nova" class="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
+          <a *appPode="'solicitacoes:CRIAR'" routerLink="/solicitacoes/nova" class="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
             <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
             Nova solicitação
           </a>

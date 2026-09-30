@@ -19,13 +19,14 @@ import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Vigencia } from '../../../core/models/contrato.model';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 
 const ALERTA_DIAS = 30;
 
 /** Lista principal da gestão de Contratos: os LOCAIS, com o vencimento do contrato vigente. */
 @Component({
   selector: 'app-contrato-locais',
-  imports: [RouterLink, ExportarExcel],
+  imports: [RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './contrato-locais.html',
   styleUrl: './contrato-locais.css',
 })

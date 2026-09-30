@@ -5,7 +5,7 @@
       <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">Hospedagens</h2>
       <p class="mt-1 text-sm text-muted">Selecione um local para gerenciar as entradas e saídas.</p>
     </div>
-    <app-exportar-excel nome="hospedagens-locais" [acao]="exportarLocaisExcel" [desabilitado]="!temItens()" />
+    <app-exportar-excel *appPode="'hospedagens:EXPORTAR'" nome="hospedagens-locais" [acao]="exportarLocaisExcel" [desabilitado]="!temItens()" />
   </div>
 
   <!-- Busca -->

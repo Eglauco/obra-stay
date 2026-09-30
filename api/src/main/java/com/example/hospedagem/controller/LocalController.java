@@ -18,6 +18,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +50,7 @@ public class LocalController {
      * Lista locais com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('locais','VER')")
     public PageResponse<LocalResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String codigo,
@@ -65,6 +67,7 @@ public class LocalController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('locais','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String codigo,
@@ -79,6 +82,7 @@ public class LocalController {
      * Busca um local por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('locais','VER')")
     public LocalResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -87,6 +91,7 @@ public class LocalController {
      * Cria um local. Multipart: parte "dados" (JSON do LocalRequest) + "foto" (opcional).
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@perm.can('locais','CRIAR')")
     public ResponseEntity<LocalResponse> criar(
             @Valid @RequestPart("dados") LocalRequest request,
             @RequestPart(value = "foto", required = false) MultipartFile foto,
@@ -105,6 +110,7 @@ public class LocalController {
      * campo "removerFoto" (quando o usuário remove a foto existente sem enviar outra).
      */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@perm.can('locais','EDITAR')")
     public LocalResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestPart("dados") LocalRequest request,
@@ -118,6 +124,7 @@ public class LocalController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('locais','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }
@@ -126,6 +133,7 @@ public class LocalController {
      * Troca o status do local (aplicação imediata) e registra a mudança no histórico.
      */
     @PostMapping("/{id}/status")
+    @PreAuthorize("@perm.can('locais','TROCAR_STATUS')")
     public LocalResponse trocarStatus(
             @PathVariable Long id,
             @Valid @RequestBody TrocarStatusLocalRequest request,
@@ -137,6 +145,7 @@ public class LocalController {
      * Histórico de mudanças de status do local (mais recente primeiro).
      */
     @GetMapping("/{id}/status-historico")
+    @PreAuthorize("@perm.can('locais','VER')")
     public List<LocalStatusHistoricoResponse> historicoStatus(@PathVariable Long id) {
         return service.historicoStatus(id);
     }

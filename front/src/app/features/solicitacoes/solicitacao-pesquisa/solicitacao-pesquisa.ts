@@ -19,6 +19,7 @@ import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-d
 import { BuscaOpcao, BuscaSelect } from '../../../core/components/busca-select/busca-select';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
 import { SolicitacaoHistoricoDialog } from '../solicitacao-historico-dialog/solicitacao-historico-dialog';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import {
   SOLICITACAO_STATUS_LABEL,
@@ -30,7 +31,7 @@ import { diasDesde, formatarDataHora } from '../../../core/util/format';
 
 @Component({
   selector: 'app-solicitacao-pesquisa',
-  imports: [ConfirmDialog, BuscaSelect, RouterLink, SolicitacaoHistoricoDialog, ExportarExcel],
+  imports: [ConfirmDialog, BuscaSelect, RouterLink, SolicitacaoHistoricoDialog, ExportarExcel, PodeDirective],
   templateUrl: './solicitacao-pesquisa.html',
   styleUrl: './solicitacao-pesquisa.css',
 })

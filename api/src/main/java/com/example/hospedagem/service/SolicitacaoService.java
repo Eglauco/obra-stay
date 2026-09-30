@@ -5,6 +5,7 @@ import com.example.hospedagem.domain.Local;
 import com.example.hospedagem.domain.Solicitacao;
 import com.example.hospedagem.domain.SolicitacaoHistorico;
 import com.example.hospedagem.domain.StatusSolicitacao;
+import com.example.hospedagem.domain.TipoNotificacao;
 import com.example.hospedagem.domain.TipoSolicitacao;
 import com.example.hospedagem.dto.HistoricoResponse;
 import com.example.hospedagem.dto.PageResponse;
@@ -56,19 +57,22 @@ public class SolicitacaoService {
     private final ColaboradorRepository colaboradorRepository;
     private final LocalRepository localRepository;
     private final HospedagemRepository hospedagemRepository;
+    private final NotificacaoService notificacaoService;
 
     public SolicitacaoService(SolicitacaoRepository repository,
                               SolicitacaoHistoricoRepository historicoRepository,
                               TipoSolicitacaoRepository tipoSolicitacaoRepository,
                               ColaboradorRepository colaboradorRepository,
                               LocalRepository localRepository,
-                              HospedagemRepository hospedagemRepository) {
+                              HospedagemRepository hospedagemRepository,
+                              NotificacaoService notificacaoService) {
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.tipoSolicitacaoRepository = tipoSolicitacaoRepository;
         this.colaboradorRepository = colaboradorRepository;
         this.localRepository = localRepository;
         this.hospedagemRepository = hospedagemRepository;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional(readOnly = true)
@@ -108,6 +112,7 @@ public class SolicitacaoService {
 
         Solicitacao salvo = repository.save(solicitacao);
         registrarHistorico(salvo, StatusSolicitacao.AGUARDANDO_ANALISE, null, salvo.getDataHoraAbertura());
+        notificarNova(salvo, tipo, colaborador);
         return toResponse(salvo);
     }
 
@@ -149,6 +154,7 @@ public class SolicitacaoService {
                 .build();
         Solicitacao salvo = repository.save(solicitacao);
         registrarHistorico(salvo, StatusSolicitacao.AGUARDANDO_ANALISE, null, salvo.getDataHoraAbertura());
+        notificarNova(salvo, tipo, colaborador);
         return toResponse(salvo);
     }
 
@@ -327,6 +333,12 @@ public class SolicitacaoService {
                 .observacao(obs)
                 .dataHora(dataHora)
                 .build());
+    }
+
+    private void notificarNova(Solicitacao solicitacao, TipoSolicitacao tipo, Colaborador colaborador) {
+        notificacaoService.registrar(TipoNotificacao.SOLICITACAO, "solicitacoes",
+                "Nova solicitação: " + tipo.getNome() + " · " + colaborador.getNome(),
+                "/solicitacoes/" + solicitacao.getId() + "/visualizar");
     }
 
     private List<HistoricoResponse> listarHistorico(Long solicitacaoId) {

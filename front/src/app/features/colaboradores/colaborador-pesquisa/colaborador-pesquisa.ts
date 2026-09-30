@@ -14,9 +14,11 @@ import { Subject, of } from 'rxjs';
 import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import { ColaboradorService } from '../../../core/services/colaborador.service';
 import { FuncaoService } from '../../../core/services/funcao.service';
+import { EpcService } from '../../../core/services/epc.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import {
   ApiError,
   Colaborador,
@@ -28,18 +30,20 @@ import {
   SortDir,
   SortField,
 } from '../../../core/models/colaborador.model';
+import { Epc } from '../../../core/models/epc.model';
 
 type SexoFiltro = Sexo | '';
 
 @Component({
   selector: 'app-colaborador-pesquisa',
-  imports: [ConfirmDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './colaborador-pesquisa.html',
   styleUrl: './colaborador-pesquisa.css',
 })
 export class ColaboradorPesquisa {
   private readonly service = inject(ColaboradorService);
   private readonly funcaoService = inject(FuncaoService);
+  private readonly epcService = inject(EpcService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -53,12 +57,14 @@ export class ColaboradorPesquisa {
     { value: 'FEMININO', label: 'Feminino' },
   ];
   protected readonly funcoes = signal<Funcao[]>([]);
+  protected readonly epcs = signal<Epc[]>([]);
 
   // Filtros (batem no backend)
   protected readonly filtroId = signal<number | null>(null);
   protected readonly filtroNome = signal('');
   protected readonly filtroSexo = signal<SexoFiltro>('');
   protected readonly filtroFuncaoId = signal<number | null>(null);
+  protected readonly filtroEpcId = signal<number | null>(null);
 
   // Paginação / ordenação
   protected readonly page = signal(0);
@@ -87,7 +93,8 @@ export class ColaboradorPesquisa {
       this.filtroId() != null ||
       this.filtroNome().trim() !== '' ||
       this.filtroSexo() !== '' ||
-      this.filtroFuncaoId() != null,
+      this.filtroFuncaoId() != null ||
+      this.filtroEpcId() != null,
   );
 
   protected readonly intervalo = computed(() => {
@@ -143,6 +150,7 @@ export class ColaboradorPesquisa {
     // Carrega apenas no browser (mantém o SSR seguro)
     afterNextRender(() => {
       this.carregarFuncoes();
+      this.carregarEpcs();
       this.buscar$.next();
     });
   }
@@ -153,6 +161,7 @@ export class ColaboradorPesquisa {
       nome: this.filtroNome().trim() || null,
       sexo: this.filtroSexo() || null,
       funcaoId: this.filtroFuncaoId(),
+      epcId: this.filtroEpcId(),
       page: this.page(),
       size: this.size(),
       sort: `${this.sortField()},${this.sortDir()}`,
@@ -164,6 +173,15 @@ export class ColaboradorPesquisa {
       next: (fs) => this.funcoes.set(fs),
       error: () => {
         /* filtro de função fica indisponível silenciosamente */
+      },
+    });
+  }
+
+  private carregarEpcs(): void {
+    this.epcService.opcoes().subscribe({
+      next: (es) => this.epcs.set(es),
+      error: () => {
+        /* filtro de EPC fica indisponível silenciosamente */
       },
     });
   }
@@ -184,6 +202,11 @@ export class ColaboradorPesquisa {
     if (funcaoId) {
       const n = Number(funcaoId);
       if (Number.isFinite(n) && n > 0) this.filtroFuncaoId.set(Math.trunc(n));
+    }
+    const epcId = q.get('epcId');
+    if (epcId) {
+      const n = Number(epcId);
+      if (Number.isFinite(n) && n > 0) this.filtroEpcId.set(Math.trunc(n));
     }
     const page = Number(q.get('page'));
     if (Number.isFinite(page) && page > 0) this.page.set(Math.trunc(page));
@@ -206,6 +229,7 @@ export class ColaboradorPesquisa {
       nome: this.filtroNome().trim() || null,
       sexo: this.filtroSexo() || null,
       funcaoId: this.filtroFuncaoId() != null ? String(this.filtroFuncaoId()) : null,
+      epcId: this.filtroEpcId() != null ? String(this.filtroEpcId()) : null,
       page: this.page() > 0 ? String(this.page()) : null,
       size: this.size() !== 10 ? String(this.size()) : null,
       sort: sort !== 'nome,asc' ? sort : null,
@@ -246,6 +270,13 @@ export class ColaboradorPesquisa {
     this.aplicar();
   }
 
+  protected selecionarEpc(valor: string): void {
+    const n = valor === '' ? null : Number(valor);
+    this.filtroEpcId.set(Number.isFinite(n as number) ? n : null);
+    this.page.set(0);
+    this.aplicar();
+  }
+
   protected buscar(): void {
     this.page.set(0);
     this.aplicar();
@@ -256,6 +287,7 @@ export class ColaboradorPesquisa {
     this.filtroNome.set('');
     this.filtroSexo.set('');
     this.filtroFuncaoId.set(null);
+    this.filtroEpcId.set(null);
     this.page.set(0);
     this.aplicar();
   }

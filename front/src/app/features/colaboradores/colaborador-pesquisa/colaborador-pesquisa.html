@@ -6,8 +6,9 @@
       <p class="mt-1 text-sm text-muted">Gerencie os colaboradores hospedados nas obras.</p>
     </div>
     <div class="flex items-center gap-2">
-      <app-exportar-excel nome="colaboradores" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+      <app-exportar-excel *appPode="'colaboradores:EXPORTAR'" nome="colaboradores" [acao]="exportarExcel" [desabilitado]="!temItens()" />
       <a
+        *appPode="'colaboradores:CRIAR'"
         routerLink="/colaboradores/novo"
         class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
       >
@@ -104,6 +105,27 @@
         </div>
       </div>
 
+      <!-- EPC -->
+      <div class="flex flex-col gap-1.5 lg:w-52">
+        <label for="f-epc" class="text-[0.8125rem] font-medium text-muted">EPC</label>
+        <div class="relative">
+          <select
+            #epcSel
+            id="f-epc"
+            (change)="selecionarEpc(epcSel.value)"
+            class="h-11 w-full appearance-none rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors focus:border-accent"
+          >
+            <option value="" [selected]="filtroEpcId() == null">Todos</option>
+            @for (op of epcs(); track op.id) {
+              <option [value]="op.id" [selected]="op.id === filtroEpcId()">{{ op.nome }}</option>
+            }
+          </select>
+          <svg viewBox="0 0 20 20" fill="none" class="pointer-events-none absolute right-3 top-1/2 size-4.5 -translate-y-1/2 text-faint" aria-hidden="true">
+            <path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+
       <!-- Ações -->
       <div class="flex items-center gap-2">
         <button
@@ -144,7 +166,7 @@
   <!-- Tabela -->
   <div class="overflow-hidden rounded-card border bg-surface shadow-card">
     <div class="overflow-x-auto">
-      <table class="w-full min-w-[42rem] border-collapse text-left text-sm">
+      <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
         <caption class="sr-only">Lista de colaboradores hospedados</caption>
         <thead>
           <tr class="border-b bg-surface-2/50 text-[0.75rem] uppercase tracking-wide text-muted">
@@ -191,6 +213,7 @@
               </button>
             </th>
             <th scope="col" class="px-4 py-3 font-semibold uppercase tracking-wide">Função</th>
+            <th scope="col" class="px-4 py-3 font-semibold uppercase tracking-wide">EPC</th>
             <th scope="col" class="w-28 px-4 py-3 text-right">Ações</th>
           </tr>
         </thead>
@@ -202,6 +225,7 @@
                 <td class="px-4 py-3.5"><span class="sk block h-4 w-48 max-w-full"></span></td>
                 <td class="px-4 py-3.5"><span class="sk block h-6 w-24 rounded-full"></span></td>
                 <td class="px-4 py-3.5"><span class="sk block h-6 w-28 rounded-full"></span></td>
+                <td class="px-4 py-3.5"><span class="sk block h-6 w-24 rounded-full"></span></td>
                 <td class="px-4 py-3.5"><span class="sk ml-auto block h-4 w-16"></span></td>
               </tr>
             }
@@ -226,8 +250,25 @@
                   </span>
                 </td>
                 <td class="px-4 py-3.5">
+                  <span class="inline-flex items-center rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted">
+                    {{ c.epc?.nome ?? '—' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3.5">
                   <div class="flex items-center justify-end gap-1">
                     <a
+                      *appPode="'colaboradores:VER'"
+                      [routerLink]="['/colaboradores', c.id, 'visualizar']"
+                      [attr.aria-label]="'Visualizar ' + c.nome"
+                      class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
+                        <path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10Z" stroke="currentColor" stroke-width="1.5" />
+                        <circle cx="10" cy="10" r="2.25" stroke="currentColor" stroke-width="1.5" />
+                      </svg>
+                    </a>
+                    <a
+                      *appPode="'colaboradores:EDITAR'"
                       [routerLink]="['/colaboradores', c.id, 'editar']"
                       [attr.aria-label]="'Editar ' + c.nome"
                       class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent"
@@ -237,6 +278,7 @@
                       </svg>
                     </a>
                     <button
+                      *appPode="'colaboradores:EXCLUIR'"
                       type="button"
                       (click)="pedirExclusao(c)"
                       [attr.aria-label]="'Excluir ' + c.nome"
@@ -284,6 +326,7 @@
           </button>
         } @else {
           <a
+            *appPode="'colaboradores:CRIAR'"
             routerLink="/colaboradores/novo"
             class="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
           >

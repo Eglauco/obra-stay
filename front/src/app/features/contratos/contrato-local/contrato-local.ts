@@ -17,6 +17,7 @@ import { ContratoService } from '../../../core/services/contrato.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Contrato, StatusFiltroContrato, Vigencia } from '../../../core/models/contrato.model';
@@ -26,7 +27,7 @@ const ALERTA_DIAS = 30;
 /** Detalhe de um local: contratos (vigente + histórico) + novo/editar/renovar/excluir. */
 @Component({
   selector: 'app-contrato-local',
-  imports: [ConfirmDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './contrato-local.html',
   styleUrl: './contrato-local.css',
 })

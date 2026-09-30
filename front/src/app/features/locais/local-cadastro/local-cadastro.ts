@@ -10,7 +10,7 @@ import {
 import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormField, form, maxLength, required } from '@angular/forms/signals';
+import { FormField, form, maxLength, readonly, required } from '@angular/forms/signals';
 import { LocalService } from '../../../core/services/local.service';
 import { StatusLocalService } from '../../../core/services/status-local.service';
 import { OrcamentoMobiliarioService } from '../../../core/services/orcamento-mobiliario.service';
@@ -22,6 +22,7 @@ import { StatusLocal } from '../../../core/models/status-local.model';
 import { OrcamentoOpcao } from '../../../core/models/orcamento-mobiliario.model';
 import { TrocarStatusDialog } from '../trocar-status-dialog/trocar-status-dialog';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { formatarDataHora } from '../../../core/util/format';
 
 interface LocalModel {
@@ -51,7 +52,7 @@ type AbaLocal = 'dados' | 'status' | 'mobilia' | 'resumo';
 /** Tela dedicada de criar/editar local (padrão de CRUD: sempre em nova tela). */
 @Component({
   selector: 'app-local-cadastro',
-  imports: [FormField, TrocarStatusDialog, ConfirmDialog],
+  imports: [FormField, TrocarStatusDialog, ConfirmDialog, PodeDirective],
   templateUrl: './local-cadastro.html',
   styleUrl: './local-cadastro.css',
 })
@@ -69,6 +70,7 @@ export class LocalCadastro {
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
+  protected readonly somenteLeitura = signal(this.route.snapshot.data['modo'] === 'visualizar');
   protected readonly localIdAtual = computed(() => this.id());
   protected readonly statusAtualId = computed(() => this.statusInfo()?.id ?? null);
 
@@ -140,6 +142,15 @@ export class LocalCadastro {
     required(p.bairro, { message: 'Informe o bairro.' });
     required(p.statusId, { message: 'Selecione o status.' });
     // cidade e uf são preenchidos pelo ViaCEP (campos travados) e validados no submit.
+    // Modo visualizar: trava os campos do formulário permitindo copiar (readonly via schema).
+    const bloqueado = () => this.somenteLeitura();
+    readonly(p.codigo, { when: bloqueado });
+    readonly(p.nome, { when: bloqueado });
+    readonly(p.capacidade, { when: bloqueado });
+    readonly(p.logradouro, { when: bloqueado });
+    readonly(p.numero, { when: bloqueado });
+    readonly(p.complemento, { when: bloqueado });
+    readonly(p.bairro, { when: bloqueado });
   });
 
   // Erros por campo (servidor + validação local)
@@ -358,6 +369,7 @@ export class LocalCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     this.submetido.set(true);
     this.f.codigo().markAsTouched();
     this.f.nome().markAsTouched();

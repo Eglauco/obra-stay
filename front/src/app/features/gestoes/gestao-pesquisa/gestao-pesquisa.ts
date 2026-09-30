@@ -16,12 +16,13 @@ import { GestaoService } from '../../../core/services/gestao.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse, SortDir } from '../../../core/models/colaborador.model';
 import { Gestao, GestaoFiltro, GestaoSortField } from '../../../core/models/gestao.model';
 
 @Component({
   selector: 'app-gestao-pesquisa',
-  imports: [ConfirmDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './gestao-pesquisa.html',
   styleUrl: './gestao-pesquisa.css',
 })

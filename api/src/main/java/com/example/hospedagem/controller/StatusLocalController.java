@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class StatusLocalController {
      * Lista status com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('status-locais','VER')")
     public PageResponse<StatusLocalResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -58,6 +60,7 @@ public class StatusLocalController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/opcoes")
+    @PreAuthorize("@perm.can('status-locais','VER')")
     public List<StatusLocalResponse> opcoes() {
         return service.listarOpcoes();
     }
@@ -67,6 +70,7 @@ public class StatusLocalController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('status-locais','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -80,6 +84,7 @@ public class StatusLocalController {
      * Busca um status por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('status-locais','VER')")
     public StatusLocalResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -88,6 +93,7 @@ public class StatusLocalController {
      * Cria um status.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('status-locais','CRIAR')")
     public ResponseEntity<StatusLocalResponse> criar(
             @Valid @RequestBody StatusLocalRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -103,6 +109,7 @@ public class StatusLocalController {
      * Atualiza um status existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('status-locais','EDITAR')")
     public StatusLocalResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody StatusLocalRequest request) {
@@ -114,6 +121,7 @@ public class StatusLocalController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('status-locais','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

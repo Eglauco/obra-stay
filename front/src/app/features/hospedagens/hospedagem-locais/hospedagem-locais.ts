@@ -19,11 +19,12 @@ import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { QrEntradaDialog } from '../../../core/components/qr-entrada-dialog/qr-entrada-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 
 /** Lista principal da Gestão de Hospedagem: os LOCAIS, com ocupação. Clicar abre o detalhe. */
 @Component({
   selector: 'app-hospedagem-locais',
-  imports: [RouterLink, QrEntradaDialog, ExportarExcel],
+  imports: [RouterLink, QrEntradaDialog, ExportarExcel, PodeDirective],
   templateUrl: './hospedagem-locais.html',
   styleUrl: './hospedagem-locais.css',
 })

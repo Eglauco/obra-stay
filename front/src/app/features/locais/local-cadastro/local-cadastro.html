@@ -13,10 +13,10 @@
     </button>
     <div>
       <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-accent">
-        {{ editMode() ? 'Editar' : 'Novo' }}
+        {{ somenteLeitura() ? 'Visualizar' : (editMode() ? 'Editar' : 'Novo') }}
       </p>
       <h2 class="font-display text-2xl font-semibold tracking-tight text-fg">
-        {{ editMode() ? 'Editar local' : 'Novo local' }}
+        {{ somenteLeitura() ? 'Visualizar local' : (editMode() ? 'Editar local' : 'Novo local') }}
       </h2>
     </div>
   </div>
@@ -69,37 +69,37 @@
             <div class="flex flex-col gap-1.5 sm:col-span-2">
               <label for="loc-nome" class="text-sm font-medium text-fg">Nome <span class="text-danger" aria-hidden="true">*</span></label>
               <input id="loc-nome" [formField]="f.nome" autocomplete="off" placeholder="Ex.: Alojamento Central"
-                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="nomeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="nomeError() ? 'true' : null" />
               @if (nomeError()) { <p class="text-[0.8125rem] text-danger">{{ nomeError() }}</p> }
             </div>
             <div class="flex flex-col gap-1.5">
               <label for="loc-codigo" class="text-sm font-medium text-fg">Código <span class="text-danger" aria-hidden="true">*</span></label>
               <input id="loc-codigo" [formField]="f.codigo" (input)="clearServerError('codigo')" autocomplete="off" placeholder="Ex.: ALJ-001"
-                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="codigoError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="codigoError() ? 'true' : null" />
               @if (codigoError()) { <p class="text-[0.8125rem] text-danger">{{ codigoError() }}</p> }
             </div>
             <div class="flex flex-col gap-1.5">
               <label for="loc-capacidade" class="text-sm font-medium text-fg">Capacidade <span class="text-danger" aria-hidden="true">*</span></label>
               <input id="loc-capacidade" type="number" [formField]="f.capacidade" (input)="clearServerError('capacidade')" placeholder="Ex.: 40"
-                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="capacidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="capacidadeError() ? 'true' : null" />
               @if (capacidadeError()) { <p class="text-[0.8125rem] text-danger">{{ capacidadeError() }}</p> }
               @else { <p class="text-[0.8125rem] text-faint">Quantos colaboradores cabem.</p> }
             </div>
             <div class="flex flex-col gap-1.5">
               <label for="loc-quartos" class="text-sm font-medium text-fg">Quartos <span class="text-danger" aria-hidden="true">*</span></label>
-              <input #quartosInput id="loc-quartos" type="number" inputmode="numeric" min="1" step="1" [value]="quartos() ?? ''" (input)="setQuartos(quartosInput.value)" placeholder="Ex.: 3"
-                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              <input #quartosInput id="loc-quartos" type="number" inputmode="numeric" min="1" step="1" [value]="quartos() ?? ''" (input)="setQuartos(quartosInput.value)" placeholder="Ex.: 3" [attr.readonly]="somenteLeitura() ? '' : null"
+                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="quartosError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="quartosError() ? 'true' : null" [attr.aria-describedby]="quartosError() ? 'loc-quartos-erro' : null" />
               @if (quartosError()) { <p id="loc-quartos-erro" class="text-[0.8125rem] text-danger">{{ quartosError() }}</p> }
               @else { <p class="text-[0.8125rem] text-faint">Usado no cálculo de mobiliário.</p> }
             </div>
             <div class="flex flex-col gap-1.5">
               <label for="loc-aluguel" class="text-sm font-medium text-fg">Valor do aluguel (R$/mês)</label>
-              <input #aluguelInput id="loc-aluguel" type="number" inputmode="decimal" min="0" step="0.01" [value]="valorAluguel() ?? ''" (input)="setValorAluguel(aluguelInput.value)" placeholder="0,00"
-                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+              <input #aluguelInput id="loc-aluguel" type="number" inputmode="decimal" min="0" step="0.01" [value]="valorAluguel() ?? ''" (input)="setValorAluguel(aluguelInput.value)" placeholder="0,00" [attr.readonly]="somenteLeitura() ? '' : null"
+                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="valorAluguelError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="valorAluguelError() ? 'true' : null" [attr.aria-describedby]="valorAluguelError() ? 'loc-aluguel-erro' : null" />
               @if (valorAluguelError()) { <p id="loc-aluguel-erro" class="text-[0.8125rem] text-danger">{{ valorAluguelError() }}</p> }
               @else { <p class="text-[0.8125rem] text-faint">Opcional. Usado no Resumo Financeiro.</p> }
@@ -114,8 +114,8 @@
             <div class="flex flex-col gap-1.5 sm:col-span-2">
               <label for="loc-cep" class="text-sm font-medium text-fg">CEP <span class="text-danger" aria-hidden="true">*</span></label>
               <div class="relative">
-                <input #cepInput id="loc-cep" inputmode="numeric" maxlength="9" [value]="model().cep" (input)="onCepInput(cepInput.value)" placeholder="00000-000"
-                  class="h-11 w-full rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                <input #cepInput id="loc-cep" inputmode="numeric" maxlength="9" [value]="model().cep" (input)="onCepInput(cepInput.value)" placeholder="00000-000" [attr.readonly]="somenteLeitura() ? '' : null"
+                  class="h-11 w-full rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                   [style.border-color]="cepErro() ? 'var(--color-danger)' : null" [attr.aria-invalid]="cepErro() ? 'true' : null" aria-describedby="loc-cep-msg" />
                 @if (cepBuscando()) {
                   <svg viewBox="0 0 24 24" fill="none" class="absolute right-3 top-1/2 size-4.5 -translate-y-1/2 animate-spin text-accent" aria-hidden="true">
@@ -132,7 +132,7 @@
             <div class="flex flex-col gap-1.5 sm:col-span-4">
               <label for="loc-logradouro" class="text-sm font-medium text-fg">Logradouro <span class="text-danger" aria-hidden="true">*</span></label>
               <input id="loc-logradouro" [formField]="f.logradouro" autocomplete="off" placeholder="Rua, avenida…"
-                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="logradouroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="logradouroError() ? 'true' : null" />
               @if (logradouroError()) { <p class="text-[0.8125rem] text-danger">{{ logradouroError() }}</p> }
             </div>
@@ -140,7 +140,7 @@
             <div class="flex flex-col gap-1.5 sm:col-span-2">
               <label for="loc-numero" class="text-sm font-medium text-fg">Número <span class="text-danger" aria-hidden="true">*</span></label>
               <input id="loc-numero" [formField]="f.numero" autocomplete="off" placeholder="Ex.: 100"
-                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="numeroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="numeroError() ? 'true' : null" />
               @if (numeroError()) { <p class="text-[0.8125rem] text-danger">{{ numeroError() }}</p> }
             </div>
@@ -148,13 +148,13 @@
             <div class="flex flex-col gap-1.5 sm:col-span-4">
               <label for="loc-complemento" class="text-sm font-medium text-fg">Complemento</label>
               <input id="loc-complemento" [formField]="f.complemento" autocomplete="off" placeholder="Apto, bloco, referência…"
-                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent" />
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70" />
             </div>
 
             <div class="flex flex-col gap-1.5 sm:col-span-3">
               <label for="loc-bairro" class="text-sm font-medium text-fg">Bairro <span class="text-danger" aria-hidden="true">*</span></label>
               <input id="loc-bairro" [formField]="f.bairro" autocomplete="off" placeholder="Bairro"
-                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                class="h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                 [style.border-color]="bairroError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="bairroError() ? 'true' : null" />
               @if (bairroError()) { <p class="text-[0.8125rem] text-danger">{{ bairroError() }}</p> }
             </div>
@@ -183,26 +183,26 @@
         <!-- Foto -->
         <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
           <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Foto do local</legend>
-          <input #fotoInput type="file" accept="image/png,image/jpeg,image/webp" class="hidden" (change)="onFotoSelecionada(fotoInput)" />
+          <input #fotoInput type="file" accept="image/png,image/jpeg,image/webp" class="hidden" (change)="onFotoSelecionada(fotoInput)" [attr.disabled]="somenteLeitura() ? '' : null" />
           @if (fotoPreview()) {
             <div class="flex flex-wrap items-center gap-4">
               <img [src]="fotoPreview()!" alt="Prévia da foto do local" class="size-28 rounded-card border border-border object-cover" />
               <div class="flex flex-col gap-2">
-                <button type="button" (click)="fotoInput.click()"
-                  class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+                <button type="button" (click)="fotoInput.click()" [attr.disabled]="somenteLeitura() ? '' : null"
+                  class="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:opacity-70">
                   <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 13.5V16h2.5l7-7L11 6.5l-7 7ZM12.5 5l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                   Trocar foto
                 </button>
-                <button type="button" (click)="removerFotoAtual()"
-                  class="inline-flex h-10 items-center gap-2 rounded-control px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger-soft">
+                <button type="button" (click)="removerFotoAtual()" [attr.disabled]="somenteLeitura() ? '' : null"
+                  class="inline-flex h-10 items-center gap-2 rounded-control px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger-soft disabled:opacity-70">
                   <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                   Remover
                 </button>
               </div>
             </div>
           } @else {
-            <button type="button" (click)="fotoInput.click()"
-              class="flex h-32 w-full max-w-xs flex-col items-center justify-center gap-1.5 rounded-card border border-dashed border-border-strong text-muted transition-colors hover:bg-surface-2 hover:text-fg">
+            <button type="button" (click)="fotoInput.click()" [attr.disabled]="somenteLeitura() ? '' : null"
+              class="flex h-32 w-full max-w-xs flex-col items-center justify-center gap-1.5 rounded-card border border-dashed border-border-strong text-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-70">
               <svg viewBox="0 0 24 24" fill="none" class="size-7" aria-hidden="true"><path d="M4 16l4-4 3 3 4-5 5 6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
               <span class="text-sm font-medium">Adicionar foto</span>
               <span class="text-[0.75rem] text-faint">JPG, PNG ou WebP · até 5 MB</span>
@@ -217,8 +217,8 @@
         @if (!editMode()) {
           <div class="flex flex-col gap-1.5 sm:max-w-xs">
             <label for="loc-status" class="text-sm font-medium text-fg">Status do local <span class="text-danger" aria-hidden="true">*</span></label>
-            <select #statusSel id="loc-status" [value]="model().statusId ?? ''" (change)="setStatus(statusSel.value)"
-              class="h-11 w-full rounded-control border bg-canvas px-3 text-sm text-fg outline-none transition-colors focus:border-accent"
+            <select #statusSel id="loc-status" [value]="model().statusId ?? ''" (change)="setStatus(statusSel.value)" [attr.disabled]="somenteLeitura() ? '' : null"
+              class="h-11 w-full rounded-control border bg-canvas px-3 text-sm text-fg outline-none transition-colors focus:border-accent disabled:opacity-70"
               [style.border-color]="statusError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="statusError() ? 'true' : null">
               <option value="" disabled>Selecione…</option>
               @for (o of statusOpcoes(); track o.id) {
@@ -243,8 +243,8 @@
                 }
               </div>
             </div>
-            <button type="button" (click)="abrirTrocaStatus()"
-              class="inline-flex h-10 shrink-0 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+            <button *appPode="'locais:TROCAR_STATUS'" type="button" (click)="abrirTrocaStatus()" [attr.disabled]="somenteLeitura() ? '' : null"
+              class="inline-flex h-10 shrink-0 items-center gap-2 rounded-control border border-border-strong px-3.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:opacity-70">
               <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 7h9m0 0-3-3m3 3-3 3M16 13H7m0 0 3-3m-3 3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
               Trocar status
             </button>
@@ -292,12 +292,12 @@
         <div class="flex flex-col gap-3 rounded-card border bg-canvas p-4">
           <p class="text-sm font-medium text-fg">Começar a partir de um orçamento</p>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select #orcSel [value]="orcamentoSelId() ?? ''" (change)="setOrcamentoSel(orcSel.value)" aria-label="Orçamento de mobiliário"
-              class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent sm:max-w-xs">
+            <select #orcSel [value]="orcamentoSelId() ?? ''" (change)="setOrcamentoSel(orcSel.value)" aria-label="Orçamento de mobiliário" [attr.disabled]="somenteLeitura() ? '' : null"
+              class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent disabled:opacity-70 sm:max-w-xs">
               <option value="" disabled>Selecione um orçamento…</option>
               @for (o of orcamentoOpcoes(); track o.id) { <option [value]="o.id">{{ o.nome }}</option> }
             </select>
-            <button type="button" (click)="aplicarOrcamento()" [disabled]="aplicandoOrcamento()"
+            <button type="button" (click)="aplicarOrcamento()" [disabled]="aplicandoOrcamento() || somenteLeitura()"
               class="inline-flex h-11 items-center justify-center gap-2 rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-70">
               @if (aplicandoOrcamento()) { <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg> }
               Copiar itens
@@ -318,8 +318,8 @@
         <!-- Cabeçalho da lista -->
         <div class="flex items-center justify-between">
           <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Itens de mobília</p>
-          <button type="button" (click)="adicionarMobilia()"
-            class="inline-flex h-9 items-center gap-2 rounded-control border border-border-strong px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+          <button type="button" (click)="adicionarMobilia()" [attr.disabled]="somenteLeitura() ? '' : null"
+            class="inline-flex h-9 items-center gap-2 rounded-control border border-border-strong px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:opacity-70">
             <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
             Adicionar item
           </button>
@@ -343,8 +343,8 @@
               <span class="text-[0.75rem] font-semibold uppercase tracking-wide text-faint">Item {{ i + 1 }}</span>
               <div class="flex items-center gap-3">
                 <span class="text-[0.8125rem] text-muted">Subtotal <strong class="tabular text-fg">{{ brl(subtotalMobilia(row)) }}</strong></span>
-                <button type="button" (click)="removerMobilia(row.key)" [attr.aria-label]="'Remover item ' + (i + 1)" title="Remover item"
-                  class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
+                <button type="button" (click)="removerMobilia(row.key)" [attr.aria-label]="'Remover item ' + (i + 1)" title="Remover item" [attr.disabled]="somenteLeitura() ? '' : null"
+                  class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-70">
                   <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
               </div>
@@ -353,8 +353,8 @@
               <div class="flex flex-col gap-1 sm:col-span-6">
                 <label class="text-[0.8125rem] font-medium text-muted" [for]="'m-nome-' + row.key">Item <span class="text-danger" aria-hidden="true">*</span></label>
                 <input [id]="'m-nome-' + row.key" type="text" autocomplete="off" [value]="row.nome" (input)="atualizarMobilia(row.key, 'nome', $event)"
-                  placeholder="Ex.: Geladeira 332L"
-                  class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                  placeholder="Ex.: Geladeira 332L" [attr.readonly]="somenteLeitura() ? '' : null"
+                  class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                   [style.border-color]="submetido() && !row.nome.trim() ? 'var(--color-danger)' : null"
                   [attr.aria-invalid]="submetido() && !row.nome.trim() ? 'true' : null"
                   [attr.aria-describedby]="erroLinhaMobilia(row) ? 'm-erro-' + row.key : null" />
@@ -362,16 +362,16 @@
               <div class="flex flex-col gap-1 sm:col-span-3">
                 <label class="text-[0.8125rem] font-medium text-muted" [for]="'m-preco-' + row.key">Preço unit. (R$) <span class="text-danger" aria-hidden="true">*</span></label>
                 <input [id]="'m-preco-' + row.key" type="number" inputmode="decimal" min="0" step="0.01" [value]="row.preco" (input)="atualizarMobilia(row.key, 'preco', $event)"
-                  placeholder="0,00"
-                  class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"
+                  placeholder="0,00" [attr.readonly]="somenteLeitura() ? '' : null"
+                  class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
                   [style.border-color]="submetido() && !precoMobiliaValido(row) ? 'var(--color-danger)' : null"
                   [attr.aria-invalid]="submetido() && !precoMobiliaValido(row) ? 'true' : null"
                   [attr.aria-describedby]="erroLinhaMobilia(row) ? 'm-erro-' + row.key : null" />
               </div>
               <div class="flex flex-col gap-1 sm:col-span-3">
                 <label class="text-[0.8125rem] font-medium text-muted" [for]="'m-qtd-' + row.key">Quantidade <span class="text-danger" aria-hidden="true">*</span></label>
-                <input [id]="'m-qtd-' + row.key" type="number" inputmode="numeric" min="1" step="1" [value]="row.quantidade" (input)="atualizarMobilia(row.key, 'quantidade', $event)"
-                  class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent"
+                <input [id]="'m-qtd-' + row.key" type="number" inputmode="numeric" min="1" step="1" [value]="row.quantidade" (input)="atualizarMobilia(row.key, 'quantidade', $event)" [attr.readonly]="somenteLeitura() ? '' : null"
+                  class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors focus:border-accent read-only:opacity-70"
                   [style.border-color]="submetido() && !qtdMobiliaValida(row) ? 'var(--color-danger)' : null"
                   [attr.aria-invalid]="submetido() && !qtdMobiliaValida(row) ? 'true' : null"
                   [attr.aria-describedby]="erroLinhaMobilia(row) ? 'm-erro-' + row.key : null" />
@@ -450,18 +450,24 @@
 
       <!-- Ações -->
       <div class="flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
-        <button type="button" class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2" (click)="voltar()" [disabled]="saving()">
-          Cancelar
-        </button>
-        <button type="submit" class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70" [disabled]="saving()">
-          @if (saving()) {
-            <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
-              <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-            </svg>
-          }
-          {{ editMode() ? 'Salvar alterações' : 'Cadastrar' }}
-        </button>
+        @if (somenteLeitura()) {
+          <button type="button" class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2" (click)="voltar()">
+            Voltar
+          </button>
+        } @else {
+          <button type="button" class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2" (click)="voltar()" [disabled]="saving()">
+            Cancelar
+          </button>
+          <button type="submit" class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70" [disabled]="saving()">
+            @if (saving()) {
+              <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" />
+                <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+              </svg>
+            }
+            {{ editMode() ? 'Salvar alterações' : 'Cadastrar' }}
+          </button>
+        }
       </div>
     </form>
 

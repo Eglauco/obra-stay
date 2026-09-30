@@ -5,6 +5,7 @@ import com.example.hospedagem.domain.Colaborador;
 import com.example.hospedagem.domain.Hospedagem;
 import com.example.hospedagem.domain.Local;
 import com.example.hospedagem.domain.OrigemHospedagem;
+import com.example.hospedagem.domain.TipoNotificacao;
 import com.example.hospedagem.dto.ConsultaEntradaResponse;
 import com.example.hospedagem.dto.EntradaPublicaRequest;
 import com.example.hospedagem.dto.EntradaPublicaResultado;
@@ -64,13 +65,16 @@ public class HospedagemService {
     private final HospedagemRepository repository;
     private final ColaboradorRepository colaboradorRepository;
     private final LocalRepository localRepository;
+    private final NotificacaoService notificacaoService;
 
     public HospedagemService(HospedagemRepository repository,
                              ColaboradorRepository colaboradorRepository,
-                             LocalRepository localRepository) {
+                             LocalRepository localRepository,
+                             NotificacaoService notificacaoService) {
         this.repository = repository;
         this.colaboradorRepository = colaboradorRepository;
         this.localRepository = localRepository;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional(readOnly = true)
@@ -128,6 +132,9 @@ public class HospedagemService {
 
         Hospedagem salvo = repository.save(hospedagem);
         sincronizarHospedagemAtiva(colaborador);
+        notificacaoService.registrar(TipoNotificacao.ENTRADA, "hospedagens",
+                "Entrada de " + colaborador.getNome() + " · " + local.getNome(),
+                "/hospedagens/local/" + local.getId());
         return toResponse(salvo);
     }
 
@@ -147,6 +154,9 @@ public class HospedagemService {
         hospedagem.setDataSaida(request.dataSaida());
         Hospedagem salvo = repository.save(hospedagem);
         sincronizarHospedagemAtiva(hospedagem.getColaborador());
+        notificacaoService.registrar(TipoNotificacao.SAIDA, "hospedagens",
+                "Saída de " + hospedagem.getColaborador().getNome() + " · " + hospedagem.getLocal().getNome(),
+                "/hospedagens/local/" + hospedagem.getLocal().getId());
         return toResponse(salvo);
     }
 
@@ -373,6 +383,9 @@ public class HospedagemService {
                 ativa.setDataSaida(LocalDateTime.now());
                 repository.save(ativa);
                 sincronizarHospedagemAtiva(colaborador);
+                notificacaoService.registrar(TipoNotificacao.SAIDA, "hospedagens",
+                        "Saída de " + colaborador.getNome() + " · " + local.getNome(),
+                        "/hospedagens/local/" + local.getId());
                 return new EntradaPublicaResultado(AcaoEntrada.SAIDA, colaborador.getNome(),
                         local.getNome(), ativa.getDataSaida().toLocalDate(),
                         "Saída registrada. Até logo, " + primeiroNome(colaborador) + "!");
@@ -400,6 +413,9 @@ public class HospedagemService {
                 .build();
         repository.save(nova);
         sincronizarHospedagemAtiva(colaborador);
+        notificacaoService.registrar(TipoNotificacao.ENTRADA, "hospedagens",
+                "Entrada de " + colaborador.getNome() + " · " + local.getNome(),
+                "/hospedagens/local/" + local.getId());
         return new EntradaPublicaResultado(AcaoEntrada.ENTRADA, colaborador.getNome(),
                 local.getNome(), nova.getDataEntrada().toLocalDate(),
                 "Entrada registrada. Bem-vindo(a), " + primeiroNome(colaborador) + "!");

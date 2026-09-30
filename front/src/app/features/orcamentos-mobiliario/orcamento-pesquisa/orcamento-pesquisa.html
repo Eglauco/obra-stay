@@ -6,8 +6,9 @@
       <p class="mt-1 text-sm text-muted">Listas de móveis e eletros para mobiliar casas.</p>
     </div>
     <div class="flex items-center gap-2">
-      <app-exportar-excel nome="orcamentos-mobiliario" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+      <app-exportar-excel *appPode="'orcamentos-mobiliario:EXPORTAR'" nome="orcamentos-mobiliario" [acao]="exportarExcel" [desabilitado]="!temItens()" />
       <a
+        *appPode="'orcamentos-mobiliario:CRIAR'"
         routerLink="/orcamentos-mobiliario/novo"
         class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
       >
@@ -167,6 +168,18 @@
                 <td class="px-4 py-3.5">
                   <div class="flex items-center justify-end gap-1">
                     <a
+                      *appPode="'orcamentos-mobiliario:VER'"
+                      [routerLink]="['/orcamentos-mobiliario', o.id, 'visualizar']"
+                      [attr.aria-label]="'Visualizar ' + o.nome"
+                      class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true">
+                        <path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10Z" stroke="currentColor" stroke-width="1.5" />
+                        <circle cx="10" cy="10" r="2.25" stroke="currentColor" stroke-width="1.5" />
+                      </svg>
+                    </a>
+                    <a
+                      *appPode="'orcamentos-mobiliario:EDITAR'"
                       [routerLink]="['/orcamentos-mobiliario', o.id, 'editar']"
                       [attr.aria-label]="'Editar ' + o.nome"
                       class="grid size-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent"
@@ -176,6 +189,7 @@
                       </svg>
                     </a>
                     <button
+                      *appPode="'orcamentos-mobiliario:EXCLUIR'"
                       type="button"
                       (click)="pedirExclusao(o)"
                       [attr.aria-label]="'Excluir ' + o.nome"
@@ -223,6 +237,7 @@
           </button>
         } @else {
           <a
+            *appPode="'orcamentos-mobiliario:CRIAR'"
             routerLink="/orcamentos-mobiliario/novo"
             class="inline-flex h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
           >

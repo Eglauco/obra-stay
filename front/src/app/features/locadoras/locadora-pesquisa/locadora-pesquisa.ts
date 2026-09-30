@@ -16,12 +16,13 @@ import { LocadoraService } from '../../../core/services/locadora.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse, SortDir } from '../../../core/models/colaborador.model';
 import { Locadora, LocadoraFiltro, LocadoraSortField } from '../../../core/models/locadora.model';
 
 @Component({
   selector: 'app-locadora-pesquisa',
-  imports: [ConfirmDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './locadora-pesquisa.html',
   styleUrl: './locadora-pesquisa.css',
 })

@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class TipoSolicitacaoController {
      * Lista tipos de solicitação com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('tipos-solicitacao','VER')")
     public PageResponse<TipoSolicitacaoResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -66,6 +68,7 @@ public class TipoSolicitacaoController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('tipos-solicitacao','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome) {
@@ -78,6 +81,7 @@ public class TipoSolicitacaoController {
      * Busca um tipo de solicitação por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('tipos-solicitacao','VER')")
     public TipoSolicitacaoResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -86,6 +90,7 @@ public class TipoSolicitacaoController {
      * Cria um tipo de solicitação.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('tipos-solicitacao','CRIAR')")
     public ResponseEntity<TipoSolicitacaoResponse> criar(
             @Valid @RequestBody TipoSolicitacaoRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -101,6 +106,7 @@ public class TipoSolicitacaoController {
      * Atualiza um tipo de solicitação existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('tipos-solicitacao','EDITAR')")
     public TipoSolicitacaoResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody TipoSolicitacaoRequest request) {
@@ -112,6 +118,7 @@ public class TipoSolicitacaoController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('tipos-solicitacao','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

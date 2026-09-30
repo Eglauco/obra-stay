@@ -18,6 +18,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { RateioDialog } from '../rateio-dialog/rateio-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Gasto, ResumoGasto } from '../../../core/models/gasto.model';
@@ -27,7 +28,7 @@ import { gerarRelatorioGastosPdf } from '../../../core/util/relatorio-gastos-pdf
 /** Detalhe de um local: gastos (com filtro de período) + total geral e do período. */
 @Component({
   selector: 'app-gasto-local',
-  imports: [ConfirmDialog, RateioDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RateioDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './gasto-local.html',
   styleUrl: './gasto-local.css',
 })

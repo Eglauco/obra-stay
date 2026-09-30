@@ -46,8 +46,8 @@
         </div>
       </div>
       <div class="flex shrink-0 flex-wrap items-center gap-2">
-        <app-exportar-excel nome="contratos" [acao]="exportarExcel" [desabilitado]="!temItens()" />
-        <a [routerLink]="['/contratos/local', localId, 'novo']"
+        <app-exportar-excel *appPode="'contratos:EXPORTAR'" nome="contratos" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+        <a *appPode="'contratos:CRIAR'" [routerLink]="['/contratos/local', localId, 'novo']"
           class="inline-flex h-11 shrink-0 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
           <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
           Novo contrato
@@ -123,17 +123,21 @@
                       </a>
                     }
                     @if (c.status === 'VIGENTE') {
-                      <a [routerLink]="['/contratos/local', localId, 'novo']" [queryParams]="{ renovarDe: c.id }" [attr.aria-label]="'Renovar ' + c.codigo"
+                      <a *appPode="'contratos:CRIAR'" [routerLink]="['/contratos/local', localId, 'novo']" [queryParams]="{ renovarDe: c.id }" [attr.aria-label]="'Renovar ' + c.codigo"
                         class="inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong px-2.5 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2">
                         <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M15 4v4h-4M5 16v-4h4M15.5 8A6 6 0 0 0 5 6.5M4.5 12A6 6 0 0 0 15 13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         Renovar
                       </a>
                     }
-                    <a [routerLink]="['/contratos/editar', c.id]" [attr.aria-label]="'Editar ' + c.codigo"
+                    <a *appPode="'contratos:VER'" [routerLink]="['/contratos/visualizar', c.id]" [attr.aria-label]="'Visualizar ' + c.codigo"
+                      class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
+                      <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10Z" stroke="currentColor" stroke-width="1.5" /><circle cx="10" cy="10" r="2.25" stroke="currentColor" stroke-width="1.5" /></svg>
+                    </a>
+                    <a *appPode="'contratos:EDITAR'" [routerLink]="['/contratos/editar', c.id]" [attr.aria-label]="'Editar ' + c.codigo"
                       class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-surface-2 hover:text-accent">
                       <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M13.5 4.5 15.5 6.5M4 16l.9-3.2 8-8 2.3 2.3-8 8L4 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </a>
-                    <button type="button" (click)="pedirExclusao(c)" [attr.aria-label]="'Excluir ' + c.codigo"
+                    <button *appPode="'contratos:EXCLUIR'" type="button" (click)="pedirExclusao(c)" [attr.aria-label]="'Excluir ' + c.codigo"
                       class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
                       <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </button>

@@ -9,7 +9,7 @@ import {
 import { Location, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormField, form, maxLength, required } from '@angular/forms/signals';
+import { FormField, form, maxLength, readonly, required } from '@angular/forms/signals';
 import { FuncaoService } from '../../../core/services/funcao.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ApiError, FuncaoRequest } from '../../../core/models/colaborador.model';
@@ -39,6 +39,7 @@ export class FuncaoCadastro {
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
+  protected readonly somenteLeitura = signal(this.route.snapshot.data['modo'] === 'visualizar');
 
   protected readonly saving = signal(false);
   protected readonly carregando = signal(false);
@@ -48,6 +49,7 @@ export class FuncaoCadastro {
   protected readonly model = signal<CadastroModel>({ nome: '' });
   protected readonly f = form(this.model, (p) => {
     required(p.nome, { message: 'O nome é obrigatório.' });
+    readonly(p.nome, { when: () => this.somenteLeitura() });
     maxLength(p.nome, NOME_MAX, {
       message: `Use no máximo ${NOME_MAX} caracteres.`,
     });
@@ -106,6 +108,7 @@ export class FuncaoCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     this.f.nome().markAsTouched();
     this.serverErrors.set({});
 

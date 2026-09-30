@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class LocadoraController {
      * Lista locadoras com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('locadoras','VER')")
     public PageResponse<LocadoraResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -57,6 +59,7 @@ public class LocadoraController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/opcoes")
+    @PreAuthorize("@perm.can('locadoras','VER')")
     public List<LocadoraResponse> opcoes() {
         return service.listarOpcoes();
     }
@@ -66,6 +69,7 @@ public class LocadoraController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('locadoras','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome) {
@@ -78,6 +82,7 @@ public class LocadoraController {
      * Busca uma locadora por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('locadoras','VER')")
     public LocadoraResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -86,6 +91,7 @@ public class LocadoraController {
      * Cria uma locadora.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('locadoras','CRIAR')")
     public ResponseEntity<LocadoraResponse> criar(
             @Valid @RequestBody LocadoraRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -101,6 +107,7 @@ public class LocadoraController {
      * Atualiza uma locadora existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('locadoras','EDITAR')")
     public LocadoraResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody LocadoraRequest request) {
@@ -112,6 +119,7 @@ public class LocadoraController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('locadoras','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

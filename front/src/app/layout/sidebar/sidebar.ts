@@ -1,11 +1,14 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 interface NavItem {
   key: string;
   label: string;
   route: string | null;
+  /** Tela (RBAC) que libera o item. Ausente = sempre visível (Painel, placeholders). */
+  tela?: string;
 }
 
 @Component({
@@ -47,7 +50,7 @@ interface NavItem {
           Menu
         </p>
         <div class="flex flex-col gap-0.5">
-          @for (item of navItens; track item.key) {
+          @for (item of navItensVisiveis(); track item.key) {
             @if (item.route) {
               <a
                 [routerLink]="item.route"
@@ -157,35 +160,52 @@ interface NavItem {
           @case ('usuarios') {
             <path d="M15.75 7.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0" />
           }
+          @case ('perfis') {
+            <path d="M12 3.5 5 6v5c0 4.2 2.9 6.8 7 8.5 4.1-1.7 7-4.3 7-8.5V6l-7-2.5Z" />
+            <path d="M12 11.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-3 3.6a3 3 0 0 1 6 0" />
+          }
+          @case ('logs-acesso') {
+            <path d="M6 3h9l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+            <path d="M14 3v4h4M8.5 12.5l2 2 3.5-3.5M8.5 17h4" />
+          }
         }
       </svg>
     </ng-template>
   `,
 })
 export class Sidebar {
+  private readonly auth = inject(AuthService);
+
   readonly open = input(false);
   readonly close = output<void>();
 
   protected readonly navItens: NavItem[] = [
     { key: 'painel', label: 'Painel', route: '/painel' },
-    { key: 'colaboradores', label: 'Colaboradores', route: '/colaboradores' },
-    { key: 'funcoes', label: 'Funções', route: '/funcoes' },
-    { key: 'epc', label: 'EPC', route: '/epcs' },
-    { key: 'empresas', label: 'Empresas', route: '/empresas' },
-    { key: 'gestoes', label: 'Gestão', route: '/gestoes' },
-    { key: 'locais', label: 'Locais', route: '/locais' },
-    { key: 'status-locais', label: 'Status dos Locais', route: '/status-locais' },
-    { key: 'orcamentos-mobiliario', label: 'Orçamento de Mobiliário', route: '/orcamentos-mobiliario' },
-    { key: 'locadoras', label: 'Locadoras', route: '/locadoras' },
-    { key: 'tipos-solicitacao', label: 'Tipos de Solicitação', route: '/tipos-solicitacao' },
-    { key: 'hospedagens', label: 'Hospedagens', route: '/hospedagens' },
-    { key: 'contratos', label: 'Contratos', route: '/contratos' },
-    { key: 'gastos', label: 'Gastos', route: '/gastos' },
-    { key: 'solicitacoes', label: 'Solicitações', route: '/solicitacoes' },
-    { key: 'usuarios', label: 'Usuários', route: '/usuarios' },
+    { key: 'colaboradores', label: 'Colaboradores', route: '/colaboradores', tela: 'colaboradores' },
+    { key: 'funcoes', label: 'Funções', route: '/funcoes', tela: 'funcoes' },
+    { key: 'epc', label: 'EPC', route: '/epcs', tela: 'epc' },
+    { key: 'empresas', label: 'Empresas', route: '/empresas', tela: 'empresas' },
+    { key: 'gestoes', label: 'Gestão', route: '/gestoes', tela: 'gestoes' },
+    { key: 'locais', label: 'Locais', route: '/locais', tela: 'locais' },
+    { key: 'status-locais', label: 'Status dos Locais', route: '/status-locais', tela: 'status-locais' },
+    { key: 'orcamentos-mobiliario', label: 'Orçamento de Mobiliário', route: '/orcamentos-mobiliario', tela: 'orcamentos-mobiliario' },
+    { key: 'locadoras', label: 'Locadoras', route: '/locadoras', tela: 'locadoras' },
+    { key: 'tipos-solicitacao', label: 'Tipos de Solicitação', route: '/tipos-solicitacao', tela: 'tipos-solicitacao' },
+    { key: 'hospedagens', label: 'Hospedagens', route: '/hospedagens', tela: 'hospedagens' },
+    { key: 'contratos', label: 'Contratos', route: '/contratos', tela: 'contratos' },
+    { key: 'gastos', label: 'Gastos', route: '/gastos', tela: 'gastos' },
+    { key: 'solicitacoes', label: 'Solicitações', route: '/solicitacoes', tela: 'solicitacoes' },
+    { key: 'usuarios', label: 'Usuários', route: '/usuarios', tela: 'usuarios' },
+    { key: 'perfis', label: 'Perfis', route: '/perfis', tela: 'perfis' },
+    { key: 'logs-acesso', label: 'Logs de Acesso', route: '/logs-acesso', tela: 'logs-acesso' },
     { key: 'obras', label: 'Obras', route: null },
     { key: 'relatorios', label: 'Relatórios', route: null },
   ];
+
+  /** Itens visíveis: sem tela (Painel/placeholders) ou com permissão de ver a tela. */
+  protected readonly navItensVisiveis = computed(() =>
+    this.navItens.filter((item) => !item.tela || this.auth.podeVer(item.tela)),
+  );
 
   protected readonly disabledCls =
     'relative flex cursor-not-allowed items-center gap-3 rounded-control px-3 py-2 text-sm font-medium text-faint';

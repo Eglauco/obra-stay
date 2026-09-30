@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,14 +44,16 @@ public class ColaboradorController {
      * Lista colaboradores com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('colaboradores','VER')")
     public PageResponse<ColaboradorResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
             @RequestParam(required = false) Sexo sexo,
             @RequestParam(required = false) Long funcaoId,
+            @RequestParam(required = false) Long epcId,
             @PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable) {
 
-        ColaboradorFiltro filtro = new ColaboradorFiltro(id, nome, sexo, funcaoId);
+        ColaboradorFiltro filtro = new ColaboradorFiltro(id, nome, sexo, funcaoId, epcId);
         return service.buscar(filtro, pageable);
     }
 
@@ -59,6 +62,7 @@ public class ColaboradorController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/opcoes")
+    @PreAuthorize("@perm.can('colaboradores','VER')")
     public java.util.List<ColaboradorResponse> opcoes() {
         return service.listarOpcoes();
     }
@@ -68,13 +72,15 @@ public class ColaboradorController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('colaboradores','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
             @RequestParam(required = false) Sexo sexo,
-            @RequestParam(required = false) Long funcaoId) {
+            @RequestParam(required = false) Long funcaoId,
+            @RequestParam(required = false) Long epcId) {
 
-        byte[] conteudo = service.exportar(new ColaboradorFiltro(id, nome, sexo, funcaoId));
+        byte[] conteudo = service.exportar(new ColaboradorFiltro(id, nome, sexo, funcaoId, epcId));
         return PlanilhaExcel.resposta(conteudo, "colaboradores");
     }
 
@@ -82,6 +88,7 @@ public class ColaboradorController {
      * Busca um colaborador por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('colaboradores','VER')")
     public ColaboradorResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -90,6 +97,7 @@ public class ColaboradorController {
      * Cria um colaborador.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('colaboradores','CRIAR')")
     public ResponseEntity<ColaboradorResponse> criar(
             @Valid @RequestBody ColaboradorRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -105,6 +113,7 @@ public class ColaboradorController {
      * Atualiza um colaborador existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('colaboradores','EDITAR')")
     public ColaboradorResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody ColaboradorRequest request) {
@@ -116,6 +125,7 @@ public class ColaboradorController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('colaboradores','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

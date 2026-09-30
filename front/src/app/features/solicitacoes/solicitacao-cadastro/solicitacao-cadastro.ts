@@ -19,6 +19,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { BuscaOpcao, BuscaSelect } from '../../../core/components/busca-select/busca-select';
 import { MudarStatusDialog } from '../../../core/components/mudar-status-dialog/mudar-status-dialog';
 import { SolicitacaoHistoricoDialog } from '../solicitacao-historico-dialog/solicitacao-historico-dialog';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError } from '../../../core/models/colaborador.model';
 import {
   SOLICITACAO_STATUS_LABEL,
@@ -49,7 +50,7 @@ const OBS_MAX = 1000;
 /** Tela dedicada de abrir/editar solicitação (padrão de CRUD: sempre em nova tela). */
 @Component({
   selector: 'app-solicitacao-cadastro',
-  imports: [FormField, BuscaSelect, MudarStatusDialog, SolicitacaoHistoricoDialog],
+  imports: [FormField, BuscaSelect, MudarStatusDialog, SolicitacaoHistoricoDialog, PodeDirective],
   templateUrl: './solicitacao-cadastro.html',
   styleUrl: './solicitacao-cadastro.css',
 })
@@ -74,6 +75,7 @@ export class SolicitacaoCadastro {
 
   protected readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
+  protected readonly somenteLeitura = signal(this.route.snapshot.data['modo'] === 'visualizar');
 
   protected readonly saving = signal(false);
   protected readonly carregando = signal(false);
@@ -167,7 +169,11 @@ export class SolicitacaoCadastro {
         this.localInicial.set(s.local ?? null);
         this.status.set(s.status);
         this.carregada.set(s);
-        if (s.colaborador?.id != null) this.carregarLocais(s.colaborador.id, false);
+        // No modo somente-leitura o local já vem da própria solicitação (localInicial);
+        // não buscar a lista de locais (evita depender de hospedagens:VER só para visualizar).
+        if (!this.somenteLeitura() && s.colaborador?.id != null) {
+          this.carregarLocais(s.colaborador.id, false);
+        }
         this.carregando.set(false);
       },
       error: (e: HttpErrorResponse) => {
@@ -311,7 +317,7 @@ export class SolicitacaoCadastro {
   protected confirmarMudanca(observacao: string): void {
     const m = this.mudanca();
     const id = this.id();
-    if (!m || id == null || this.acaoStatus()) return;
+    if (this.somenteLeitura() || !m || id == null || this.acaoStatus()) return;
     const op$ =
       m.acao === 'iniciar'
         ? this.service.iniciar(id, observacao)
@@ -347,6 +353,7 @@ export class SolicitacaoCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     if (this.encerrada()) return;
     this.f.tipoSolicitacaoId().markAsTouched();
     this.f.colaboradorId().markAsTouched();

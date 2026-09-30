@@ -47,7 +47,7 @@ public class Colaborador {
     @Column(name = "cpf", nullable = false, length = 11, unique = true)
     private String cpf;
 
-    @Column(name = "email", nullable = false, length = 160)
+    @Column(name = "email", length = 160)
     private String email;
 
     @ManyToOne(optional = false, fetch = FetchType.EAGER)

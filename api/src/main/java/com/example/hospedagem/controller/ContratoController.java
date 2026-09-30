@@ -15,6 +15,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,6 +46,7 @@ public class ContratoController {
      * Lista contratos com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('contratos','VER')")
     public PageResponse<ContratoResponse> listar(
             @RequestParam(required = false) Long localId,
             @RequestParam(required = false) String codigo,
@@ -66,6 +68,7 @@ public class ContratoController {
 
     /** Exporta os contratos do local (detalhe) para Excel, respeitando os filtros. */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('contratos','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long localId,
             @RequestParam(required = false) String codigo,
@@ -76,6 +79,7 @@ public class ContratoController {
 
     /** Exporta a grade de locais com o contrato vigente (respeita o filtro de nome). */
     @GetMapping("/exportar-locais")
+    @PreAuthorize("@perm.can('contratos','EXPORTAR')")
     public ResponseEntity<byte[]> exportarLocais(@RequestParam(required = false) String nome) {
         return PlanilhaExcel.resposta(service.exportarLocais(nome), "contratos-locais");
     }
@@ -84,6 +88,7 @@ public class ContratoController {
      * Busca um contrato por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('contratos','VER')")
     public ContratoResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -92,6 +97,7 @@ public class ContratoController {
      * Cria um contrato. Multipart: parte "dados" (JSON) + "arquivo" (PDF, opcional).
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@perm.can('contratos','CRIAR')")
     public ResponseEntity<ContratoResponse> criar(
             @Valid @RequestPart("dados") ContratoRequest request,
             @RequestPart(value = "arquivo", required = false) MultipartFile arquivo,
@@ -109,6 +115,7 @@ public class ContratoController {
      * o campo "removerArquivo" (quando o usuário remove o PDF existente sem enviar outro).
      */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@perm.can('contratos','EDITAR')")
     public ContratoResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestPart("dados") ContratoRequest request,
@@ -122,6 +129,7 @@ public class ContratoController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('contratos','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

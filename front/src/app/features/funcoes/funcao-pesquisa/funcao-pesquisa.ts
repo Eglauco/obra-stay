@@ -16,6 +16,7 @@ import { FuncaoService } from '../../../core/services/funcao.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../core/components/confirm-dialog/confirm-dialog';
 import { ExportarExcel } from '../../../core/components/exportar-excel/exportar-excel';
+import { PodeDirective } from '../../../core/directives/pode.directive';
 import {
   ApiError,
   Funcao,
@@ -27,7 +28,7 @@ import {
 
 @Component({
   selector: 'app-funcao-pesquisa',
-  imports: [ConfirmDialog, RouterLink, ExportarExcel],
+  imports: [ConfirmDialog, RouterLink, ExportarExcel, PodeDirective],
   templateUrl: './funcao-pesquisa.html',
   styleUrl: './funcao-pesquisa.css',
 })

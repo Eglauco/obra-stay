@@ -36,12 +36,15 @@ export class ContratoCadastro {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly modo = this.route.snapshot.data['modo'] as 'novo' | 'editar';
+  private readonly modo = this.route.snapshot.data['modo'] as 'novo' | 'editar' | 'visualizar';
   private readonly paramId = this.lerId();
 
   protected readonly editMode = this.modo === 'editar';
-  protected readonly contratoId = signal<number | null>(this.editMode ? this.paramId : null);
-  protected readonly localId = signal<number | null>(this.editMode ? null : this.paramId);
+  protected readonly somenteLeitura = signal(this.modo === 'visualizar');
+  /** Editar e Visualizar carregam um contrato existente pelo :id. */
+  private readonly carregarExistente = this.modo === 'editar' || this.modo === 'visualizar';
+  protected readonly contratoId = signal<number | null>(this.carregarExistente ? this.paramId : null);
+  protected readonly localId = signal<number | null>(this.carregarExistente ? null : this.paramId);
   protected readonly localNome = signal('');
   protected readonly localInfo = signal('');
   protected readonly renovando = signal(false);
@@ -108,7 +111,7 @@ export class ContratoCadastro {
     this.destroyRef.onDestroy(() => this.revogarObjectUrl());
     afterNextRender(() => {
       this.carregarLocadoras();
-      if (this.editMode) {
+      if (this.carregarExistente) {
         if (this.paramId == null) {
           this.erroCarregar.set('Contrato inválido.');
           return;
@@ -221,6 +224,7 @@ export class ContratoCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     this.submetido.set(true);
     this.serverErrors.set({});
 

@@ -43,7 +43,8 @@ export interface Colaborador {
   sexo: Sexo;
   mdo: Mdo;
   cpf: string;
-  email: string;
+  /** E-mail é opcional: pode vir nulo quando não informado. */
+  email: string | null;
   funcao: Funcao;
   epc: RefNome;
   empresa: RefNome;
@@ -83,6 +84,7 @@ export interface ColaboradorFiltro {
   nome?: string | null;
   sexo?: Sexo | null;
   funcaoId?: number | null;
+  epcId?: number | null;
   page: number;
   size: number;
   sort: string; // "campo,direcao" (padrão Spring)

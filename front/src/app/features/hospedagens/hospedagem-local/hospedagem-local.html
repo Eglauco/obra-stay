@@ -64,8 +64,9 @@
           </svg>
           QR de autoatendimento
         </button>
-        <app-exportar-excel nome="hospedagens" [acao]="exportarExcel" [desabilitado]="!temItens()" />
+        <app-exportar-excel *appPode="'hospedagens:EXPORTAR'" nome="hospedagens" [acao]="exportarExcel" [desabilitado]="!temItens()" />
         <button
+          *appPode="'hospedagens:EXPORTAR'"
           type="button"
           (click)="exportarPdf()"
           [disabled]="gerandoPdf() || !temItens()"
@@ -80,13 +81,13 @@
           Relatório PDF
         </button>
         @if (lotado()) {
-          <button type="button" disabled title="Local lotado"
+          <button *appPode="'hospedagens:DAR_ENTRADA'" type="button" disabled title="Local lotado"
             class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg opacity-50 cursor-not-allowed">
             <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
             Local lotado
           </button>
         } @else {
-          <a [routerLink]="['/hospedagens/local', localId, 'entrada']"
+          <a *appPode="'hospedagens:DAR_ENTRADA'" [routerLink]="['/hospedagens/local', localId, 'entrada']"
             class="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover">
             <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
             Dar entrada
@@ -162,13 +163,13 @@
                 <td class="px-4 py-3.5">
                   <div class="flex items-center justify-end gap-1">
                     @if (h.status === 'ATIVA') {
-                      <button type="button" (click)="pedirSaida(h)" [attr.aria-label]="'Dar saída de ' + h.colaborador.nome"
+                      <button *appPode="'hospedagens:DAR_SAIDA'" type="button" (click)="pedirSaida(h)" [attr.aria-label]="'Dar saída de ' + h.colaborador.nome"
                         class="inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong px-2.5 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2">
                         <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M13 5l4 5-4 5M17 10H7M9 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         Dar saída
                       </button>
                     }
-                    <button type="button" (click)="pedirExclusao(h)" [attr.aria-label]="'Excluir registro de ' + h.colaborador.nome"
+                    <button *appPode="'hospedagens:EXCLUIR'" type="button" (click)="pedirExclusao(h)" [attr.aria-label]="'Excluir registro de ' + h.colaborador.nome"
                       class="grid size-8 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger">
                       <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </button>

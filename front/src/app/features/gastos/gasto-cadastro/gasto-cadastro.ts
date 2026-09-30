@@ -32,12 +32,15 @@ export class GastoCadastro {
   private readonly location = inject(Location);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  private readonly modo = this.route.snapshot.data['modo'] as 'novo' | 'editar';
+  private readonly modo = this.route.snapshot.data['modo'] as 'novo' | 'editar' | 'visualizar';
   private readonly paramId = this.lerId();
 
   protected readonly editMode = this.modo === 'editar';
-  protected readonly gastoId = signal<number | null>(this.editMode ? this.paramId : null);
-  protected readonly localId = signal<number | null>(this.editMode ? null : this.paramId);
+  protected readonly somenteLeitura = signal(this.modo === 'visualizar');
+  /** Em editar e visualizar o :id da rota é o gasto; em novo é o local. */
+  private readonly idEhGasto = this.editMode || this.modo === 'visualizar';
+  protected readonly gastoId = signal<number | null>(this.idEhGasto ? this.paramId : null);
+  protected readonly localId = signal<number | null>(this.idEhGasto ? null : this.paramId);
   protected readonly localNome = signal('');
   protected readonly localInfo = signal('');
 
@@ -91,7 +94,7 @@ export class GastoCadastro {
 
   constructor() {
     afterNextRender(() => {
-      if (this.editMode) {
+      if (this.idEhGasto) {
         if (this.paramId == null) {
           this.erroCarregar.set('Gasto inválido.');
           return;
@@ -176,6 +179,7 @@ export class GastoCadastro {
   }
 
   protected submit(): void {
+    if (this.somenteLeitura()) return;
     this.submetido.set(true);
     this.serverErrors.set({});
 

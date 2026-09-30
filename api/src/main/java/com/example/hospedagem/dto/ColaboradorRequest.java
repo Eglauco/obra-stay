@@ -27,7 +27,6 @@ public record ColaboradorRequest(
         @CPF(message = "CPF inválido.")
         String cpf,
 
-        @NotBlank(message = "O e-mail é obrigatório.")
         @Email(message = "E-mail inválido.")
         @Size(max = 160, message = "O e-mail deve ter no máximo 160 caracteres.")
         String email,

@@ -19,6 +19,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,6 +49,7 @@ public class GastoController {
      * Lista gastos com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('gastos','VER')")
     public PageResponse<GastoResponse> listar(
             @RequestParam(required = false) Long localId,
             @RequestParam(required = false) String nome,
@@ -70,6 +72,7 @@ public class GastoController {
 
     /** Exporta os gastos do local (detalhe) para Excel, respeitando os filtros de período. */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('gastos','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long localId,
             @RequestParam(required = false) String nome,
@@ -82,6 +85,7 @@ public class GastoController {
 
     /** Exporta a grade de locais com o total gasto (respeita o filtro de nome). */
     @GetMapping("/exportar-locais")
+    @PreAuthorize("@perm.can('gastos','EXPORTAR')")
     public ResponseEntity<byte[]> exportarLocais(@RequestParam(required = false) String nome) {
         return PlanilhaExcel.resposta(service.exportarLocais(nome), "gastos-locais");
     }
@@ -91,6 +95,7 @@ public class GastoController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/resumo")
+    @PreAuthorize("@perm.can('gastos','VER')")
     public ResumoGastoResponse resumo(
             @RequestParam Long localId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataDe,
@@ -104,6 +109,7 @@ public class GastoController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/relatorio")
+    @PreAuthorize("@perm.can('gastos','EXPORTAR')")
     public RelatorioGastosResponse relatorio(
             @RequestParam Long localId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataDe,
@@ -116,6 +122,7 @@ public class GastoController {
      * Busca um gasto por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('gastos','VER')")
     public GastoResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -124,6 +131,7 @@ public class GastoController {
      * Rateio do gasto por EPC (lista de divisão do custo).
      */
     @GetMapping("/{id}/rateio")
+    @PreAuthorize("@perm.can('gastos','VER')")
     public List<RateioGastoResponse> rateio(@PathVariable Long id) {
         return service.rateio(id);
     }
@@ -132,6 +140,7 @@ public class GastoController {
      * Cria um gasto (lançamento de despesa).
      */
     @PostMapping
+    @PreAuthorize("@perm.can('gastos','CRIAR')")
     public ResponseEntity<GastoResponse> criar(
             @Valid @RequestBody GastoRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -147,6 +156,7 @@ public class GastoController {
      * Atualiza um gasto existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('gastos','EDITAR')")
     public GastoResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody GastoRequest request) {
@@ -158,6 +168,7 @@ public class GastoController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('gastos','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

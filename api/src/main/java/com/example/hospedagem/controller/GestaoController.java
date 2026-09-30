@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class GestaoController {
      * Lista gestões com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('gestoes','VER')")
     public PageResponse<GestaoResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -57,6 +59,7 @@ public class GestaoController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/opcoes")
+    @PreAuthorize("@perm.can('gestoes','VER')")
     public List<GestaoResponse> opcoes() {
         return service.listarOpcoes();
     }
@@ -66,6 +69,7 @@ public class GestaoController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('gestoes','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome) {
@@ -78,6 +82,7 @@ public class GestaoController {
      * Busca uma gestão por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('gestoes','VER')")
     public GestaoResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -86,6 +91,7 @@ public class GestaoController {
      * Cria uma gestão.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('gestoes','CRIAR')")
     public ResponseEntity<GestaoResponse> criar(
             @Valid @RequestBody GestaoRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -101,6 +107,7 @@ public class GestaoController {
      * Atualiza uma gestão existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('gestoes','EDITAR')")
     public GestaoResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody GestaoRequest request) {
@@ -112,6 +119,7 @@ public class GestaoController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('gestoes','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }

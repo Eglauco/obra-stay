@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class FuncaoController {
      * Lista funções com paginação e filtros aplicados no backend.
      */
     @GetMapping
+    @PreAuthorize("@perm.can('funcoes','VER')")
     public PageResponse<FuncaoResponse> listar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome,
@@ -57,6 +59,7 @@ public class FuncaoController {
      * Declarado ANTES de "/{id}" para evitar ambiguidade de rota.
      */
     @GetMapping("/opcoes")
+    @PreAuthorize("@perm.can('funcoes','VER')")
     public List<FuncaoResponse> opcoes() {
         return service.listarOpcoes();
     }
@@ -66,6 +69,7 @@ public class FuncaoController {
      * Declarado antes de "/{id}" para não ser capturado como path variable.
      */
     @GetMapping("/exportar")
+    @PreAuthorize("@perm.can('funcoes','EXPORTAR')")
     public ResponseEntity<byte[]> exportar(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) String nome) {
@@ -78,6 +82,7 @@ public class FuncaoController {
      * Busca uma função por id.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@perm.can('funcoes','VER')")
     public FuncaoResponse obter(@PathVariable Long id) {
         return service.obter(id);
     }
@@ -86,6 +91,7 @@ public class FuncaoController {
      * Cria uma função.
      */
     @PostMapping
+    @PreAuthorize("@perm.can('funcoes','CRIAR')")
     public ResponseEntity<FuncaoResponse> criar(
             @Valid @RequestBody FuncaoRequest request,
             UriComponentsBuilder uriBuilder) {
@@ -101,6 +107,7 @@ public class FuncaoController {
      * Atualiza uma função existente.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@perm.can('funcoes','EDITAR')")
     public FuncaoResponse atualizar(
             @PathVariable Long id,
             @Valid @RequestBody FuncaoRequest request) {
@@ -112,6 +119,7 @@ public class FuncaoController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@perm.can('funcoes','EXCLUIR')")
     public void excluir(@PathVariable Long id) {
         service.excluir(id);
     }
