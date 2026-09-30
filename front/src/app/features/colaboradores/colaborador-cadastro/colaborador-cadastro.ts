@@ -28,6 +28,7 @@ import {
   Sexo,
 } from '../../../core/models/colaborador.model';
 import { apenasDigitosCpf, cpfValido, formatarCpf, formatarDataHora } from '../../../core/util/format';
+import { Epc } from '../../../core/models/epc.model';
 
 interface CadastroModel {
   nome: string;
@@ -36,7 +37,6 @@ interface CadastroModel {
   cpf: string;
   email: string;
   funcaoId: number | null;
-  epcId: number | null;
   empresaId: number | null;
   gestaoId: number | null;
 }
@@ -76,9 +76,15 @@ export class ColaboradorCadastro {
 
   // Valor inicial (modo edição) dos campos de busca — alimenta o rótulo do autocomplete.
   protected readonly funcaoInicial = signal<BuscaOpcao | null>(null);
-  protected readonly epcInicial = signal<BuscaOpcao | null>(null);
   protected readonly empresaInicial = signal<BuscaOpcao | null>(null);
   protected readonly gestaoInicial = signal<BuscaOpcao | null>(null);
+
+  // EPC agora é múltipla seleção (grupo de checkboxes). Opções carregadas do back.
+  protected readonly epcOpcoes = signal<Epc[]>([]);
+  // Conjunto imutável de ids marcados (toggle via set/update, nunca mutate).
+  protected readonly epcIdsSel = signal<Set<number>>(new Set());
+  // "Tocado" para o EPC, espelhando o markAsTouched dos demais campos.
+  protected readonly epcTocado = signal(false);
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
@@ -100,7 +106,6 @@ export class ColaboradorCadastro {
     cpf: '',
     email: '',
     funcaoId: null,
-    epcId: null,
     empresaId: null,
     gestaoId: null,
   });
@@ -124,7 +129,6 @@ export class ColaboradorCadastro {
     email(p.email, { message: 'E-mail inválido.' });
     maxLength(p.email, EMAIL_MAX, { message: `Use no máximo ${EMAIL_MAX} caracteres.` });
     required(p.funcaoId, { message: 'Selecione a função.' });
-    required(p.epcId, { message: 'Selecione o EPC.' });
     required(p.empresaId, { message: 'Selecione a empresa.' });
     required(p.gestaoId, { message: 'Selecione a gestão.' });
   });
@@ -138,17 +142,19 @@ export class ColaboradorCadastro {
   protected readonly cpfError = computed(() => this.fieldError('cpf', this.f.cpf));
   protected readonly emailError = computed(() => this.fieldError('email', this.f.email));
   protected readonly funcaoError = computed(() => this.fieldError('funcaoId', this.f.funcaoId));
-  protected readonly epcError = computed(() => this.fieldError('epcId', this.f.epcId));
   protected readonly empresaError = computed(() => this.fieldError('empresaId', this.f.empresaId));
   protected readonly gestaoError = computed(() => this.fieldError('gestaoId', this.f.gestaoId));
+  // EPC (múltiplo): erro do servidor ou "obrigatório >= 1" após tocado/submeter.
+  protected readonly epcError = computed<string | null>(() => {
+    const server = this.serverErrors()['epcIds'];
+    if (server) return server;
+    if (!this.epcTocado()) return null;
+    return this.epcIdsSel().size === 0 ? 'Selecione ao menos um EPC.' : null;
+  });
 
   // Funções de busca no backend (autocomplete). size 8 = primeira página enxuta.
   protected readonly buscarFuncao = (t: string): Observable<BuscaOpcao[]> =>
     this.funcaoService
-      .listar({ id: null, nome: t || null, page: 0, size: 8, sort: 'nome,asc' })
-      .pipe(map((r) => r.content));
-  protected readonly buscarEpc = (t: string): Observable<BuscaOpcao[]> =>
-    this.epcService
       .listar({ id: null, nome: t || null, page: 0, size: 8, sort: 'nome,asc' })
       .pipe(map((r) => r.content));
   protected readonly buscarEmpresa = (t: string): Observable<BuscaOpcao[]> =>
@@ -162,9 +168,19 @@ export class ColaboradorCadastro {
 
   constructor() {
     afterNextRender(() => {
+      this.carregarEpcOpcoes();
       const id = this.id();
       if (id != null) this.carregar(id);
       else document.getElementById('cad-nome')?.focus();
+    });
+  }
+
+  private carregarEpcOpcoes(): void {
+    this.epcService.opcoes().subscribe({
+      next: (es) => this.epcOpcoes.set(es),
+      error: () => {
+        /* lista de EPC fica indisponível silenciosamente */
+      },
     });
   }
 
@@ -187,12 +203,11 @@ export class ColaboradorCadastro {
           cpf: apenasDigitosCpf(c.cpf),
           email: c.email ?? '',
           funcaoId: c.funcao?.id ?? null,
-          epcId: c.epc?.id ?? null,
           empresaId: c.empresa?.id ?? null,
           gestaoId: c.gestao?.id ?? null,
         });
+        this.epcIdsSel.set(new Set((c.epcs ?? []).map((e) => e.id)));
         this.funcaoInicial.set(c.funcao ?? null);
-        this.epcInicial.set(c.epc ?? null);
         this.empresaInicial.set(c.empresa ?? null);
         this.gestaoInicial.set(c.gestao ?? null);
         this.hospedagemAtiva.set(c.hospedagemAtiva ?? null);
@@ -244,10 +259,19 @@ export class ColaboradorCadastro {
     this.clearServerError('funcaoId');
   }
 
-  protected onEpc(op: BuscaOpcao | null): void {
-    this.model.update((m) => ({ ...m, epcId: op?.id ?? null }));
-    this.f.epcId().markAsTouched();
-    this.clearServerError('epcId');
+  protected epcSelecionado(id: number): boolean {
+    return this.epcIdsSel().has(id);
+  }
+
+  protected toggleEpc(id: number, marcado: boolean): void {
+    this.epcIdsSel.update((atual) => {
+      const proximo = new Set(atual);
+      if (marcado) proximo.add(id);
+      else proximo.delete(id);
+      return proximo;
+    });
+    this.epcTocado.set(true);
+    this.clearServerError('epcIds');
   }
 
   protected onEmpresa(op: BuscaOpcao | null): void {
@@ -280,12 +304,13 @@ export class ColaboradorCadastro {
     this.f.cpf().markAsTouched();
     this.f.email().markAsTouched();
     this.f.funcaoId().markAsTouched();
-    this.f.epcId().markAsTouched();
     this.f.empresaId().markAsTouched();
     this.f.gestaoId().markAsTouched();
+    this.epcTocado.set(true);
     this.serverErrors.set({});
 
-    if (!this.f().valid() || this.saving()) return;
+    const epcIds = Array.from(this.epcIdsSel());
+    if (!this.f().valid() || epcIds.length === 0 || this.saving()) return;
 
     const value = this.model();
     const req: ColaboradorRequest = {
@@ -295,7 +320,7 @@ export class ColaboradorCadastro {
       cpf: value.cpf,
       email: value.email.trim(),
       funcaoId: value.funcaoId,
-      epcId: value.epcId,
+      epcIds,
       empresaId: value.empresaId,
       gestaoId: value.gestaoId,
     };

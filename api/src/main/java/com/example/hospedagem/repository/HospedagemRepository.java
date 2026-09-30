@@ -3,6 +3,8 @@ package com.example.hospedagem.repository;
 import com.example.hospedagem.domain.Hospedagem;
 import com.example.hospedagem.dto.DistribuicaoEpcResponse;
 import com.example.hospedagem.dto.OcupacaoResponse;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -40,14 +42,35 @@ public interface HospedagemRepository
     List<OcupacaoResponse> ocupacaoPorLocal();
 
     /**
-     * Distribuição por EPC dos colaboradores ATIVOS (hospedados) em um local,
-     * base para o rateio de gastos. Ordena do EPC com mais pessoas para o menor.
+     * Distribuição por EPC dos colaboradores ATIVOS (hospedados) em um local, base do rateio.
+     * Como o colaborador pode ter vários EPCs, cada pessoa é dividida igualmente entre os seus
+     * EPCs: peso = soma de 1/(qtde de EPCs da pessoa). pessoas = colaboradores distintos por EPC.
+     * Query nativa (usa a tabela de junção colaborador_epc). Colunas: epcId, epcNome, pessoas, peso.
      */
-    @Query("select new com.example.hospedagem.dto.DistribuicaoEpcResponse("
-            + "c.epc.id, c.epc.nome, count(h)) "
-            + "from Hospedagem h join h.colaborador c "
-            + "where h.local.id = :localId and h.dataSaida is null "
-            + "group by c.epc.id, c.epc.nome "
-            + "order by count(h) desc, c.epc.nome asc")
-    List<DistribuicaoEpcResponse> distribuicaoEpcAtivaPorLocal(@Param("localId") Long localId);
+    @Query(value = "SELECT ce.epc_id AS epcId, e.nome AS epcNome, "
+            + "COUNT(DISTINCT c.id) AS pessoas, SUM(1.0 / nq.n) AS peso "
+            + "FROM hospedagem h "
+            + "JOIN colaborador c ON c.id = h.colaborador_id "
+            + "JOIN colaborador_epc ce ON ce.colaborador_id = c.id "
+            + "JOIN epc e ON e.id = ce.epc_id "
+            + "JOIN (SELECT colaborador_id, COUNT(*) AS n FROM colaborador_epc GROUP BY colaborador_id) nq "
+            + "ON nq.colaborador_id = c.id "
+            + "WHERE h.local_id = :localId AND h.data_saida IS NULL "
+            + "GROUP BY ce.epc_id, e.nome "
+            + "ORDER BY SUM(1.0 / nq.n) DESC, e.nome ASC", nativeQuery = true)
+    List<Object[]> distribuicaoEpcAtivaPorLocalRaw(@Param("localId") Long localId);
+
+    /** Mapeia o resultado nativo da distribuição por EPC para o DTO. */
+    default List<DistribuicaoEpcResponse> distribuicaoEpcAtivaPorLocal(Long localId) {
+        List<DistribuicaoEpcResponse> out = new ArrayList<>();
+        for (Object[] r : distribuicaoEpcAtivaPorLocalRaw(localId)) {
+            BigDecimal peso = r[3] instanceof BigDecimal bd ? bd : new BigDecimal(r[3].toString());
+            out.add(new DistribuicaoEpcResponse(
+                    ((Number) r[0]).longValue(),
+                    (String) r[1],
+                    ((Number) r[2]).longValue(),
+                    peso));
+        }
+        return out;
+    }
 }

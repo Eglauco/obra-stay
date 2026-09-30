@@ -46,7 +46,8 @@ export interface Colaborador {
   /** E-mail é opcional: pode vir nulo quando não informado. */
   email: string | null;
   funcao: Funcao;
-  epc: RefNome;
+  /** EPCs do colaborador (vários): lista de {id, nome}. */
+  epcs: RefNome[];
   empresa: RefNome;
   gestao: RefNome;
   /** Hospedagem ativa atual, ou null quando não está hospedado. */
@@ -60,7 +61,8 @@ export interface ColaboradorRequest {
   cpf: string;
   email: string;
   funcaoId: number | null;
-  epcId: number | null;
+  /** EPCs do colaborador (vários): pelo menos 1 obrigatório. */
+  epcIds: number[];
   empresaId: number | null;
   gestaoId: number | null;
 }

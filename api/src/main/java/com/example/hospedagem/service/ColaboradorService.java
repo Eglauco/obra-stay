@@ -29,8 +29,11 @@ import com.example.hospedagem.specification.ColaboradorSpecifications;
 import com.example.hospedagem.util.PlanilhaExcel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -109,7 +112,7 @@ public class ColaboradorService {
                 .cpf(cpf)
                 .email(normalizarEmail(request.email()))
                 .funcao(buscarFuncao(request.funcaoId()))
-                .epc(buscarEpc(request.epcId()))
+                .epcs(buscarEpcs(request.epcIds()))
                 .empresa(buscarEmpresa(request.empresaId()))
                 .gestao(buscarGestao(request.gestaoId()))
                 .build();
@@ -129,7 +132,8 @@ public class ColaboradorService {
         colaborador.setCpf(cpf);
         colaborador.setEmail(normalizarEmail(request.email()));
         colaborador.setFuncao(buscarFuncao(request.funcaoId()));
-        colaborador.setEpc(buscarEpc(request.epcId()));
+        colaborador.getEpcs().clear();
+        colaborador.getEpcs().addAll(buscarEpcs(request.epcIds()));
         colaborador.setEmpresa(buscarEmpresa(request.empresaId()));
         colaborador.setGestao(buscarGestao(request.gestaoId()));
         return toResponse(repository.save(colaborador));
@@ -161,7 +165,8 @@ public class ColaboradorService {
                     rotuloMdo(c.getMdo()),
                     c.getEmail(),
                     c.getFuncao() != null ? c.getFuncao().getNome() : null,
-                    c.getEpc() != null ? c.getEpc().getNome() : null,
+                    c.getEpcs().stream().map(Epc::getNome)
+                            .sorted(String.CASE_INSENSITIVE_ORDER).collect(Collectors.joining(", ")),
                     c.getEmpresa() != null ? c.getEmpresa().getNome() : null,
                     c.getGestao() != null ? c.getGestao().getNome() : null,
                     h != null ? h.getLocal().getNome() : null,
@@ -207,9 +212,16 @@ public class ColaboradorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Função não encontrada."));
     }
 
-    private Epc buscarEpc(Long epcId) {
-        return epcRepository.findById(epcId)
-                .orElseThrow(() -> new ResourceNotFoundException("EPC não encontrado."));
+    private Set<Epc> buscarEpcs(List<Long> epcIds) {
+        if (epcIds == null || epcIds.isEmpty()) {
+            throw new RegraNegocioException("epcIds", "Selecione ao menos um EPC.");
+        }
+        Set<Epc> epcs = new LinkedHashSet<>();
+        for (Long epcId : epcIds) {
+            epcs.add(epcRepository.findById(epcId)
+                    .orElseThrow(() -> new ResourceNotFoundException("EPC não encontrado.")));
+        }
+        return epcs;
     }
 
     private Empresa buscarEmpresa(Long empresaId) {
@@ -238,9 +250,12 @@ public class ColaboradorService {
 
     private ColaboradorResponse toResponse(Colaborador colaborador) {
         Funcao funcao = colaborador.getFuncao();
-        Epc epc = colaborador.getEpc();
         Empresa empresa = colaborador.getEmpresa();
         Gestao gestao = colaborador.getGestao();
+        List<EpcResponse> epcs = colaborador.getEpcs().stream()
+                .sorted(Comparator.comparing(Epc::getNome, String.CASE_INSENSITIVE_ORDER))
+                .map(e -> new EpcResponse(e.getId(), e.getNome()))
+                .toList();
         return new ColaboradorResponse(
                 colaborador.getId(),
                 colaborador.getNome(),
@@ -249,7 +264,7 @@ public class ColaboradorService {
                 colaborador.getCpf(),
                 colaborador.getEmail(),
                 new FuncaoResponse(funcao.getId(), funcao.getNome()),
-                new EpcResponse(epc.getId(), epc.getNome()),
+                epcs,
                 new EmpresaResponse(empresa.getId(), empresa.getNome()),
                 new GestaoResponse(gestao.getId(), gestao.getNome()),
                 hospedagemAtiva(colaborador));

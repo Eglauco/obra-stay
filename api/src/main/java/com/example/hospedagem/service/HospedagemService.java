@@ -255,7 +255,11 @@ public class HospedagemService {
             }
 
             String funcao = c.getFuncao() != null ? c.getFuncao().getNome() : "—";
-            String epc = c.getEpc() != null ? c.getEpc().getNome() : "—";
+            List<String> epcNomes = c.getEpcs().stream()
+                    .map(e -> e.getNome())
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .toList();
+            String epc = epcNomes.isEmpty() ? "—" : String.join(", ", epcNomes);
             String empresa = c.getEmpresa() != null ? c.getEmpresa().getNome() : "—";
             String gestao = c.getGestao() != null ? c.getGestao().getNome() : "—";
 
@@ -265,7 +269,13 @@ public class HospedagemService {
                     h.getDataEntrada(), h.getDataSaida(),
                     ativa ? STATUS_ATIVA : STATUS_ENCERRADA, h.getOrigem(), dias, h.getObservacao()));
 
-            acumular(porEpc, epc, ativa);
+            if (epcNomes.isEmpty()) {
+                acumular(porEpc, "—", ativa);
+            } else {
+                for (String en : epcNomes) {
+                    acumular(porEpc, en, ativa);
+                }
+            }
             acumular(porEmpresa, empresa, ativa);
             acumular(porFuncao, funcao, ativa);
             acumular(porOrigem, rotuloOrigem(h.getOrigem()), ativa);

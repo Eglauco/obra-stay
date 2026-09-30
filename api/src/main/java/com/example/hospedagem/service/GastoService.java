@@ -163,7 +163,7 @@ public class GastoService {
         for (Gasto g : lista) {
             linhas.add(Arrays.asList(
                     g.getData(), g.getNome(), g.getQuantidade(), g.getValor(),
-                    g.getQuantidade().multiply(g.getValor())));
+                    totalGasto(g)));
         }
         return PlanilhaExcel.gerar("Gastos", cabecalhos, linhas);
     }
@@ -218,7 +218,7 @@ public class GastoService {
         for (int i = 0; i < gastos.size(); i++) {
             Gasto g = gastos.get(i);
             List<RateioGasto> rr = rateiosPorGasto.get(i);
-            BigDecimal total = g.getQuantidade().multiply(g.getValor());
+            BigDecimal total = totalGasto(g);
             totalGeral = totalGeral.add(total);
 
             List<RateioGastoResponse> rateio = rr.stream()
@@ -263,6 +263,16 @@ public class GastoService {
 
     // ----- auxiliares -----
 
+    /**
+     * Total do gasto (quantidade x valor unitário) arredondado a 2 casas (centavos).
+     * Ponto único para que rateio, total exibido, relatório e Excel usem a MESMA base:
+     * como quantidade tem escala 3, o produto pode ter mais de 2 casas; arredondar aqui
+     * evita que a soma do rateio por EPC divirja do total do gasto.
+     */
+    private static BigDecimal totalGasto(Gasto gasto) {
+        return gasto.getQuantidade().multiply(gasto.getValor()).setScale(2, RoundingMode.HALF_UP);
+    }
+
     private Local carregarLocal(Long localId) {
         return localRepository.findById(localId)
                 .orElseThrow(() -> new ResourceNotFoundException("Local não encontrado."));
@@ -283,13 +293,16 @@ public class GastoService {
 
         List<DistribuicaoEpcResponse> dist =
                 hospedagemRepository.distribuicaoEpcAtivaPorLocal(gasto.getLocal().getId());
-        long totalPessoas = dist.stream().mapToLong(DistribuicaoEpcResponse::pessoas).sum();
-        if (totalPessoas == 0) {
+        // Peso = soma de 1/(qtde de EPCs da pessoa): quem tem mais de 1 EPC é dividido igualmente
+        // entre eles. O total dos pesos equivale ao nº de pessoas hospedadas.
+        BigDecimal totalPeso = dist.stream()
+                .map(DistribuicaoEpcResponse::peso)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (dist.isEmpty() || totalPeso.compareTo(BigDecimal.ZERO) == 0) {
             return; // sem hospedados no local -> sem rateio
         }
 
-        BigDecimal total = gasto.getQuantidade().multiply(gasto.getValor()).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalPessoasBd = BigDecimal.valueOf(totalPessoas);
+        BigDecimal total = totalGasto(gasto);
         BigDecimal cem = BigDecimal.valueOf(100);
 
         BigDecimal valorAcumulado = BigDecimal.ZERO;
@@ -298,7 +311,7 @@ public class GastoService {
 
         for (int i = 0; i < dist.size(); i++) {
             DistribuicaoEpcResponse d = dist.get(i);
-            BigDecimal pessoasBd = BigDecimal.valueOf(d.pessoas());
+            BigDecimal peso = d.peso();
             boolean ultima = i == dist.size() - 1;
 
             BigDecimal percentual;
@@ -307,8 +320,8 @@ public class GastoService {
                 percentual = cem.subtract(pctAcumulado);
                 valor = total.subtract(valorAcumulado);
             } else {
-                percentual = pessoasBd.multiply(cem).divide(totalPessoasBd, 2, RoundingMode.HALF_UP);
-                valor = total.multiply(pessoasBd).divide(totalPessoasBd, 2, RoundingMode.HALF_UP);
+                percentual = peso.multiply(cem).divide(totalPeso, 2, RoundingMode.HALF_UP);
+                valor = total.multiply(peso).divide(totalPeso, 2, RoundingMode.HALF_UP);
                 pctAcumulado = pctAcumulado.add(percentual);
                 valorAcumulado = valorAcumulado.add(valor);
             }
@@ -346,7 +359,7 @@ public class GastoService {
                 gasto.getNome(),
                 gasto.getQuantidade(),
                 gasto.getValor(),
-                gasto.getQuantidade().multiply(gasto.getValor()),
+                totalGasto(gasto),
                 gasto.getData());
     }
 

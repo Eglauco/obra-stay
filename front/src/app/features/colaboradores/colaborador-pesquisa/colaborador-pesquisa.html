@@ -248,9 +248,17 @@
                   </span>
                 </td>
                 <td class="px-4 py-3.5">
-                  <span class="inline-flex items-center rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted">
-                    {{ c.epc?.nome ?? '—' }}
-                  </span>
+                  @if (c.epcs?.length) {
+                    <div class="flex flex-wrap gap-1">
+                      @for (e of c.epcs; track e.id) {
+                        <span class="inline-flex items-center rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted">
+                          {{ e.nome }}
+                        </span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
                 </td>
                 <td class="px-4 py-3.5">
                   <div class="flex items-center justify-end gap-1">

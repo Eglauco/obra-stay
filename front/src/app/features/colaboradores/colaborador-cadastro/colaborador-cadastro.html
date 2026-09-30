@@ -235,19 +235,41 @@
           (tocado)="f.funcaoId().markAsTouched()"
         />
 
-        <!-- EPC (busca no backend) -->
-        <app-busca-select
-          label="EPC"
-          idBase="cad-epc"
-          [obrigatorio]="true"
-          [desabilitado]="somenteLeitura()"
-          placeholder="Buscar EPC…"
-          [buscar]="buscarEpc"
-          [inicial]="epcInicial()"
-          [erro]="epcError()"
-          (selecionadoChange)="onEpc($event)"
-          (tocado)="f.epcId().markAsTouched()"
-        />
+        <!-- EPC (múltipla seleção via checkboxes) -->
+        <fieldset class="flex flex-col gap-1.5">
+          <legend id="cad-epc-legend" class="text-sm font-medium text-fg">
+            EPC <span class="text-danger" aria-hidden="true">*</span>
+          </legend>
+          <div
+            role="group"
+            aria-labelledby="cad-epc-legend"
+            class="flex flex-wrap gap-x-4 gap-y-2 rounded-control border bg-canvas px-3.5 py-2.5"
+            [style.border-color]="epcError() ? 'var(--color-danger)' : null"
+            [attr.aria-invalid]="epcError() ? 'true' : null"
+            [attr.aria-describedby]="epcError() ? 'cad-epc-error' : null"
+          >
+            @for (op of epcOpcoes(); track op.id) {
+              <label class="flex cursor-pointer items-center gap-2 text-sm text-fg">
+                <input
+                  #cbEpc
+                  type="checkbox"
+                  [checked]="epcSelecionado(op.id)"
+                  [attr.disabled]="somenteLeitura() ? '' : null"
+                  [attr.aria-describedby]="epcError() ? 'cad-epc-error' : null"
+                  (change)="toggleEpc(op.id, cbEpc.checked)"
+                  class="size-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+                  style="accent-color: var(--color-accent)"
+                />
+                {{ op.nome }}
+              </label>
+            } @empty {
+              <span class="text-sm text-muted">Nenhum EPC disponível.</span>
+            }
+          </div>
+          @if (epcError()) {
+            <p id="cad-epc-error" role="alert" class="text-[0.8125rem] text-danger">{{ epcError() }}</p>
+          }
+        </fieldset>
 
         <!-- Empresa (busca no backend) -->
         <app-busca-select

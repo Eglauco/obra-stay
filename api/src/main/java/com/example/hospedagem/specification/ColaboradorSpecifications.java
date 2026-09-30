@@ -45,7 +45,9 @@ public final class ColaboradorSpecifications {
 
                 Long epcId = filtro.epcId();
                 if (epcId != null) {
-                    predicados.add(cb.equal(root.get("epc").get("id"), epcId));
+                    // Colaborador tem vários EPCs (N:N): casa se possuir AQUELE EPC.
+                    predicados.add(cb.equal(root.join("epcs").get("id"), epcId));
+                    query.distinct(true);
                 }
             }
 

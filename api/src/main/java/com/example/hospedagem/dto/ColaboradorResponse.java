@@ -2,6 +2,7 @@ package com.example.hospedagem.dto;
 
 import com.example.hospedagem.domain.Mdo;
 import com.example.hospedagem.domain.Sexo;
+import java.util.List;
 
 /**
  * Representação de saída de um colaborador.
@@ -14,7 +15,7 @@ public record ColaboradorResponse(
         String cpf,
         String email,
         FuncaoResponse funcao,
-        EpcResponse epc,
+        List<EpcResponse> epcs,
         EmpresaResponse empresa,
         GestaoResponse gestao,
         HospedagemAtivaResumo hospedagemAtiva

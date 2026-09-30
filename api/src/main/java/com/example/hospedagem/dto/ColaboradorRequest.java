@@ -4,8 +4,10 @@ import com.example.hospedagem.domain.Mdo;
 import com.example.hospedagem.domain.Sexo;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import org.hibernate.validator.constraints.br.CPF;
 
 /**
@@ -34,8 +36,8 @@ public record ColaboradorRequest(
         @NotNull(message = "Selecione a função.")
         Long funcaoId,
 
-        @NotNull(message = "Selecione o EPC.")
-        Long epcId,
+        @NotEmpty(message = "Selecione ao menos um EPC.")
+        List<Long> epcIds,
 
         @NotNull(message = "Selecione a empresa.")
         Long empresaId,
