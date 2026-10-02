@@ -32,6 +32,9 @@ public interface HospedagemRepository
     /** R2: conta as hospedagens ativas em um local (para validar capacidade). */
     long countByLocalIdAndDataSaidaIsNull(Long localId);
 
+    /** Total de hospedagens ativas (sem data de saída) em todos os locais — KPI do Painel. */
+    long countByDataSaidaIsNull();
+
     /**
      * Ocupação por local: para CADA local, sua capacidade e o número de hospedagens ativas.
      * Usa LEFT JOIN para incluir locais sem nenhuma hospedagem ativa (ocupados = 0).

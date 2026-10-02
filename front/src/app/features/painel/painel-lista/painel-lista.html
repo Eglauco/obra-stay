@@ -1,0 +1,56 @@
+<div
+  #caixa
+  class="overflow-y-auto pr-1"
+  style="max-height: 24rem"
+  [attr.aria-label]="rotulo() || null"
+  [attr.aria-busy]="carregando() ? 'true' : null"
+>
+  @if (carregandoInicial()) {
+    <div class="flex flex-col gap-3" aria-hidden="true">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <span class="sk block h-9 w-full"></span>
+      }
+    </div>
+  } @else if (erro() && itens().length === 0) {
+    <div class="flex flex-col items-center gap-2 py-6 text-center">
+      <p class="text-sm text-muted">{{ erroMsg() }}</p>
+      <button
+        type="button"
+        (click)="carregar()"
+        class="rounded-control border px-3 py-1 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (itens().length === 0) {
+    <p class="py-6 text-center text-sm text-muted">{{ vazio() }}</p>
+  } @else {
+    <div class="flex flex-col gap-3" role="list">
+      @for (item of itens(); track $index) {
+        <div role="listitem">
+          <ng-container
+            [ngTemplateOutlet]="linha()"
+            [ngTemplateOutletContext]="{ $implicit: item, primeiro: itens()[0] }"
+          />
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Sentinela do scroll infinito + feedback de carregamento da próxima página -->
+  <div #sentinela class="h-px w-full" aria-hidden="true"></div>
+  @if (!carregandoInicial() && carregando() && itens().length > 0) {
+    <p class="py-2 text-center text-xs text-muted">Carregando mais…</p>
+  }
+  @if (erro() && itens().length > 0) {
+    <div class="py-2 text-center">
+      <button
+        type="button"
+        (click)="carregar()"
+        class="text-[0.8125rem] font-medium text-accent hover:underline"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  }
+</div>
