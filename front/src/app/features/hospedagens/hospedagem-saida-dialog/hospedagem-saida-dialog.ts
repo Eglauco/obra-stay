@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { utcParaInputLocal } from '../../../core/util/format';
 
 /** Diálogo de "dar saída" (check-out): confirma a data de saída de uma hospedagem. */
 @Component({
@@ -106,8 +107,8 @@ export class HospedagemSaidaDialog {
 
   protected readonly titleId = 'saida-title';
   protected readonly dataSaida = signal('');
-  /** Min do input datetime-local (a partir da entrada), no formato "YYYY-MM-DDTHH:mm". */
-  protected readonly minLocal = computed(() => (this.dataEntradaMin() ?? '').slice(0, 16));
+  /** Min do input datetime-local (a entrada, convertida de UTC p/ o fuso do navegador). */
+  protected readonly minLocal = computed(() => utcParaInputLocal(this.dataEntradaMin()));
 
   constructor() {
     afterNextRender(() => {

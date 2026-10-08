@@ -10,6 +10,7 @@ import {
   Ocupacao,
   RelatorioHospedagens,
 } from '../models/hospedagem.model';
+import { fusoNavegador } from '../util/format';
 
 import { environment } from '../../../environments/environment';
 
@@ -31,6 +32,7 @@ export class HospedagemService {
     if (filtro.status) params = params.set('status', filtro.status);
     if (filtro.entradaDe) params = params.set('entradaDe', filtro.entradaDe);
     if (filtro.entradaAte) params = params.set('entradaAte', filtro.entradaAte);
+    params = params.set('tz', fusoNavegador());
 
     return this.http.get<PageResponse<Hospedagem>>(this.resource, { params });
   }
@@ -62,6 +64,7 @@ export class HospedagemService {
     if (filtro.status) params = params.set('status', filtro.status);
     if (filtro.entradaDe) params = params.set('entradaDe', filtro.entradaDe);
     if (filtro.entradaAte) params = params.set('entradaAte', filtro.entradaAte);
+    params = params.set('tz', fusoNavegador());
     return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
   }
 

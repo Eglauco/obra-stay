@@ -8,5 +8,6 @@ public record LogAuditoriaFiltro(
         String evento,     // LOGIN, LOGOUT, ACAO
         Boolean sucesso,
         LocalDate de,      // data inicial (inclusive)
-        LocalDate ate) {   // data final (inclusive)
+        LocalDate ate,     // data final (inclusive)
+        String tz) {       // fuso IANA do navegador (ex.: America/Sao_Paulo) p/ limites de dia e export
 }

@@ -2,7 +2,9 @@ package com.example.hospedagem.specification;
 
 import com.example.hospedagem.domain.Solicitacao;
 import com.example.hospedagem.dto.SolicitacaoFiltro;
+import com.example.hospedagem.util.Fusos;
 import jakarta.persistence.criteria.Predicate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,13 +35,14 @@ public final class SolicitacaoSpecifications {
                 if (filtro.localId() != null) {
                     predicados.add(cb.equal(root.get("local").get("id"), filtro.localId()));
                 }
+                ZoneId zona = Fusos.zona(filtro.tz());
                 if (filtro.aberturaDe() != null) {
                     predicados.add(cb.greaterThanOrEqualTo(
-                            root.get("dataHoraAbertura"), filtro.aberturaDe().atStartOfDay()));
+                            root.get("dataHoraAbertura"), Fusos.inicioDiaUtc(filtro.aberturaDe(), zona)));
                 }
                 if (filtro.aberturaAte() != null) {
                     predicados.add(cb.lessThan(
-                            root.get("dataHoraAbertura"), filtro.aberturaAte().plusDays(1).atStartOfDay()));
+                            root.get("dataHoraAbertura"), Fusos.inicioDiaUtc(filtro.aberturaAte().plusDays(1), zona)));
                 }
             }
 

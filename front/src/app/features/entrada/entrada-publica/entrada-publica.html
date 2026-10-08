@@ -282,7 +282,7 @@
             <p class="mt-2 text-sm text-muted">{{ r.mensagem }}</p>
             <div class="mt-4 rounded-card bg-surface-2 p-3 text-sm">
               <p class="font-medium text-fg">{{ r.localNome }}</p>
-              <p class="text-muted">{{ r.acao === 'ENTRADA' ? 'Entrada' : 'Saída' }} em {{ formatarData(r.data) }}</p>
+              <p class="text-muted">{{ r.acao === 'ENTRADA' ? 'Entrada' : 'Saída' }} em {{ fmtData(r.data) }}</p>
             </div>
           } @else if (solSucesso(); as s) {
             <span class="mx-auto grid size-16 place-items-center rounded-full" style="color: var(--color-accent); background-color: var(--color-accent-soft)" aria-hidden="true">

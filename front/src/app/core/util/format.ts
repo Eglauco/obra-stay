@@ -29,22 +29,85 @@ export function formatarCpf(v: string | null | undefined): string {
   return out;
 }
 
-/** Formata um ISO datetime ("YYYY-MM-DDTHH:mm[:ss]") como "DD/MM/AAAA HH:mm". */
-export function formatarDataHora(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const [data, hora = ''] = iso.split('T');
-  const [y, m, d] = data.split('-');
-  if (!y || !m || !d) return iso;
-  const hhmm = hora.slice(0, 5);
-  return hhmm ? `${d}/${m}/${y} ${hhmm}` : `${d}/${m}/${y}`;
+/**
+ * Converte um ISO datetime vindo do backend em um instante absoluto.
+ * O backend grava tudo em UTC e envia sem fuso ("YYYY-MM-DDTHH:mm:ss"); por isso um valor
+ * "naive" é interpretado como UTC. Se já vier com fuso (Z ou ±hh:mm), ele é respeitado.
+ */
+function paraInstante(iso: string): Date | null {
+  const temFuso = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso);
+  const d = new Date(temFuso ? iso : iso + 'Z');
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** Dias inteiros decorridos entre um ISO datetime e agora (nunca negativo). */
+const pad2 = (n: number): string => String(n).padStart(2, '0');
+
+/**
+ * Formata um ISO datetime (UTC) como "DD/MM/AAAA HH:mm" NO FUSO DO NAVEGADOR do usuário.
+ * Assim quem está em SP (UTC-3) e em MS (UTC-4) vê cada um o seu horário local.
+ */
+export function formatarDataHora(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const inst = paraInstante(iso);
+  if (!inst) return iso;
+  return `${pad2(inst.getDate())}/${pad2(inst.getMonth() + 1)}/${inst.getFullYear()} `
+    + `${pad2(inst.getHours())}:${pad2(inst.getMinutes())}`;
+}
+
+/**
+ * Formata um ISO datetime (UTC) como "DD/MM/AAAA" (só a data) NO FUSO DO NAVEGADOR.
+ * Use para datas derivadas de um instante (ex.: confirmação do auto check-in), onde a data
+ * do dia depende do fuso do usuário. Para campos LocalDate puros (sem hora), use formatarData.
+ */
+export function formatarDataLocal(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const inst = paraInstante(iso);
+  if (!inst) return iso;
+  return `${pad2(inst.getDate())}/${pad2(inst.getMonth() + 1)}/${inst.getFullYear()}`;
+}
+
+/**
+ * Converte o valor de um input datetime-local (no fuso do navegador) para ISO UTC "naive"
+ * ("YYYY-MM-DDTHH:mm:ss") para enviar ao backend. Garante que tudo é gravado em UTC.
+ */
+export function inputLocalParaUtc(valor: string | null | undefined): string | null {
+  if (!valor) return null;
+  const d = new Date(valor); // "YYYY-MM-DDTHH:mm" é interpretado no fuso local do navegador
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 19);
+}
+
+/**
+ * Converte um ISO datetime (UTC, do backend) para o valor de um input datetime-local
+ * ("YYYY-MM-DDTHH:mm") no fuso do navegador — para pré-preencher/validar campos de data-hora.
+ */
+export function utcParaInputLocal(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const inst = paraInstante(iso);
+  if (!inst) return '';
+  return `${inst.getFullYear()}-${pad2(inst.getMonth() + 1)}-${pad2(inst.getDate())}`
+    + `T${pad2(inst.getHours())}:${pad2(inst.getMinutes())}`;
+}
+
+/**
+ * Fuso IANA do navegador (ex.: "America/Sao_Paulo", "America/Campo_Grande"). Enviado ao backend
+ * nos filtros por data e nas exportações, para que os limites de dia e o Excel saiam no fuso do
+ * usuário (SP = UTC-3, MS = UTC-4). Cai no fuso de Brasília se o navegador não informar.
+ */
+export function fusoNavegador(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
+  } catch {
+    return 'America/Sao_Paulo';
+  }
+}
+
+/** Dias inteiros decorridos entre um ISO datetime (UTC) e agora (nunca negativo). */
 export function diasDesde(iso: string | null | undefined): number {
   if (!iso) return 0;
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return 0;
-  return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+  const inst = paraInstante(iso);
+  if (!inst) return 0;
+  return Math.max(0, Math.floor((Date.now() - inst.getTime()) / 86_400_000));
 }
 
 /** Mantém apenas os dígitos de um telefone, limitado a 11. */

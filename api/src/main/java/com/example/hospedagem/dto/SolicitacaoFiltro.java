@@ -12,6 +12,7 @@ public record SolicitacaoFiltro(
         Long colaboradorId,
         Long localId,
         LocalDate aberturaDe,
-        LocalDate aberturaAte
+        LocalDate aberturaAte,
+        String tz   // fuso IANA do navegador (ex.: America/Sao_Paulo) p/ limites de dia e export
 ) {
 }

@@ -7,9 +7,11 @@ import com.example.hospedagem.dto.PageResponse;
 import com.example.hospedagem.repository.LogAuditoriaRepository;
 import com.example.hospedagem.repository.UsuarioRepository;
 import com.example.hospedagem.specification.LogAuditoriaSpecifications;
+import com.example.hospedagem.util.Fusos;
 import com.example.hospedagem.util.PlanilhaExcel;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -117,12 +119,13 @@ public class LogAuditoriaService {
         List<LogAuditoria> lista = repository.findAll(
                 LogAuditoriaSpecifications.comFiltro(filtro), Sort.by(Sort.Direction.DESC, "dataHora"));
 
+        ZoneId zona = Fusos.zona(filtro.tz());
         List<String> cabecalhos = List.of(
                 "Data/hora", "Usuário", "Evento", "Tela", "Ação", "Detalhe", "Sucesso", "Status", "IP", "Navegador");
         List<List<Object>> linhas = new ArrayList<>();
         for (LogAuditoria l : lista) {
             linhas.add(java.util.Arrays.asList(
-                    l.getDataHora() == null ? "" : l.getDataHora().format(FMT),
+                    l.getDataHora() == null ? "" : Fusos.utcParaLocal(l.getDataHora(), zona).format(FMT),
                     l.getUsuarioEmail() == null ? "" : l.getUsuarioEmail(),
                     l.getEvento(),
                     l.getTela() == null ? "" : l.getTela(),

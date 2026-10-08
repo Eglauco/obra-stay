@@ -57,10 +57,11 @@ public class SolicitacaoController {
             @RequestParam(required = false) Long localId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aberturaDe,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aberturaAte,
+            @RequestParam(required = false) String tz,
             @PageableDefault(size = 10, sort = "dataHoraAbertura", direction = Sort.Direction.DESC) Pageable pageable) {
 
         SolicitacaoFiltro filtro = new SolicitacaoFiltro(
-                status, tipoSolicitacaoId, colaboradorId, localId, aberturaDe, aberturaAte);
+                status, tipoSolicitacaoId, colaboradorId, localId, aberturaDe, aberturaAte, tz);
         return service.buscar(filtro, pageable);
     }
 
@@ -76,10 +77,11 @@ public class SolicitacaoController {
             @RequestParam(required = false) Long colaboradorId,
             @RequestParam(required = false) Long localId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aberturaDe,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aberturaAte) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aberturaAte,
+            @RequestParam(required = false) String tz) {
 
         byte[] conteudo = service.exportar(new SolicitacaoFiltro(
-                status, tipoSolicitacaoId, colaboradorId, localId, aberturaDe, aberturaAte));
+                status, tipoSolicitacaoId, colaboradorId, localId, aberturaDe, aberturaAte, tz));
         return PlanilhaExcel.resposta(conteudo, "solicitacoes");
     }
 

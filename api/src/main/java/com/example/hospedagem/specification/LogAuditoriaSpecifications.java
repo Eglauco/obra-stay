@@ -2,7 +2,9 @@ package com.example.hospedagem.specification;
 
 import com.example.hospedagem.domain.LogAuditoria;
 import com.example.hospedagem.dto.LogAuditoriaFiltro;
+import com.example.hospedagem.util.Fusos;
 import jakarta.persistence.criteria.Predicate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
@@ -34,11 +36,14 @@ public final class LogAuditoriaSpecifications {
                 if (filtro.sucesso() != null) {
                     predicados.add(cb.equal(root.get("sucesso"), filtro.sucesso()));
                 }
+                ZoneId zona = Fusos.zona(filtro.tz());
                 if (filtro.de() != null) {
-                    predicados.add(cb.greaterThanOrEqualTo(root.get("dataHora"), filtro.de().atStartOfDay()));
+                    predicados.add(cb.greaterThanOrEqualTo(
+                            root.get("dataHora"), Fusos.inicioDiaUtc(filtro.de(), zona)));
                 }
                 if (filtro.ate() != null) {
-                    predicados.add(cb.lessThan(root.get("dataHora"), filtro.ate().plusDays(1).atStartOfDay()));
+                    predicados.add(cb.lessThan(
+                            root.get("dataHora"), Fusos.inicioDiaUtc(filtro.ate().plusDays(1), zona)));
                 }
             }
 

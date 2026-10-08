@@ -26,7 +26,7 @@ import { HistoricoTimeline } from '../../../core/components/historico-timeline/h
 import {
   apenasDigitosCpf,
   formatarCpf,
-  formatarData,
+  formatarDataLocal,
   formatarDataHora,
 } from '../../../core/util/format';
 
@@ -335,8 +335,8 @@ export class EntradaPublica {
     this.carregarLocal();
   }
 
-  protected formatarData(iso: string | null): string {
-    return formatarData(iso);
+  protected fmtData(iso: string | null): string {
+    return formatarDataLocal(iso);
   }
 
   private mensagemErro(e: HttpErrorResponse): string {

@@ -36,8 +36,9 @@ public class LogAuditoriaController {
             @RequestParam(required = false) Boolean sucesso,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(required = false) String tz,
             @PageableDefault(size = 20, sort = "dataHora", direction = Sort.Direction.DESC) Pageable pageable) {
-        return service.buscar(new LogAuditoriaFiltro(q, evento, sucesso, de, ate), pageable);
+        return service.buscar(new LogAuditoriaFiltro(q, evento, sucesso, de, ate, tz), pageable);
     }
 
     @GetMapping("/exportar")
@@ -47,8 +48,9 @@ public class LogAuditoriaController {
             @RequestParam(required = false) String evento,
             @RequestParam(required = false) Boolean sucesso,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate) {
-        byte[] conteudo = service.exportar(new LogAuditoriaFiltro(q, evento, sucesso, de, ate));
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(required = false) String tz) {
+        byte[] conteudo = service.exportar(new LogAuditoriaFiltro(q, evento, sucesso, de, ate, tz));
         return PlanilhaExcel.resposta(conteudo, "logs-acesso");
     }
 }

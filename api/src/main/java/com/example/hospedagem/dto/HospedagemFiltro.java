@@ -12,6 +12,7 @@ public record HospedagemFiltro(
         Long localId,
         String status,
         LocalDate entradaDe,
-        LocalDate entradaAte
+        LocalDate entradaAte,
+        String tz   // fuso IANA do navegador (ex.: America/Sao_Paulo) p/ limites de dia e export
 ) {
 }

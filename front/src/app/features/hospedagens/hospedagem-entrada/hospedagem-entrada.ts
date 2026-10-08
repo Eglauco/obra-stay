@@ -16,6 +16,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ApiError, Colaborador } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { HospedagemEntradaRequest } from '../../../core/models/hospedagem.model';
+import { inputLocalParaUtc } from '../../../core/util/format';
 
 const OBS_MAX = 255;
 
@@ -134,7 +135,7 @@ export class HospedagemEntrada {
     const req: HospedagemEntradaRequest = {
       colaboradorId: this.colaboradorId(),
       localId: this.localId,
-      dataEntrada: this.dataEntrada(),
+      dataEntrada: inputLocalParaUtc(this.dataEntrada()),
       observacao: this.observacao().trim() || null,
     };
     this.saving.set(true);

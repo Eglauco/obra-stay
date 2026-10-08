@@ -185,13 +185,14 @@ public class HospedagemService {
                 HospedagemSpecifications.comFiltro(filtro),
                 Sort.by(Sort.Direction.DESC, "dataEntrada").and(Sort.by(Sort.Direction.ASC, "id")));
 
+        java.time.ZoneId zona = com.example.hospedagem.util.Fusos.zona(filtro.tz());
         List<String> cabecalhos = List.of("Colaborador", "Entrada", "Saída", "Status", "Origem");
         List<List<Object>> linhas = new ArrayList<>();
         for (Hospedagem h : lista) {
             linhas.add(Arrays.asList(
                     h.getColaborador().getNome(),
-                    h.getDataEntrada(),
-                    h.getDataSaida(),
+                    com.example.hospedagem.util.Fusos.utcParaLocal(h.getDataEntrada(), zona),
+                    com.example.hospedagem.util.Fusos.utcParaLocal(h.getDataSaida(), zona),
                     h.getDataSaida() == null ? "Ativa" : "Encerrada",
                     rotuloOrigem(h.getOrigem())));
         }
@@ -230,7 +231,8 @@ public class HospedagemService {
         Local local = localRepository.findById(localId)
                 .orElseThrow(() -> new ResourceNotFoundException("Local não encontrado."));
 
-        HospedagemFiltro filtro = new HospedagemFiltro(null, localId, status, entradaDe, entradaAte);
+        // Período do relatório: sem tz do navegador aqui, usa o fuso de negócio padrão (Fusos.PADRAO).
+        HospedagemFiltro filtro = new HospedagemFiltro(null, localId, status, entradaDe, entradaAte, null);
         List<Hospedagem> lista = repository.findAll(
                 HospedagemSpecifications.comFiltro(filtro),
                 Sort.by(Sort.Direction.DESC, "dataEntrada").and(Sort.by(Sort.Direction.ASC, "id")));
@@ -397,7 +399,7 @@ public class HospedagemService {
                         "Saída de " + colaborador.getNome() + " · " + local.getNome(),
                         "/hospedagens/local/" + local.getId());
                 return new EntradaPublicaResultado(AcaoEntrada.SAIDA, colaborador.getNome(),
-                        local.getNome(), ativa.getDataSaida().toLocalDate(),
+                        local.getNome(), ativa.getDataSaida(),
                         "Saída registrada. Até logo, " + primeiroNome(colaborador) + "!");
             }
             throw new RegraNegocioException(null, "Você já está hospedado em "
@@ -427,7 +429,7 @@ public class HospedagemService {
                 "Entrada de " + colaborador.getNome() + " · " + local.getNome(),
                 "/hospedagens/local/" + local.getId());
         return new EntradaPublicaResultado(AcaoEntrada.ENTRADA, colaborador.getNome(),
-                local.getNome(), nova.getDataEntrada().toLocalDate(),
+                local.getNome(), nova.getDataEntrada(),
                 "Entrada registrada. Bem-vindo(a), " + primeiroNome(colaborador) + "!");
     }
 

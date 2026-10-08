@@ -2,6 +2,8 @@ package com.example.hospedagem.specification;
 
 import com.example.hospedagem.domain.Hospedagem;
 import com.example.hospedagem.dto.HospedagemFiltro;
+import com.example.hospedagem.util.Fusos;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
@@ -41,14 +43,15 @@ public final class HospedagemSpecifications {
                     }
                 }
 
+                ZoneId zona = Fusos.zona(filtro.tz());
                 if (filtro.entradaDe() != null) {
                     predicados.add(cb.greaterThanOrEqualTo(
-                            root.get("dataEntrada"), filtro.entradaDe().atStartOfDay()));
+                            root.get("dataEntrada"), Fusos.inicioDiaUtc(filtro.entradaDe(), zona)));
                 }
 
                 if (filtro.entradaAte() != null) {
                     predicados.add(cb.lessThan(
-                            root.get("dataEntrada"), filtro.entradaAte().plusDays(1).atStartOfDay()));
+                            root.get("dataEntrada"), Fusos.inicioDiaUtc(filtro.entradaAte().plusDays(1), zona)));
                 }
             }
 

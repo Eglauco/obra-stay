@@ -9,6 +9,7 @@ import {
   SolicitacaoFiltro,
   SolicitacaoRequest,
 } from '../models/solicitacao.model';
+import { fusoNavegador } from '../util/format';
 
 import { environment } from '../../../environments/environment';
 
@@ -35,6 +36,7 @@ export class SolicitacaoService {
     if (filtro.localId != null) params = params.set('localId', String(filtro.localId));
     if (filtro.aberturaDe) params = params.set('aberturaDe', filtro.aberturaDe);
     if (filtro.aberturaAte) params = params.set('aberturaAte', filtro.aberturaAte);
+    params = params.set('tz', fusoNavegador());
 
     return this.http.get<PageResponse<Solicitacao>>(this.resource, { params });
   }
@@ -52,6 +54,7 @@ export class SolicitacaoService {
     if (filtro.localId != null) params = params.set('localId', String(filtro.localId));
     if (filtro.aberturaDe) params = params.set('aberturaDe', filtro.aberturaDe);
     if (filtro.aberturaAte) params = params.set('aberturaAte', filtro.aberturaAte);
+    params = params.set('tz', fusoNavegador());
     return this.http.get(`${this.resource}/exportar`, { params, responseType: 'blob' });
   }
 

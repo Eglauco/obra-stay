@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PageResponse } from '../models/colaborador.model';
 import { LogAuditoria, LogAuditoriaFiltro } from '../models/log-auditoria.model';
+import { fusoNavegador } from '../util/format';
 import { environment } from '../../../environments/environment';
 
 const API_BASE = environment.apiBase;
@@ -26,6 +27,7 @@ export class LogAuditoriaService {
     if (filtro.sucesso != null) params = params.set('sucesso', String(filtro.sucesso));
     if (filtro.de) params = params.set('de', filtro.de);
     if (filtro.ate) params = params.set('ate', filtro.ate);
+    params = params.set('tz', fusoNavegador());
     return params;
   }
 

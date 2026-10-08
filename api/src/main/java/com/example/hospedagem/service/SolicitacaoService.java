@@ -236,6 +236,7 @@ public class SolicitacaoService {
                 SolicitacaoSpecifications.comFiltro(filtro),
                 Sort.by(Sort.Direction.DESC, "dataHoraAbertura"));
 
+        java.time.ZoneId zona = com.example.hospedagem.util.Fusos.zona(filtro.tz());
         List<String> cabecalhos = List.of("ID", "Tipo", "Colaborador", "Local", "Status",
                 "Aberta em", "Encerrada em", "Observação");
 
@@ -247,8 +248,8 @@ public class SolicitacaoService {
                     s.getColaborador() != null ? s.getColaborador().getNome() : null,
                     s.getLocal() != null ? s.getLocal().getNome() : null,
                     rotuloStatus(s.getStatus()),
-                    s.getDataHoraAbertura(),
-                    s.getDataHoraEncerramento(),
+                    com.example.hospedagem.util.Fusos.utcParaLocal(s.getDataHoraAbertura(), zona),
+                    com.example.hospedagem.util.Fusos.utcParaLocal(s.getDataHoraEncerramento(), zona),
                     s.getObservacao()));
         }
         return PlanilhaExcel.gerar("Solicitações", cabecalhos, linhas);

@@ -60,9 +60,10 @@ public class HospedagemController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaDe,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaAte,
+            @RequestParam(required = false) String tz,
             @PageableDefault(size = 10) Pageable pageable) {
 
-        HospedagemFiltro filtro = new HospedagemFiltro(colaboradorId, localId, status, entradaDe, entradaAte);
+        HospedagemFiltro filtro = new HospedagemFiltro(colaboradorId, localId, status, entradaDe, entradaAte, tz);
         return service.buscar(filtro, pageable);
     }
 
@@ -83,10 +84,11 @@ public class HospedagemController {
             @RequestParam(required = false) Long localId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaDe,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaAte) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate entradaAte,
+            @RequestParam(required = false) String tz) {
 
         byte[] conteudo = service.exportar(
-                new HospedagemFiltro(colaboradorId, localId, status, entradaDe, entradaAte));
+                new HospedagemFiltro(colaboradorId, localId, status, entradaDe, entradaAte, tz));
         return PlanilhaExcel.resposta(conteudo, "hospedagens");
     }
 

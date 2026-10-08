@@ -23,7 +23,7 @@ import { PodeDirective } from '../../../core/directives/pode.directive';
 import { ApiError, PageResponse } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
 import { Hospedagem, StatusFiltro } from '../../../core/models/hospedagem.model';
-import { formatarDataHora } from '../../../core/util/format';
+import { formatarDataHora, inputLocalParaUtc } from '../../../core/util/format';
 import { gerarRelatorioHospedagensPdf } from '../../../core/util/relatorio-hospedagens-pdf';
 
 /** Detalhe de um local: colaboradores hospedados + dar entrada / dar saída. */
@@ -265,7 +265,7 @@ export class HospedagemLocal {
     if (!h || this.dandoSaida()) return;
     this.dandoSaida.set(true);
     this.saidaErro.set(null);
-    this.service.darSaida(h.id, { dataSaida }).subscribe({
+    this.service.darSaida(h.id, { dataSaida: inputLocalParaUtc(dataSaida) }).subscribe({
       next: () => {
         this.dandoSaida.set(false);
         this.aDarSaida.set(null);
