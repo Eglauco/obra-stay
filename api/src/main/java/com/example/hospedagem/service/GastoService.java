@@ -293,8 +293,8 @@ public class GastoService {
 
         List<DistribuicaoEpcResponse> dist =
                 hospedagemRepository.distribuicaoEpcAtivaPorLocal(gasto.getLocal().getId());
-        // Peso = soma de 1/(qtde de EPCs da pessoa): quem tem mais de 1 EPC é dividido igualmente
-        // entre eles. O total dos pesos equivale ao nº de pessoas hospedadas.
+        // Peso de cada EPC = soma de (percentual/100) dos colaboradores ativos nele. Como as
+        // porcentagens de cada pessoa somam 100%, o total dos pesos equivale ao nº de pessoas.
         BigDecimal totalPeso = dist.stream()
                 .map(DistribuicaoEpcResponse::peso)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

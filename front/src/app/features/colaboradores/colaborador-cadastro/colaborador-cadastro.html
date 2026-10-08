@@ -235,35 +235,75 @@
           (tocado)="f.funcaoId().markAsTouched()"
         />
 
-        <!-- EPC (múltipla seleção via checkboxes) -->
+        <!-- EPC (múltipla seleção com porcentagem; a soma deve ser 100%) -->
         <fieldset class="flex flex-col gap-1.5">
           <legend id="cad-epc-legend" class="text-sm font-medium text-fg">
             EPC <span class="text-danger" aria-hidden="true">*</span>
+            <span class="font-normal text-muted">— a soma das porcentagens deve ser 100%</span>
           </legend>
           <div
             role="group"
             aria-labelledby="cad-epc-legend"
-            class="flex flex-wrap gap-x-4 gap-y-2 rounded-control border bg-canvas px-3.5 py-2.5"
+            class="flex flex-col gap-2 rounded-control border bg-canvas px-3.5 py-2.5"
             [style.border-color]="epcError() ? 'var(--color-danger)' : null"
             [attr.aria-invalid]="epcError() ? 'true' : null"
             [attr.aria-describedby]="epcError() ? 'cad-epc-error' : null"
           >
             @for (op of epcOpcoes(); track op.id) {
-              <label class="flex cursor-pointer items-center gap-2 text-sm text-fg">
-                <input
-                  #cbEpc
-                  type="checkbox"
-                  [checked]="epcSelecionado(op.id)"
-                  [attr.disabled]="somenteLeitura() ? '' : null"
-                  [attr.aria-describedby]="epcError() ? 'cad-epc-error' : null"
-                  (change)="toggleEpc(op.id, cbEpc.checked)"
-                  class="size-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
-                  style="accent-color: var(--color-accent)"
-                />
-                {{ op.nome }}
-              </label>
+              <div class="flex items-center justify-between gap-3">
+                <label class="flex min-w-0 cursor-pointer items-center gap-2 text-sm text-fg">
+                  <input
+                    #cbEpc
+                    type="checkbox"
+                    [checked]="epcSelecionado(op.id)"
+                    [attr.disabled]="somenteLeitura() ? '' : null"
+                    [attr.aria-describedby]="epcError() ? 'cad-epc-error' : null"
+                    (change)="toggleEpc(op.id, cbEpc.checked)"
+                    class="size-4 shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+                    style="accent-color: var(--color-accent)"
+                  />
+                  <span class="truncate">{{ op.nome }}</span>
+                </label>
+                @if (epcSelecionado(op.id)) {
+                  <div class="flex shrink-0 items-center gap-1">
+                    <input
+                      #pctEpc
+                      type="text"
+                      inputmode="decimal"
+                      [value]="percentualDe(op.id)"
+                      [attr.disabled]="somenteLeitura() ? '' : null"
+                      (input)="setPercentual(op.id, pctEpc.value)"
+                      [attr.aria-label]="'Porcentagem de ' + op.nome"
+                      [attr.aria-invalid]="percentualInvalido(op.id) ? 'true' : null"
+                      [style.border-color]="percentualInvalido(op.id) ? 'var(--color-danger)' : null"
+                      class="h-9 w-20 rounded-control border bg-surface px-2 text-right text-sm text-fg outline-none transition-colors focus:border-accent disabled:cursor-not-allowed disabled:opacity-70"
+                    />
+                    <span class="text-sm text-muted">%</span>
+                  </div>
+                }
+              </div>
             } @empty {
               <span class="text-sm text-muted">Nenhum EPC disponível.</span>
+            }
+
+            @if (epcPct().size > 0) {
+              <div class="mt-1 flex items-center justify-between gap-3 border-t border-border pt-2">
+                <span
+                  class="text-[0.8125rem] font-medium"
+                  [style.color]="epcSoma100() ? 'var(--color-success)' : 'var(--color-danger)'"
+                >
+                  Soma: {{ somaDisplay() }}%{{ epcSoma100() ? '' : ' · precisa ser 100%' }}
+                </span>
+                @if (!somenteLeitura()) {
+                  <button
+                    type="button"
+                    (click)="dividirIgualmente()"
+                    class="shrink-0 rounded-control border px-2.5 py-1 text-[0.8125rem] font-medium text-fg transition-colors hover:bg-surface-2"
+                  >
+                    Dividir igualmente
+                  </button>
+                }
+              </div>
             }
           </div>
           @if (epcError()) {

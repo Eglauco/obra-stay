@@ -79,12 +79,28 @@ export class ColaboradorCadastro {
   protected readonly empresaInicial = signal<BuscaOpcao | null>(null);
   protected readonly gestaoInicial = signal<BuscaOpcao | null>(null);
 
-  // EPC agora é múltipla seleção (grupo de checkboxes). Opções carregadas do back.
+  // EPC: múltipla seleção, cada um com a SUA porcentagem (a soma é 100%). Opções do back.
   protected readonly epcOpcoes = signal<Epc[]>([]);
-  // Conjunto imutável de ids marcados (toggle via set/update, nunca mutate).
-  protected readonly epcIdsSel = signal<Set<number>>(new Set());
+  // Map imutável epcId -> TEXTO digitado da porcentagem (aceita vírgula; parse só na soma/envio).
+  protected readonly epcPct = signal<Map<number, string>>(new Map());
   // "Tocado" para o EPC, espelhando o markAsTouched dos demais campos.
   protected readonly epcTocado = signal(false);
+  // Soma das porcentagens (arredondada a 2 casas) e se fecha exatamente em 100.
+  protected readonly somaPct = computed(
+    () => Math.round([...this.epcPct().values()].reduce((s, v) => s + this.parsePct(v), 0) * 100) / 100,
+  );
+  protected readonly epcSoma100 = computed(() => this.epcPct().size > 0 && this.somaPct() === 100);
+  // Cada EPC marcado deve ter porcentagem em (0, 100] — espelha os limites do backend.
+  protected readonly epcItensOk = computed(
+    () =>
+      this.epcPct().size > 0 &&
+      [...this.epcPct().values()].every((v) => {
+        const n = this.parsePct(v);
+        return n > 0 && n <= 100;
+      }),
+  );
+  // Soma formatada com vírgula (pt-BR) para exibição.
+  protected readonly somaDisplay = computed(() => this.fmtPct(this.somaPct()));
 
   private readonly id = signal<number | null>(this.lerId());
   protected readonly editMode = computed(() => this.id() != null);
@@ -146,10 +162,14 @@ export class ColaboradorCadastro {
   protected readonly gestaoError = computed(() => this.fieldError('gestaoId', this.f.gestaoId));
   // EPC (múltiplo): erro do servidor ou "obrigatório >= 1" após tocado/submeter.
   protected readonly epcError = computed<string | null>(() => {
-    const server = this.serverErrors()['epcIds'];
-    if (server) return server;
+    const errs = this.serverErrors();
+    const serverKey = Object.keys(errs).find((k) => k === 'epcs' || k.startsWith('epcs['));
+    if (serverKey) return errs[serverKey];
     if (!this.epcTocado()) return null;
-    return this.epcIdsSel().size === 0 ? 'Selecione ao menos um EPC.' : null;
+    if (this.epcPct().size === 0) return 'Selecione ao menos um EPC.';
+    if (!this.epcItensOk()) return 'Informe uma porcentagem entre 0,01 e 100 para cada EPC.';
+    if (this.somaPct() !== 100) return 'A soma das porcentagens deve ser exatamente 100%.';
+    return null;
   });
 
   // Funções de busca no backend (autocomplete). size 8 = primeira página enxuta.
@@ -206,7 +226,7 @@ export class ColaboradorCadastro {
           empresaId: c.empresa?.id ?? null,
           gestaoId: c.gestao?.id ?? null,
         });
-        this.epcIdsSel.set(new Set((c.epcs ?? []).map((e) => e.id)));
+        this.epcPct.set(new Map((c.epcs ?? []).map((e) => [e.epcId, this.fmtPct(e.percentual)])));
         this.funcaoInicial.set(c.funcao ?? null);
         this.empresaInicial.set(c.empresa ?? null);
         this.gestaoInicial.set(c.gestao ?? null);
@@ -260,18 +280,71 @@ export class ColaboradorCadastro {
   }
 
   protected epcSelecionado(id: number): boolean {
-    return this.epcIdsSel().has(id);
+    return this.epcPct().has(id);
+  }
+
+  /** Texto da porcentagem do EPC para o input ('' quando não preenchido). */
+  protected percentualDe(id: number): string {
+    return this.epcPct().get(id) ?? '';
   }
 
   protected toggleEpc(id: number, marcado: boolean): void {
-    this.epcIdsSel.update((atual) => {
-      const proximo = new Set(atual);
-      if (marcado) proximo.add(id);
-      else proximo.delete(id);
+    this.epcPct.update((atual) => {
+      const proximo = new Map(atual);
+      if (marcado) {
+        if (!proximo.has(id)) proximo.set(id, '');
+      } else {
+        proximo.delete(id);
+      }
       return proximo;
     });
     this.epcTocado.set(true);
-    this.clearServerError('epcIds');
+    this.clearEpcServerErrors();
+  }
+
+  /** Porcentagem inválida (fora de (0,100]) para destacar o input após tocado. */
+  protected percentualInvalido(id: number): boolean {
+    if (!this.epcTocado()) return false;
+    const n = this.parsePct(this.epcPct().get(id) ?? '');
+    return !(n > 0 && n <= 100);
+  }
+
+  /** Guarda o texto digitado (sem reformatar, para não atrapalhar a digitação com vírgula). */
+  protected setPercentual(id: number, raw: string): void {
+    this.epcPct.update((atual) => {
+      const proximo = new Map(atual);
+      if (proximo.has(id)) proximo.set(id, raw);
+      return proximo;
+    });
+    this.epcTocado.set(true);
+    this.clearEpcServerErrors();
+  }
+
+  /** Distribui 100% igualmente entre os EPCs marcados (o 1º absorve o resto do arredondamento). */
+  protected dividirIgualmente(): void {
+    const ids = [...this.epcPct().keys()];
+    const n = ids.length;
+    if (n === 0) return;
+    const base = Math.floor(10000 / n) / 100;
+    const resto = Math.round((100 - base * n) * 100) / 100;
+    const proximo = new Map<number, string>();
+    ids.forEach((id, i) =>
+      proximo.set(id, this.fmtPct(i === 0 ? Math.round((base + resto) * 100) / 100 : base)),
+    );
+    this.epcPct.set(proximo);
+    this.epcTocado.set(true);
+    this.clearEpcServerErrors();
+  }
+
+  /** Converte o texto digitado (aceita vírgula) em número com 2 casas; NaN vira 0. */
+  private parsePct(raw: string): number {
+    const n = Number((raw || '').replace(',', '.'));
+    return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+  }
+
+  /** Formata um número de porcentagem como texto com vírgula (ex.: 33.34 -> "33,34"). */
+  private fmtPct(v: number): string {
+    return String(Math.round(v * 100) / 100).replace('.', ',');
   }
 
   protected onEmpresa(op: BuscaOpcao | null): void {
@@ -296,6 +369,17 @@ export class ColaboradorCadastro {
     }
   }
 
+  /** Limpa os erros de servidor do grupo de EPC (inclui as chaves indexadas 'epcs[...]'). */
+  private clearEpcServerErrors(): void {
+    this.serverErrors.update((e) => {
+      const next: Record<string, string> = {};
+      for (const [k, v] of Object.entries(e)) {
+        if (k !== 'epcs' && !k.startsWith('epcs[')) next[k] = v;
+      }
+      return next;
+    });
+  }
+
   protected submit(): void {
     if (this.somenteLeitura()) return;
     this.f.nome().markAsTouched();
@@ -309,8 +393,8 @@ export class ColaboradorCadastro {
     this.epcTocado.set(true);
     this.serverErrors.set({});
 
-    const epcIds = Array.from(this.epcIdsSel());
-    if (!this.f().valid() || epcIds.length === 0 || this.saving()) return;
+    const epcs = [...this.epcPct()].map(([epcId, raw]) => ({ epcId, percentual: this.parsePct(raw) }));
+    if (!this.f().valid() || !this.epcSoma100() || !this.epcItensOk() || this.saving()) return;
 
     const value = this.model();
     const req: ColaboradorRequest = {
@@ -320,7 +404,7 @@ export class ColaboradorCadastro {
       cpf: value.cpf,
       email: value.email.trim(),
       funcaoId: value.funcaoId,
-      epcIds,
+      epcs,
       empresaId: value.empresaId,
       gestaoId: value.gestaoId,
     };

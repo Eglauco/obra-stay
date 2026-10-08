@@ -15,7 +15,7 @@ public record ColaboradorResponse(
         String cpf,
         String email,
         FuncaoResponse funcao,
-        List<EpcResponse> epcs,
+        List<ColaboradorEpcResponse> epcs,
         EmpresaResponse empresa,
         GestaoResponse gestao,
         HospedagemAtivaResumo hospedagemAtiva

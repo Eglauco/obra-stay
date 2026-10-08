@@ -2,6 +2,7 @@ package com.example.hospedagem.dto;
 
 import com.example.hospedagem.domain.Mdo;
 import com.example.hospedagem.domain.Sexo;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -37,7 +38,8 @@ public record ColaboradorRequest(
         Long funcaoId,
 
         @NotEmpty(message = "Selecione ao menos um EPC.")
-        List<Long> epcIds,
+        @Valid
+        List<EpcPercentualRequest> epcs,
 
         @NotNull(message = "Selecione a empresa.")
         Long empresaId,

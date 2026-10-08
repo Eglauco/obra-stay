@@ -9,11 +9,13 @@ import com.example.hospedagem.domain.Hospedagem;
 import com.example.hospedagem.domain.Local;
 import com.example.hospedagem.domain.Mdo;
 import com.example.hospedagem.domain.Sexo;
+import com.example.hospedagem.domain.ColaboradorEpc;
+import com.example.hospedagem.dto.ColaboradorEpcResponse;
 import com.example.hospedagem.dto.ColaboradorFiltro;
 import com.example.hospedagem.dto.ColaboradorRequest;
 import com.example.hospedagem.dto.ColaboradorResponse;
 import com.example.hospedagem.dto.EmpresaResponse;
-import com.example.hospedagem.dto.EpcResponse;
+import com.example.hospedagem.dto.EpcPercentualRequest;
 import com.example.hospedagem.dto.FuncaoResponse;
 import com.example.hospedagem.dto.GestaoResponse;
 import com.example.hospedagem.dto.HospedagemAtivaResumo;
@@ -27,11 +29,14 @@ import com.example.hospedagem.repository.FuncaoRepository;
 import com.example.hospedagem.repository.GestaoRepository;
 import com.example.hospedagem.specification.ColaboradorSpecifications;
 import com.example.hospedagem.util.PlanilhaExcel;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
@@ -52,6 +57,8 @@ public class ColaboradorService {
     private static final int SIZE_MIN = 5;
     private static final int SIZE_MAX = 100;
     private static final Sort ORDENACAO_PADRAO = Sort.by(Sort.Direction.ASC, "nome");
+    /** A soma das porcentagens dos EPCs de um colaborador deve ser exatamente isto. */
+    private static final BigDecimal SOMA_PERCENTUAL = new BigDecimal("100.00");
 
     private final ColaboradorRepository repository;
     private final FuncaoRepository funcaoRepository;
@@ -112,10 +119,10 @@ public class ColaboradorService {
                 .cpf(cpf)
                 .email(normalizarEmail(request.email()))
                 .funcao(buscarFuncao(request.funcaoId()))
-                .epcs(buscarEpcs(request.epcIds()))
                 .empresa(buscarEmpresa(request.empresaId()))
                 .gestao(buscarGestao(request.gestaoId()))
                 .build();
+        aplicarEpcs(colaborador, request.epcs());
         return toResponse(repository.save(colaborador));
     }
 
@@ -132,8 +139,7 @@ public class ColaboradorService {
         colaborador.setCpf(cpf);
         colaborador.setEmail(normalizarEmail(request.email()));
         colaborador.setFuncao(buscarFuncao(request.funcaoId()));
-        colaborador.getEpcs().clear();
-        colaborador.getEpcs().addAll(buscarEpcs(request.epcIds()));
+        aplicarEpcs(colaborador, request.epcs());
         colaborador.setEmpresa(buscarEmpresa(request.empresaId()));
         colaborador.setGestao(buscarGestao(request.gestaoId()));
         return toResponse(repository.save(colaborador));
@@ -165,8 +171,11 @@ public class ColaboradorService {
                     rotuloMdo(c.getMdo()),
                     c.getEmail(),
                     c.getFuncao() != null ? c.getFuncao().getNome() : null,
-                    c.getEpcs().stream().map(Epc::getNome)
-                            .sorted(String.CASE_INSENSITIVE_ORDER).collect(Collectors.joining(", ")),
+                    c.getEpcs().stream()
+                            .sorted(Comparator.comparing(ce -> ce.getEpc().getNome(), String.CASE_INSENSITIVE_ORDER))
+                            .map(ce -> ce.getEpc().getNome() + " ("
+                                    + ce.getPercentual().toPlainString().replace('.', ',') + "%)")
+                            .collect(Collectors.joining(", ")),
                     c.getEmpresa() != null ? c.getEmpresa().getNome() : null,
                     c.getGestao() != null ? c.getGestao().getNome() : null,
                     h != null ? h.getLocal().getNome() : null,
@@ -212,16 +221,50 @@ public class ColaboradorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Função não encontrada."));
     }
 
-    private Set<Epc> buscarEpcs(List<Long> epcIds) {
-        if (epcIds == null || epcIds.isEmpty()) {
-            throw new RegraNegocioException("epcIds", "Selecione ao menos um EPC.");
+    /**
+     * Valida e aplica os EPCs (com porcentagem) ao colaborador: ao menos 1, sem repetição, cada
+     * porcentagem &gt; 0 e a SOMA exatamente 100%.
+     *
+     * <p>Reconcilia a associação em vez de limpar e recriar: os EPCs que permanecem são
+     * ATUALIZADOS (mesma entidade), os que saíram são removidos (orphanRemoval) e só os novos
+     * são inseridos. Isso evita recriar {@code ColaboradorEpc} com a mesma chave derivada
+     * (@MapsId), o que causaria {@code NonUniqueObjectException} ao editar.
+     */
+    private void aplicarEpcs(Colaborador colaborador, List<EpcPercentualRequest> itens) {
+        if (itens == null || itens.isEmpty()) {
+            throw new RegraNegocioException("epcs", "Selecione ao menos um EPC.");
         }
-        Set<Epc> epcs = new LinkedHashSet<>();
-        for (Long epcId : epcIds) {
-            epcs.add(epcRepository.findById(epcId)
-                    .orElseThrow(() -> new ResourceNotFoundException("EPC não encontrado.")));
+        Map<Long, BigDecimal> desejado = new LinkedHashMap<>();
+        BigDecimal soma = BigDecimal.ZERO;
+        for (EpcPercentualRequest it : itens) {
+            if (it.epcId() == null) {
+                throw new RegraNegocioException("epcs", "Selecione o EPC.");
+            }
+            if (desejado.putIfAbsent(it.epcId(), it.percentual()) != null) {
+                throw new RegraNegocioException("epcs", "O mesmo EPC foi informado mais de uma vez.");
+            }
+            soma = soma.add(it.percentual());
         }
-        return epcs;
+        if (soma.compareTo(SOMA_PERCENTUAL) != 0) {
+            throw new RegraNegocioException("epcs",
+                    "A soma das porcentagens dos EPCs deve ser exatamente 100%.");
+        }
+
+        // Remove os que saíram; atualiza o percentual dos que permanecem.
+        colaborador.getEpcs().removeIf(ce -> !desejado.containsKey(ce.getEpc().getId()));
+        Set<Long> existentes = new HashSet<>();
+        for (ColaboradorEpc ce : colaborador.getEpcs()) {
+            ce.setPercentual(desejado.get(ce.getEpc().getId()));
+            existentes.add(ce.getEpc().getId());
+        }
+        // Insere apenas os EPCs novos.
+        for (EpcPercentualRequest it : itens) {
+            if (!existentes.contains(it.epcId())) {
+                Epc epc = epcRepository.findById(it.epcId())
+                        .orElseThrow(() -> new ResourceNotFoundException("EPC não encontrado."));
+                colaborador.adicionarEpc(epc, it.percentual());
+            }
+        }
     }
 
     private Empresa buscarEmpresa(Long empresaId) {
@@ -252,9 +295,10 @@ public class ColaboradorService {
         Funcao funcao = colaborador.getFuncao();
         Empresa empresa = colaborador.getEmpresa();
         Gestao gestao = colaborador.getGestao();
-        List<EpcResponse> epcs = colaborador.getEpcs().stream()
-                .sorted(Comparator.comparing(Epc::getNome, String.CASE_INSENSITIVE_ORDER))
-                .map(e -> new EpcResponse(e.getId(), e.getNome()))
+        List<ColaboradorEpcResponse> epcs = colaborador.getEpcs().stream()
+                .sorted(Comparator.comparing(ce -> ce.getEpc().getNome(), String.CASE_INSENSITIVE_ORDER))
+                .map(ce -> new ColaboradorEpcResponse(
+                        ce.getEpc().getId(), ce.getEpc().getNome(), ce.getPercentual()))
                 .toList();
         return new ColaboradorResponse(
                 colaborador.getId(),

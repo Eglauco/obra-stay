@@ -250,9 +250,9 @@
                 <td class="px-4 py-3.5">
                   @if (c.epcs?.length) {
                     <div class="flex flex-wrap gap-1">
-                      @for (e of c.epcs; track e.id) {
+                      @for (e of c.epcs; track e.epcId) {
                         <span class="inline-flex items-center rounded-full bg-surface-2 px-2.5 py-1 text-[0.75rem] font-medium text-muted">
-                          {{ e.nome }}
+                          {{ e.nome }} · {{ e.percentual }}%
                         </span>
                       }
                     </div>

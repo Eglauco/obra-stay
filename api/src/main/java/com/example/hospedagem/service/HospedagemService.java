@@ -258,7 +258,7 @@ public class HospedagemService {
 
             String funcao = c.getFuncao() != null ? c.getFuncao().getNome() : "—";
             List<String> epcNomes = c.getEpcs().stream()
-                    .map(e -> e.getNome())
+                    .map(ce -> ce.getEpc().getNome())
                     .sorted(String.CASE_INSENSITIVE_ORDER)
                     .toList();
             String epc = epcNomes.isEmpty() ? "—" : String.join(", ", epcNomes);

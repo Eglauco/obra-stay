@@ -46,21 +46,20 @@ public interface HospedagemRepository
 
     /**
      * Distribuição por EPC dos colaboradores ATIVOS (hospedados) em um local, base do rateio.
-     * Como o colaborador pode ter vários EPCs, cada pessoa é dividida igualmente entre os seus
-     * EPCs: peso = soma de 1/(qtde de EPCs da pessoa). pessoas = colaboradores distintos por EPC.
-     * Query nativa (usa a tabela de junção colaborador_epc). Colunas: epcId, epcNome, pessoas, peso.
+     * Cada colaborador tem uma PORCENTAGEM por EPC (soma 100%); no rateio a pessoa contribui
+     * com {@code percentual/100} para cada um dos seus EPCs: peso = soma dessas frações por EPC.
+     * pessoas = colaboradores distintos por EPC (headcount, só para exibição).
+     * Query nativa (usa a tabela colaborador_epc). Colunas: epcId, epcNome, pessoas, peso.
      */
     @Query(value = "SELECT ce.epc_id AS epcId, e.nome AS epcNome, "
-            + "COUNT(DISTINCT c.id) AS pessoas, SUM(1.0 / nq.n) AS peso "
+            + "COUNT(DISTINCT c.id) AS pessoas, SUM(ce.percentual / 100.0) AS peso "
             + "FROM hospedagem h "
             + "JOIN colaborador c ON c.id = h.colaborador_id "
             + "JOIN colaborador_epc ce ON ce.colaborador_id = c.id "
             + "JOIN epc e ON e.id = ce.epc_id "
-            + "JOIN (SELECT colaborador_id, COUNT(*) AS n FROM colaborador_epc GROUP BY colaborador_id) nq "
-            + "ON nq.colaborador_id = c.id "
             + "WHERE h.local_id = :localId AND h.data_saida IS NULL "
             + "GROUP BY ce.epc_id, e.nome "
-            + "ORDER BY SUM(1.0 / nq.n) DESC, e.nome ASC", nativeQuery = true)
+            + "ORDER BY SUM(ce.percentual / 100.0) DESC, e.nome ASC", nativeQuery = true)
     List<Object[]> distribuicaoEpcAtivaPorLocalRaw(@Param("localId") Long localId);
 
     /** Mapeia o resultado nativo da distribuição por EPC para o DTO. */

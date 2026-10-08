@@ -15,6 +15,19 @@ export interface Funcao {
   nome: string;
 }
 
+/** EPC do colaborador na resposta: id, nome e porcentagem de participação. */
+export interface ColaboradorEpcView {
+  epcId: number;
+  nome: string;
+  percentual: number;
+}
+
+/** EPC do colaborador no envio: id + porcentagem (a soma de todos deve ser 100). */
+export interface EpcPercentual {
+  epcId: number;
+  percentual: number;
+}
+
 export interface FuncaoRequest {
   nome: string;
 }
@@ -46,8 +59,8 @@ export interface Colaborador {
   /** E-mail é opcional: pode vir nulo quando não informado. */
   email: string | null;
   funcao: Funcao;
-  /** EPCs do colaborador (vários): lista de {id, nome}. */
-  epcs: RefNome[];
+  /** EPCs do colaborador, cada um com a sua porcentagem (a soma é 100%). */
+  epcs: ColaboradorEpcView[];
   empresa: RefNome;
   gestao: RefNome;
   /** Hospedagem ativa atual, ou null quando não está hospedado. */
@@ -61,8 +74,8 @@ export interface ColaboradorRequest {
   cpf: string;
   email: string;
   funcaoId: number | null;
-  /** EPCs do colaborador (vários): pelo menos 1 obrigatório. */
-  epcIds: number[];
+  /** EPCs do colaborador com porcentagem: pelo menos 1, somando 100%. */
+  epcs: EpcPercentual[];
   empresaId: number | null;
   gestaoId: number | null;
 }

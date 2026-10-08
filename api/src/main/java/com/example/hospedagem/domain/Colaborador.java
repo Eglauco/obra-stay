@@ -7,14 +7,15 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -58,14 +59,13 @@ public class Colaborador {
     @JoinColumn(name = "funcao_id", nullable = false)
     private Funcao funcao;
 
-    /** EPCs do colaborador (N:N; pelo menos 1). Sem "principal" — todos com o mesmo peso. */
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "colaborador_epc",
-            joinColumns = @JoinColumn(name = "colaborador_id"),
-            inverseJoinColumns = @JoinColumn(name = "epc_id"))
+    /**
+     * EPCs do colaborador, cada um com a sua porcentagem (a soma é sempre 100%). Pelo menos 1.
+     * Associação gerenciada pelo colaborador (cascade + orphanRemoval).
+     */
+    @OneToMany(mappedBy = "colaborador", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private Set<Epc> epcs = new LinkedHashSet<>();
+    private List<ColaboradorEpc> epcs = new ArrayList<>();
 
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "empresa_id", nullable = false)
@@ -79,4 +79,9 @@ public class Colaborador {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospedagem_ativa_id")
     private Hospedagem hospedagemAtiva;
+
+    /** Adiciona um EPC com sua porcentagem, mantendo a associação bidirecional. */
+    public void adicionarEpc(Epc epc, BigDecimal percentual) {
+        this.epcs.add(new ColaboradorEpc(this, epc, percentual));
+    }
 }
