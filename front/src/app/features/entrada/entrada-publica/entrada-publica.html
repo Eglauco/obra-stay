@@ -84,13 +84,35 @@
 
           <div class="mt-4 flex flex-col gap-3">
             @if (podeEntrada()) {
-              <button type="button" (click)="darEntradaSaida()" [disabled]="processando()"
-                class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent text-base font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:opacity-60">
-                @if (processando()) {
-                  <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
-                }
-                Dar entrada
-              </button>
+              <div class="flex flex-col gap-3">
+                <p class="text-sm font-medium text-fg">Escolha o quarto</p>
+                <div class="flex flex-col gap-2" role="radiogroup" aria-label="Quartos disponíveis">
+                  @for (q of quartosDisponiveis(); track q.id) {
+                    <button
+                      type="button"
+                      role="radio"
+                      (click)="selecionarQuartoEntrada(q.id)"
+                      [attr.aria-checked]="quartoId() === q.id"
+                      class="inline-flex h-12 w-full items-center justify-between rounded-control border px-4 text-sm font-medium transition-colors"
+                      [style.border-color]="quartoId() === q.id ? 'var(--color-accent)' : null"
+                      [style.background-color]="quartoId() === q.id ? 'var(--color-accent-soft)' : null"
+                      [style.color]="quartoId() === q.id ? 'var(--color-accent)' : 'var(--color-fg)'"
+                    >
+                      <span>{{ q.nome }} · {{ vagas(q) === 1 ? '1 vaga' : vagas(q) + ' vagas' }}</span>
+                      @if (quartoId() === q.id) {
+                        <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      }
+                    </button>
+                  }
+                </div>
+                <button type="button" (click)="darEntradaSaida()" [disabled]="processando() || !entradaPronta()"
+                  class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent text-base font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
+                  @if (processando()) {
+                    <svg viewBox="0 0 24 24" fill="none" class="size-5 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
+                  }
+                  Dar entrada
+                </button>
+              </div>
             } @else if (podeSaida()) {
               <button type="button" (click)="darEntradaSaida()" [disabled]="processando()"
                 class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent text-base font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:opacity-60">

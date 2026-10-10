@@ -3,7 +3,6 @@ package com.example.hospedagem.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -23,10 +22,6 @@ public record LocalRequest(
         @NotBlank(message = "O nome é obrigatório.")
         @Size(max = 120, message = "Use no máximo 120 caracteres.")
         String nome,
-
-        @NotNull(message = "A capacidade é obrigatória.")
-        @Min(value = 1, message = "A capacidade deve ser ao menos 1.")
-        Integer capacidade,
 
         @NotBlank(message = "O CEP é obrigatório.")
         @Pattern(regexp = "\\d{5}-?\\d{3}", message = "CEP inválido.")
@@ -58,9 +53,8 @@ public record LocalRequest(
         @NotNull(message = "O status é obrigatório.")
         Long statusId,
 
-        @NotNull(message = "Informe o número de quartos.")
-        @Min(value = 1, message = "O número de quartos deve ser ao menos 1.")
-        Integer quartos,
+        @Valid
+        List<QuartoRequest> quartos,
 
         @DecimalMin(value = "0.0", inclusive = true, message = "O aluguel não pode ser negativo.")
         @Digits(integer = 10, fraction = 2, message = "Valor de aluguel inválido.")

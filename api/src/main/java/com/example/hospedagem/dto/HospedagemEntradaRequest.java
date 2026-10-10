@@ -15,6 +15,9 @@ public record HospedagemEntradaRequest(
         @NotNull(message = "Selecione o local.")
         Long localId,
 
+        @NotNull(message = "Selecione o quarto.")
+        Long quartoId,
+
         @NotNull(message = "Informe a data e hora de entrada.")
         LocalDateTime dataEntrada,
 

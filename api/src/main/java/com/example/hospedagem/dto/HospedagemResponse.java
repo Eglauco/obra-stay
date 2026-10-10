@@ -11,6 +11,7 @@ public record HospedagemResponse(
         Long id,
         ResumoRef colaborador,
         ResumoRef local,
+        ResumoRef quarto,
         LocalDateTime dataEntrada,
         LocalDateTime dataSaida,
         String status,

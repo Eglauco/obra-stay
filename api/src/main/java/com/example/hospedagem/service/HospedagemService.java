@@ -5,6 +5,7 @@ import com.example.hospedagem.domain.Colaborador;
 import com.example.hospedagem.domain.Hospedagem;
 import com.example.hospedagem.domain.Local;
 import com.example.hospedagem.domain.OrigemHospedagem;
+import com.example.hospedagem.domain.Quarto;
 import com.example.hospedagem.domain.TipoNotificacao;
 import com.example.hospedagem.dto.ConsultaEntradaResponse;
 import com.example.hospedagem.dto.EntradaPublicaRequest;
@@ -18,6 +19,7 @@ import com.example.hospedagem.dto.LocaisColaboradorResponse;
 import com.example.hospedagem.dto.LocalEntradaResponse;
 import com.example.hospedagem.dto.OcupacaoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.QuartoDisponivelResponse;
 import com.example.hospedagem.dto.RelatorioHospedagensResponse;
 import com.example.hospedagem.dto.ResumoRef;
 import com.example.hospedagem.dto.TotalCategoriaRelatorio;
@@ -26,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,6 +38,7 @@ import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.repository.ColaboradorRepository;
 import com.example.hospedagem.repository.HospedagemRepository;
 import com.example.hospedagem.repository.LocalRepository;
+import com.example.hospedagem.repository.QuartoRepository;
 import com.example.hospedagem.specification.HospedagemSpecifications;
 import com.example.hospedagem.util.PlanilhaExcel;
 import java.util.List;
@@ -65,15 +69,18 @@ public class HospedagemService {
     private final HospedagemRepository repository;
     private final ColaboradorRepository colaboradorRepository;
     private final LocalRepository localRepository;
+    private final QuartoRepository quartoRepository;
     private final NotificacaoService notificacaoService;
 
     public HospedagemService(HospedagemRepository repository,
                              ColaboradorRepository colaboradorRepository,
                              LocalRepository localRepository,
+                             QuartoRepository quartoRepository,
                              NotificacaoService notificacaoService) {
         this.repository = repository;
         this.colaboradorRepository = colaboradorRepository;
         this.localRepository = localRepository;
+        this.quartoRepository = quartoRepository;
         this.notificacaoService = notificacaoService;
     }
 
@@ -115,15 +122,13 @@ public class HospedagemService {
                             + local.getStatus().getNome() + ") não libera novas entradas.");
         }
 
-        // R2: o local não pode ultrapassar sua capacidade de vagas.
-        if (repository.countByLocalIdAndDataSaidaIsNull(local.getId()) >= local.getCapacidade()) {
-            throw new RegraNegocioException("localId",
-                    "Local sem vagas: capacidade máxima atingida.");
-        }
+        // R2: a vaga agora é por QUARTO (ativos no quarto < lotação do quarto).
+        Quarto quarto = buscarQuartoComVaga(request.quartoId(), local);
 
         Hospedagem hospedagem = Hospedagem.builder()
                 .colaborador(colaborador)
                 .local(local)
+                .quarto(quarto)
                 .dataEntrada(request.dataEntrada())
                 .dataSaida(null)
                 .observacao(normalizar(request.observacao()))
@@ -339,6 +344,46 @@ public class HospedagemService {
                 local.getCapacidade(), ocupados, temVaga);
     }
 
+    /** Quartos de um local que ainda têm vaga (ativos &lt; lotação), para escolher no check-in. */
+    @Transactional(readOnly = true)
+    public List<QuartoDisponivelResponse> quartosDisponiveis(Long localId) {
+        Local local = localRepository.findById(localId)
+                .orElseThrow(() -> new ResourceNotFoundException("Local não encontrado."));
+        return quartosComVaga(local.getId());
+    }
+
+    /** Monta a lista de quartos com vaga de um local (ativos por quarto em uma só consulta). */
+    private List<QuartoDisponivelResponse> quartosComVaga(Long localId) {
+        Map<Long, Long> ocupacao = new HashMap<>();
+        for (Object[] r : repository.ocupacaoPorQuartoDoLocal(localId)) {
+            ocupacao.put(((Number) r[0]).longValue(), ((Number) r[1]).longValue());
+        }
+        List<QuartoDisponivelResponse> out = new ArrayList<>();
+        for (Quarto q : quartoRepository.findByLocalIdOrderByOrdemAscIdAsc(localId)) {
+            long ocupados = ocupacao.getOrDefault(q.getId(), 0L);
+            if (ocupados < q.getLotacaoMaxima()) {
+                out.add(new QuartoDisponivelResponse(q.getId(), q.getNome(), q.getLotacaoMaxima(), ocupados));
+            }
+        }
+        return out;
+    }
+
+    /** Carrega o quarto, garante que é do local informado e que ainda tem vaga. */
+    private Quarto buscarQuartoComVaga(Long quartoId, Local local) {
+        if (quartoId == null) {
+            throw new RegraNegocioException("quartoId", "Selecione o quarto.");
+        }
+        Quarto quarto = quartoRepository.findById(quartoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Quarto não encontrado."));
+        if (!quarto.getLocal().getId().equals(local.getId())) {
+            throw new RegraNegocioException("quartoId", "O quarto não pertence a este local.");
+        }
+        if (repository.countByQuartoIdAndDataSaidaIsNull(quarto.getId()) >= quarto.getLotacaoMaxima()) {
+            throw new RegraNegocioException("quartoId", "Quarto sem vaga: lotação máxima atingida.");
+        }
+        return quarto;
+    }
+
     /** Consulta pelo CPF a ação disponível no local (para a tela confirmar antes de efetivar). */
     @Transactional(readOnly = true)
     public ConsultaEntradaResponse consultarEntrada(EntradaPublicaRequest request) {
@@ -354,20 +399,20 @@ public class HospedagemService {
             if (ativa.getLocal().getId().equals(local.getId())) {
                 return new ConsultaEntradaResponse(colaborador.getId(), colaborador.getNome(),
                         AcaoEntrada.SAIDA, "Você está hospedado aqui. Deseja registrar a saída?",
-                        ativa.getId(), ativa.getDataEntrada(), false);
+                        ativa.getId(), ativa.getDataEntrada(), false, List.of());
             }
             return new ConsultaEntradaResponse(colaborador.getId(), colaborador.getNome(),
                     AcaoEntrada.BLOQUEADO,
                     "Você já está hospedado em " + ativa.getLocal().getNome()
                             + ". Dê saída lá antes de entrar aqui.",
-                    null, null, false);
+                    null, null, false, List.of());
         }
 
         if (hospedagemBloqueada(local)) {
             return new ConsultaEntradaResponse(colaborador.getId(), colaborador.getNome(),
                     AcaoEntrada.BLOQUEADO,
                     "Local indisponível para entrada no momento. Procure a administração.",
-                    null, null, false);
+                    null, null, false, List.of());
         }
 
         long ocupados = repository.countByLocalIdAndDataSaidaIsNull(local.getId());
@@ -376,7 +421,8 @@ public class HospedagemService {
                 ? "Confirmar entrada em " + local.getNome() + "?"
                 : "Local sem vagas no momento. Procure a administração.";
         return new ConsultaEntradaResponse(colaborador.getId(), colaborador.getNome(),
-                AcaoEntrada.ENTRADA, mensagem, null, null, temVaga);
+                AcaoEntrada.ENTRADA, mensagem, null, null, temVaga,
+                temVaga ? quartosComVaga(local.getId()) : List.of());
     }
 
     /** Efetiva o auto check-in: decide no servidor entre entrada e saída e aplica as regras. */
@@ -411,13 +457,13 @@ public class HospedagemService {
                     "Local indisponível para novas entradas no momento. Procure a administração.");
         }
 
-        if (repository.countByLocalIdAndDataSaidaIsNull(local.getId()) >= local.getCapacidade()) {
-            throw new RegraNegocioException(null, "Local sem vagas no momento. Procure a administração.");
-        }
+        // R2: vaga por QUARTO (o trabalhador escolhe o quarto no quiosque).
+        Quarto quarto = buscarQuartoComVaga(request.quartoId(), local);
 
         Hospedagem nova = Hospedagem.builder()
                 .colaborador(colaborador)
                 .local(local)
+                .quarto(quarto)
                 .dataEntrada(LocalDateTime.now())
                 .dataSaida(null)
                 .observacao(null)
@@ -525,12 +571,14 @@ public class HospedagemService {
     private HospedagemResponse toResponse(Hospedagem hospedagem) {
         Colaborador colaborador = hospedagem.getColaborador();
         Local local = hospedagem.getLocal();
+        Quarto quarto = hospedagem.getQuarto();
         String status = hospedagem.getDataSaida() == null ? STATUS_ATIVA : STATUS_ENCERRADA;
 
         return new HospedagemResponse(
                 hospedagem.getId(),
                 new ResumoRef(colaborador.getId(), colaborador.getNome()),
                 new ResumoRef(local.getId(), local.getNome()),
+                quarto != null ? new ResumoRef(quarto.getId(), quarto.getNome()) : null,
                 hospedagem.getDataEntrada(),
                 hospedagem.getDataSaida(),
                 status,

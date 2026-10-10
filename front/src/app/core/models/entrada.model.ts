@@ -1,3 +1,5 @@
+import { QuartoDisponivel } from './hospedagem.model';
+
 export type AcaoEntrada = 'ENTRADA' | 'SAIDA' | 'BLOQUEADO';
 
 /** Dados do local exibidos na tela pública de auto check-in. */
@@ -26,6 +28,8 @@ export interface ConsultaEntrada {
   hospedagemAtivaId: number | null;
   dataEntradaAtual: string | null;
   localTemVaga: boolean;
+  /** Quartos com vaga (preenchido quando acao === 'ENTRADA'). */
+  quartos: QuartoDisponivel[];
 }
 
 /** Resultado final do auto check-in (entrada ou saída efetivada). */

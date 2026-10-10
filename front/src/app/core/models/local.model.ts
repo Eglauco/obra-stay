@@ -1,7 +1,16 @@
+/** Quarto do Local na resposta (lista editável do cadastro). */
+export interface QuartoView {
+  id: number;
+  nome: string;
+  lotacaoMaxima: number;
+  ordem: number;
+}
+
 export interface Local {
   id: number;
   codigo: string;
   nome: string;
+  /** Capacidade derivada (soma das lotações dos quartos). Somente leitura. */
   capacidade: number;
   cep: string;
   logradouro: string;
@@ -16,7 +25,7 @@ export interface Local {
   statusNome?: string | null;
   /** Se o status atual do local libera novas hospedagens. */
   hospedagemLiberada?: boolean;
-  quartos?: number;
+  quartos: QuartoView[];
   valorAluguel?: number;
   itensMobilia?: ItemMobiliaLocal[];
 }
@@ -51,10 +60,16 @@ export interface TrocarStatusRequest {
   observacao?: string | null;
 }
 
+/** Um quarto no payload de criação/edição do Local. {@code id} nulo = quarto novo. */
+export interface QuartoRequestModel {
+  id: number | null;
+  nome: string;
+  lotacaoMaxima: number;
+}
+
 export interface LocalRequest {
   codigo: string;
   nome: string;
-  capacidade: number | null;
   cep: string;
   logradouro: string;
   numero: string;
@@ -63,7 +78,7 @@ export interface LocalRequest {
   cidade: string;
   uf: string;
   statusId: number | null;
-  quartos: number | null;
+  quartos: QuartoRequestModel[];
   valorAluguel: number | null;
   itensMobilia: ItemMobiliaLocalRequest[];
 }

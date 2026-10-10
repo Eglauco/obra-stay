@@ -44,6 +44,11 @@ public class Hospedagem {
     @JoinColumn(name = "local_id", nullable = false)
     private Local local;
 
+    /** Quarto do local onde o colaborador está hospedado (a vaga é por quarto). */
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "quarto_id", nullable = false)
+    private Quarto quarto;
+
     @Column(name = "data_entrada", nullable = false)
     private LocalDateTime dataEntrada;
 

@@ -67,10 +67,6 @@ public class Local {
     @Column(name = "uf", nullable = false, length = 2)
     private String uf;
 
-    /** Quantidade de quartos do local (base da regra de mobiliário). */
-    @Column(name = "quartos", nullable = false)
-    private Integer quartos;
-
     /** Valor do aluguel mensal do local (0 quando não informado). */
     @Column(name = "valor_aluguel", nullable = false, precision = 12, scale = 2)
     private BigDecimal valorAluguel;
@@ -90,6 +86,12 @@ public class Local {
     @Builder.Default
     private List<ItemMobiliaLocal> itensMobilia = new ArrayList<>();
 
+    /** Quartos do local; a capacidade do local é a soma das lotações dos quartos. */
+    @OneToMany(mappedBy = "local", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("ordem ASC, id ASC")
+    @Builder.Default
+    private List<Quarto> quartos = new ArrayList<>();
+
     /** Adiciona um item de mobília mantendo os dois lados da associação em sincronia. */
     public void addItemMobilia(ItemMobiliaLocal item) {
         item.setLocal(this);
@@ -99,5 +101,11 @@ public class Local {
     /** Remove todos os itens de mobília (usado ao recadastrar a lista em uma edição). */
     public void limparItensMobilia() {
         this.itensMobilia.clear();
+    }
+
+    /** Adiciona um quarto mantendo os dois lados da associação em sincronia. */
+    public void addQuarto(Quarto quarto) {
+        quarto.setLocal(this);
+        this.quartos.add(quarto);
     }
 }

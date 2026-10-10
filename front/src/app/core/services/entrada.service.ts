@@ -26,8 +26,12 @@ export class EntradaService {
     return this.http.post<ConsultaEntrada>(`${this.base}/entrada-publica/consulta`, { localId, cpf });
   }
 
-  confirmar(localId: number, cpf: string): Observable<EntradaResultado> {
-    return this.http.post<EntradaResultado>(`${this.base}/entrada-publica/confirmar`, { localId, cpf });
+  confirmar(localId: number, cpf: string, quartoId: number | null): Observable<EntradaResultado> {
+    return this.http.post<EntradaResultado>(`${this.base}/entrada-publica/confirmar`, {
+      localId,
+      cpf,
+      quartoId,
+    });
   }
 
   /** Tipos de solicitação (para o menu do quiosque). */

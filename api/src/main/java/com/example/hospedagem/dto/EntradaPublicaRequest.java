@@ -12,6 +12,9 @@ public record EntradaPublicaRequest(
         Long localId,
 
         @NotBlank(message = "Informe o CPF.")
-        String cpf
+        String cpf,
+
+        /** Quarto escolhido (obrigatório apenas na confirmação de ENTRADA; validado no serviço). */
+        Long quartoId
 ) {
 }

@@ -54,6 +54,29 @@
         @if (colaboradorError()) { <p class="text-[0.8125rem] text-danger">{{ colaboradorError() }}</p> }
       </div>
 
+      <!-- Quarto -->
+      <div class="flex flex-col gap-1.5">
+        <label for="h-quarto" class="text-sm font-medium text-fg">Quarto <span class="text-danger" aria-hidden="true">*</span></label>
+        @if (semQuartos()) {
+          <div class="rounded-control border px-4 py-3 text-sm text-danger" style="background-color: var(--color-danger-soft)">
+            Não há quartos com vaga neste local. Cadastre ou libere quartos antes de dar entrada.
+          </div>
+        } @else {
+          <div class="relative">
+            <select #quartoSel id="h-quarto" (change)="selecionarQuarto(quartoSel.value)" [attr.disabled]="carregandoQuartos() ? '' : null"
+              class="h-11 w-full appearance-none rounded-control border bg-canvas pl-3.5 pr-10 text-sm text-fg outline-none transition-colors focus:border-accent disabled:opacity-70"
+              [style.border-color]="quartoError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="quartoError() ? 'true' : null">
+              <option value="" [selected]="quartoId() == null">{{ carregandoQuartos() ? 'Carregando quartos…' : 'Selecione o quarto…' }}</option>
+              @for (q of quartos(); track q.id) {
+                <option [value]="q.id" [selected]="q.id === quartoId()">{{ q.nome }} ({{ q.ocupados }}/{{ q.lotacaoMaxima }} · {{ vagas(q) === 1 ? '1 vaga' : vagas(q) + ' vagas' }})</option>
+              }
+            </select>
+            <svg viewBox="0 0 20 20" fill="none" class="pointer-events-none absolute right-3 top-1/2 size-4.5 -translate-y-1/2 text-faint" aria-hidden="true"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </div>
+        }
+        @if (quartoError()) { <p class="text-[0.8125rem] text-danger">{{ quartoError() }}</p> }
+      </div>
+
       <!-- Data e hora de entrada -->
       <div class="flex flex-col gap-1.5">
         <label for="h-data" class="text-sm font-medium text-fg">Data e hora de entrada <span class="text-danger" aria-hidden="true">*</span></label>
@@ -69,14 +92,14 @@
           <label for="h-obs" class="text-sm font-medium text-fg">Observação</label>
           <span class="tabular text-[0.75rem] text-faint">{{ obsCount() }}/{{ obsMax }}</span>
         </div>
-        <textarea #obsInput id="h-obs" rows="3" [value]="observacao()" (input)="onObservacao(obsInput.value)" placeholder="Opcional: quarto, referência, etc."
+        <textarea #obsInput id="h-obs" rows="3" [value]="observacao()" (input)="onObservacao(obsInput.value)" placeholder="Opcional: referência, pendências, etc."
           class="w-full resize-y rounded-control border bg-canvas px-3.5 py-2.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent"></textarea>
       </div>
 
       <!-- Ações -->
       <div class="mt-1 flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
         <button type="button" class="inline-flex h-11 items-center justify-center rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2" (click)="voltar()" [disabled]="saving()">Cancelar</button>
-        <button type="submit" class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70" [disabled]="saving()">
+        <button type="submit" class="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70" [disabled]="saving() || semQuartos()">
           @if (saving()) {
             <svg viewBox="0 0 24 24" fill="none" class="size-4 animate-spin" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
           }

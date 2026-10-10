@@ -8,6 +8,7 @@ import {
   HospedagemFiltro,
   HospedagemSaidaRequest,
   Ocupacao,
+  QuartoDisponivel,
   RelatorioHospedagens,
 } from '../models/hospedagem.model';
 import { fusoNavegador } from '../util/format';
@@ -74,6 +75,11 @@ export class HospedagemService {
     const n = nome?.trim();
     if (n) params = params.set('nome', n);
     return this.http.get(`${this.resource}/exportar-locais`, { params, responseType: 'blob' });
+  }
+
+  /** Quartos com vaga de um local, para escolher no check-in da administração. */
+  quartosDisponiveis(localId: number): Observable<QuartoDisponivel[]> {
+    return this.http.get<QuartoDisponivel[]>(`${this.resource}/quartos-disponiveis/${localId}`);
   }
 
   obter(id: number): Observable<Hospedagem> {

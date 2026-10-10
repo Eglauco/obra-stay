@@ -32,6 +32,17 @@ public interface HospedagemRepository
     /** R2: conta as hospedagens ativas em um local (para validar capacidade). */
     long countByLocalIdAndDataSaidaIsNull(Long localId);
 
+    /** Conta as hospedagens ativas em um quarto (vaga por quarto = lotação - ativos). */
+    long countByQuartoIdAndDataSaidaIsNull(Long quartoId);
+
+    /** Existe QUALQUER hospedagem (ativa ou encerrada) vinculada ao quarto? (impede remover). */
+    boolean existsByQuartoId(Long quartoId);
+
+    /** Ocupação ativa por quarto de um local: linhas [quartoId, qtdAtivos]. */
+    @Query("select h.quarto.id, count(h) from Hospedagem h "
+            + "where h.local.id = :localId and h.dataSaida is null group by h.quarto.id")
+    List<Object[]> ocupacaoPorQuartoDoLocal(@Param("localId") Long localId);
+
     /** Total de hospedagens ativas (sem data de saída) em todos os locais — KPI do Painel. */
     long countByDataSaidaIsNull();
 

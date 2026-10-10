@@ -13,6 +13,7 @@ export interface Hospedagem {
   id: number;
   colaborador: RefItem;
   local: RefItem;
+  quarto?: RefItem | null;
   dataEntrada: string; // ISO datetime "YYYY-MM-DDTHH:mm:ss"
   dataSaida: string | null;
   status: HospedagemStatus;
@@ -20,9 +21,18 @@ export interface Hospedagem {
   origem: OrigemHospedagem;
 }
 
+/** Quarto com vaga, para escolher no check-in. vagas = lotacaoMaxima - ocupados. */
+export interface QuartoDisponivel {
+  id: number;
+  nome: string;
+  lotacaoMaxima: number;
+  ocupados: number;
+}
+
 export interface HospedagemEntradaRequest {
   colaboradorId: number | null;
   localId: number | null;
+  quartoId: number | null;
   dataEntrada: string | null; // ISO datetime-local "YYYY-MM-DDTHH:mm"
   observacao: string | null;
 }

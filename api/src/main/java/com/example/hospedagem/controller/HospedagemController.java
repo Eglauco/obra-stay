@@ -11,6 +11,7 @@ import com.example.hospedagem.dto.LocaisColaboradorResponse;
 import com.example.hospedagem.dto.LocalEntradaResponse;
 import com.example.hospedagem.dto.OcupacaoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.QuartoDisponivelResponse;
 import com.example.hospedagem.dto.RelatorioHospedagensResponse;
 import com.example.hospedagem.service.HospedagemService;
 import com.example.hospedagem.util.PlanilhaExcel;
@@ -74,6 +75,13 @@ public class HospedagemController {
     @GetMapping("/ocupacao")
     public List<OcupacaoResponse> ocupacao() {
         return service.ocupacao();
+    }
+
+    /** Quartos com vaga de um local, para escolher no check-in da administração. */
+    @GetMapping("/quartos-disponiveis/{localId}")
+    @PreAuthorize("@perm.can('hospedagens','DAR_ENTRADA')")
+    public List<QuartoDisponivelResponse> quartosDisponiveis(@PathVariable Long localId) {
+        return service.quartosDisponiveis(localId);
     }
 
     /** Exporta as hospedagens do local (detalhe) para Excel, respeitando os filtros. */

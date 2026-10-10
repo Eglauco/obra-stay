@@ -15,7 +15,7 @@ import { HospedagemService } from '../../../core/services/hospedagem.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ApiError, Colaborador } from '../../../core/models/colaborador.model';
 import { Local } from '../../../core/models/local.model';
-import { HospedagemEntradaRequest } from '../../../core/models/hospedagem.model';
+import { HospedagemEntradaRequest, QuartoDisponivel } from '../../../core/models/hospedagem.model';
 import { inputLocalParaUtc } from '../../../core/util/format';
 
 const OBS_MAX = 255;
@@ -43,7 +43,11 @@ export class HospedagemEntrada {
   protected readonly erroLocal = signal<string | null>(null);
   protected readonly colaboradores = signal<Colaborador[]>([]);
 
+  protected readonly quartos = signal<QuartoDisponivel[]>([]);
+  protected readonly carregandoQuartos = signal(true);
+
   protected readonly colaboradorId = signal<number | null>(null);
+  protected readonly quartoId = signal<number | null>(null);
   protected readonly dataEntrada = signal('');
   protected readonly observacao = signal('');
 
@@ -53,10 +57,20 @@ export class HospedagemEntrada {
 
   protected readonly obsCount = computed(() => this.observacao().length);
 
+  /** Há quartos com vaga para dar entrada? */
+  protected readonly semQuartos = computed(
+    () => !this.carregandoQuartos() && this.quartos().length === 0,
+  );
+
   protected readonly colaboradorError = computed(() => {
     const s = this.serverErrors()['colaboradorId'];
     if (s) return s;
     return this.submetido() && this.colaboradorId() == null ? 'Selecione o colaborador.' : null;
+  });
+  protected readonly quartoError = computed(() => {
+    const s = this.serverErrors()['quartoId'];
+    if (s) return s;
+    return this.submetido() && this.quartoId() == null ? 'Selecione o quarto.' : null;
   });
   protected readonly dataError = computed(() => {
     const s = this.serverErrors()['dataEntrada'];
@@ -75,6 +89,7 @@ export class HospedagemEntrada {
       this.dataEntrada.set(this.agora());
       this.carregarLocal(this.localId);
       this.carregarColaboradores();
+      this.carregarQuartos(this.localId);
     });
   }
 
@@ -100,9 +115,34 @@ export class HospedagemEntrada {
     });
   }
 
+  private carregarQuartos(localId: number): void {
+    this.carregandoQuartos.set(true);
+    this.service.quartosDisponiveis(localId).subscribe({
+      next: (qs) => {
+        this.quartos.set(qs);
+        this.carregandoQuartos.set(false);
+      },
+      error: () => {
+        this.quartos.set([]);
+        this.carregandoQuartos.set(false);
+        this.toast.error('Quartos indisponíveis', 'Não foi possível carregar os quartos com vaga.');
+      },
+    });
+  }
+
+  /** Vagas restantes de um quarto (lotação - ocupados). */
+  protected vagas(q: QuartoDisponivel): number {
+    return Math.max(0, q.lotacaoMaxima - q.ocupados);
+  }
+
   protected selecionarColaborador(valor: string): void {
     this.colaboradorId.set(valor ? Number(valor) : null);
     this.limparServer('colaboradorId');
+  }
+
+  protected selecionarQuarto(valor: string): void {
+    this.quartoId.set(valor ? Number(valor) : null);
+    this.limparServer('quartoId');
   }
 
   protected onData(valor: string): void {
@@ -128,13 +168,20 @@ export class HospedagemEntrada {
     this.submetido.set(true);
     this.serverErrors.set({});
 
-    if (this.localId == null || this.colaboradorId() == null || !this.dataEntrada() || this.saving()) {
+    if (
+      this.localId == null ||
+      this.colaboradorId() == null ||
+      this.quartoId() == null ||
+      !this.dataEntrada() ||
+      this.saving()
+    ) {
       return;
     }
 
     const req: HospedagemEntradaRequest = {
       colaboradorId: this.colaboradorId(),
       localId: this.localId,
+      quartoId: this.quartoId(),
       dataEntrada: inputLocalParaUtc(this.dataEntrada()),
       observacao: this.observacao().trim() || null,
     };

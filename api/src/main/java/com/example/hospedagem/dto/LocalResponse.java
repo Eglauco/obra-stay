@@ -22,7 +22,7 @@ public record LocalResponse(
         Long statusId,
         String statusNome,
         boolean hospedagemLiberada,
-        Integer quartos,
+        List<QuartoResponse> quartos,
         BigDecimal valorAluguel,
         List<ItemMobiliaLocalResponse> itensMobilia
 ) {

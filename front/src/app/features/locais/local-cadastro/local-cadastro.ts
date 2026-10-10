@@ -28,7 +28,6 @@ import { formatarDataHora } from '../../../core/util/format';
 interface LocalModel {
   codigo: string;
   nome: string;
-  capacidade: number | null;
   cep: string;
   logradouro: string;
   numero: string;
@@ -45,6 +44,14 @@ interface MobiliaRow {
   nome: string;
   preco: string;
   quantidade: string;
+}
+
+/** Quarto editável do local (lotação como texto; convertida no submit/computed). */
+interface QuartoEdit {
+  key: number;
+  id: number | null;
+  nome: string;
+  lotacao: string;
 }
 
 type AbaLocal = 'dados' | 'status' | 'mobilia' | 'resumo';
@@ -83,8 +90,18 @@ export class LocalCadastro {
   // Abas do cadastro
   protected readonly aba = signal<AbaLocal>('dados');
 
-  // Nº de quartos (signal próprio: alimenta a regra de mobiliário em tempo real)
-  protected readonly quartos = signal<number | null>(null);
+  // Quartos do local (lista editável). A capacidade é derivada da soma das lotações.
+  protected readonly quartos = signal<QuartoEdit[]>([]);
+  private seqQuartos = 0;
+
+  // Gerador de quartos (atalho para criar vários de uma vez)
+  protected readonly gerQtd = signal('');
+  protected readonly gerLotacao = signal('');
+
+  /** Capacidade derivada: soma das lotações de todos os quartos (read-only). */
+  protected readonly capacidade = computed(() =>
+    this.quartos().reduce((soma, q) => soma + this.lotacaoNum(q), 0),
+  );
 
   // Valor do aluguel mensal (signal próprio: alimenta o Resumo Financeiro em tempo real)
   protected readonly valorAluguel = signal<number | null>(null);
@@ -112,7 +129,6 @@ export class LocalCadastro {
   protected readonly model = signal<LocalModel>({
     codigo: '',
     nome: '',
-    capacidade: null,
     cep: '',
     logradouro: '',
     numero: '',
@@ -136,7 +152,6 @@ export class LocalCadastro {
     maxLength(p.codigo, 30, { message: 'Use no máximo 30 caracteres.' });
     required(p.nome, { message: 'Informe o nome.' });
     maxLength(p.nome, 120, { message: 'Use no máximo 120 caracteres.' });
-    required(p.capacidade, { message: 'Informe a capacidade.' });
     required(p.logradouro, { message: 'Informe o logradouro.' });
     required(p.numero, { message: 'Informe o número.' });
     required(p.bairro, { message: 'Informe o bairro.' });
@@ -146,7 +161,6 @@ export class LocalCadastro {
     const bloqueado = () => this.somenteLeitura();
     readonly(p.codigo, { when: bloqueado });
     readonly(p.nome, { when: bloqueado });
-    readonly(p.capacidade, { when: bloqueado });
     readonly(p.logradouro, { when: bloqueado });
     readonly(p.numero, { when: bloqueado });
     readonly(p.complemento, { when: bloqueado });
@@ -156,7 +170,6 @@ export class LocalCadastro {
   // Erros por campo (servidor + validação local)
   protected readonly codigoError = computed(() => this.err(this.f.codigo, 'codigo'));
   protected readonly nomeError = computed(() => this.err(this.f.nome, 'nome'));
-  protected readonly capacidadeError = computed(() => this.err(this.f.capacidade, 'capacidade'));
   protected readonly logradouroError = computed(() => this.err(this.f.logradouro, 'logradouro'));
   protected readonly numeroError = computed(() => this.err(this.f.numero, 'numero'));
   protected readonly complementoError = computed(() => this.serverErrors()['complemento'] ?? null);
@@ -165,11 +178,8 @@ export class LocalCadastro {
   protected readonly ufError = computed(() => this.err(this.f.uf, 'uf'));
   protected readonly statusError = computed(() => this.err(this.f.statusId, 'statusId'));
   protected readonly fotoError = computed(() => this.serverErrors()['foto'] ?? this.fotoErro());
-  protected readonly quartosError = computed(
-    () =>
-      this.serverErrors()['quartos'] ??
-      (this.submetido() && !((this.quartos() ?? 0) >= 1) ? 'Informe ao menos 1 quarto.' : null),
-  );
+  /** Erro de servidor no grupo de quartos (campos quartos[...] são colapsados numa chave). */
+  protected readonly quartosServerError = computed(() => this.serverErrors()['quartos'] ?? null);
   protected readonly valorAluguelError = computed(() => this.serverErrors()['valorAluguel'] ?? null);
   protected readonly totalMobilia = computed(() =>
     this.itensMobilia().reduce((soma, r) => soma + this.subtotalMobilia(r), 0),
@@ -181,7 +191,7 @@ export class LocalCadastro {
    * Moradores = capacidade do local (nº de residentes).
    */
   protected readonly cenariosMoradores = computed(() => {
-    const moradores = this.model().capacidade ?? 0;
+    const moradores = this.capacidade();
     const total = this.totalMobilia();
     if (moradores <= 0) return [];
     return [{ moradores, ano: total, mes: total / moradores / 12 }];
@@ -190,7 +200,7 @@ export class LocalCadastro {
   // ----- Resumo Financeiro (aluguel + mobiliário) -----
   protected readonly mobiliarioMensal = computed(() => this.totalMobilia() / 12);
   protected readonly custoMensalCasa = computed(() => (this.valorAluguel() ?? 0) + this.mobiliarioMensal());
-  protected readonly moradoresFinanceiro = computed(() => this.model().capacidade ?? 0);
+  protected readonly moradoresFinanceiro = computed(() => this.capacidade());
   protected readonly custoMensalPorMorador = computed(() => {
     const m = this.moradoresFinanceiro();
     return m > 0 ? this.custoMensalCasa() / m : 0;
@@ -237,7 +247,6 @@ export class LocalCadastro {
         this.model.set({
           codigo: l.codigo,
           nome: l.nome,
-          capacidade: l.capacidade,
           cep: ViaCepService.formatar(l.cep),
           logradouro: l.logradouro,
           numero: l.numero,
@@ -247,7 +256,14 @@ export class LocalCadastro {
           uf: l.uf,
           statusId: l.statusId ?? null,
         });
-        this.quartos.set(l.quartos ?? null);
+        this.quartos.set(
+          (l.quartos ?? []).map((q) => ({
+            key: this.seqQuartos++,
+            id: q.id,
+            nome: q.nome,
+            lotacao: String(q.lotacaoMaxima ?? ''),
+          })),
+        );
         this.valorAluguel.set(l.valorAluguel ?? null);
         this.itensMobilia.set(
           (l.itensMobilia ?? []).map((it) => ({
@@ -373,7 +389,6 @@ export class LocalCadastro {
     this.submetido.set(true);
     this.f.codigo().markAsTouched();
     this.f.nome().markAsTouched();
-    this.f.capacidade().markAsTouched();
     this.f.logradouro().markAsTouched();
     this.f.numero().markAsTouched();
     this.f.bairro().markAsTouched();
@@ -388,23 +403,23 @@ export class LocalCadastro {
     }
 
     const mobiliaErro = this.itensMobilia().some((r) => !!this.erroLinhaMobilia(r));
+    const quartosErro = this.quartos().some((q) => !!this.erroLinhaQuarto(q));
 
     // Leva o usuário para a primeira aba que tiver erro.
     const dadosErro = !!(
       this.codigoError() ||
       this.nomeError() ||
-      this.capacidadeError() ||
       this.logradouroError() ||
       this.numeroError() ||
       this.bairroError() ||
       this.cepErro() ||
-      this.quartosError()
+      quartosErro
     );
     if (dadosErro) this.aba.set('dados');
     else if (this.statusError()) this.aba.set('status');
     else if (mobiliaErro) this.aba.set('mobilia');
 
-    if (!this.f().valid() || this.cepErro() || this.quartosError() || mobiliaErro || this.saving()) {
+    if (!this.f().valid() || this.cepErro() || quartosErro || mobiliaErro || this.saving()) {
       return;
     }
 
@@ -412,7 +427,6 @@ export class LocalCadastro {
     const req: LocalRequest = {
       codigo: v.codigo.trim(),
       nome: v.nome.trim(),
-      capacidade: v.capacidade == null ? null : Number(v.capacidade),
       cep: ViaCepService.formatar(v.cep),
       logradouro: v.logradouro.trim(),
       numero: v.numero.trim(),
@@ -421,7 +435,11 @@ export class LocalCadastro {
       cidade: v.cidade.trim(),
       uf: v.uf.trim().toUpperCase(),
       statusId: v.statusId,
-      quartos: this.quartos(),
+      quartos: this.quartos().map((q) => ({
+        id: q.id,
+        nome: q.nome.trim(),
+        lotacaoMaxima: this.lotacaoNum(q),
+      })),
       valorAluguel: this.valorAluguel(),
       itensMobilia: this.itensMobilia().map((r) => ({
         nome: r.nome.trim(),
@@ -526,15 +544,84 @@ export class LocalCadastro {
   }
 
   // ----- Quartos -----
-  protected setQuartos(valor: string): void {
-    const bruto = valor.trim();
-    if (bruto === '') {
-      this.quartos.set(null);
-    } else {
-      const n = Math.trunc(Number(bruto.replace(',', '.')));
-      this.quartos.set(Number.isFinite(n) ? n : null);
+  /** Lotação de um quarto como inteiro ≥ 0 (texto vazio/invalid → 0). */
+  private lotacaoNum(q: QuartoEdit): number {
+    const n = Number(q.lotacao.trim().replace(',', '.'));
+    return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : 0;
+  }
+
+  protected setGerQtd(valor: string): void {
+    this.gerQtd.set(valor);
+  }
+
+  protected setGerLotacao(valor: string): void {
+    this.gerLotacao.set(valor);
+  }
+
+  /** Próximo número para nomear "Quarto N": maior sufixo numérico já usado + 1 (não reusa). */
+  private proximoNumeroQuarto(): number {
+    let max = 0;
+    for (const q of this.quartos()) {
+      const m = /^Quarto\s+(\d+)$/i.exec(q.nome.trim());
+      if (m) max = Math.max(max, Number(m[1]));
     }
+    return max + 1;
+  }
+
+  /** Gera N quartos "Quarto {k}" continuando a numeração a partir do maior já existente. */
+  protected gerarQuartos(): void {
+    if (this.somenteLeitura()) return;
+    const qtd = Math.trunc(Number(this.gerQtd().trim().replace(',', '.')));
+    const lot = Math.trunc(Number(this.gerLotacao().trim().replace(',', '.')));
+    if (!Number.isFinite(qtd) || qtd < 1) {
+      this.toast.error('Quantidade inválida', 'Informe quantos quartos gerar (ao menos 1).');
+      return;
+    }
+    if (!Number.isFinite(lot) || lot < 1) {
+      this.toast.error('Lotação inválida', 'Informe a lotação por quarto (ao menos 1).');
+      return;
+    }
+    const base = this.proximoNumeroQuarto() - 1;
+    const novos: QuartoEdit[] = [];
+    for (let k = 1; k <= qtd; k++) {
+      novos.push({ key: this.seqQuartos++, id: null, nome: `Quarto ${base + k}`, lotacao: String(lot) });
+    }
+    this.quartos.update((rows) => [...rows, ...novos]);
+    this.gerQtd.set('');
+    this.gerLotacao.set('');
     this.clearServerError('quartos');
+  }
+
+  protected adicionarQuarto(): void {
+    const n = this.proximoNumeroQuarto();
+    this.quartos.update((rows) => [
+      ...rows,
+      { key: this.seqQuartos++, id: null, nome: `Quarto ${n}`, lotacao: '1' },
+    ]);
+    this.clearServerError('quartos');
+  }
+
+  protected removerQuarto(key: number): void {
+    this.quartos.update((rows) => rows.filter((q) => q.key !== key));
+    this.clearServerError('quartos');
+  }
+
+  protected atualizarQuarto(key: number, campo: 'nome' | 'lotacao', e: Event): void {
+    const valor = (e.target as HTMLInputElement).value;
+    this.quartos.update((rows) => rows.map((q) => (q.key === key ? { ...q, [campo]: valor } : q)));
+    this.clearServerError('quartos');
+  }
+
+  protected lotacaoQuartoValida(q: QuartoEdit): boolean {
+    return this.lotacaoNum(q) >= 1;
+  }
+
+  protected erroLinhaQuarto(q: QuartoEdit): string | null {
+    if (!this.submetido()) return null;
+    if (!q.nome.trim()) return 'Informe o nome do quarto.';
+    if (q.nome.trim().length > 60) return 'Nome muito longo (máx. 60 caracteres).';
+    if (!this.lotacaoQuartoValida(q)) return 'A lotação deve ser ao menos 1.';
+    return null;
   }
 
   protected setValorAluguel(valor: string): void {
@@ -554,10 +641,9 @@ export class LocalCadastro {
   }
 
   protected aplicarOrcamento(): void {
-    if ((this.quartos() ?? 0) < 1) {
-      this.submetido.set(true);
+    if (this.quartos().length < 1) {
       this.aba.set('dados');
-      this.toast.error('Informe o nº de quartos', 'A quantidade dos itens é calculada pelo nº de quartos.');
+      this.toast.error('Adicione quartos', 'A quantidade dos itens é calculada pelo nº de quartos.');
       return;
     }
     const id = this.orcamentoSelId();
@@ -587,7 +673,7 @@ export class LocalCadastro {
     this.orcamentoService.obter(id).subscribe({
       next: (orc) => {
         // Resolve a escala do orçamento numa quantidade única, usando o nº de quartos do local.
-        const q = this.quartos() ?? 0;
+        const q = this.quartos().length;
         this.itensMobilia.set(
           (orc.itens ?? []).map((it) => ({
             key: this.seqMobilia++,
@@ -685,7 +771,9 @@ export class LocalCadastro {
     if (body?.fieldErrors?.length) {
       const map: Record<string, string> = {};
       for (const fe of body.fieldErrors) {
-        const campo = fe.field.startsWith('itensMobilia') ? 'itensMobilia' : fe.field;
+        let campo = fe.field;
+        if (campo.startsWith('itensMobilia')) campo = 'itensMobilia';
+        else if (campo.startsWith('quartos')) campo = 'quartos';
         map[campo] = map[campo] ?? fe.message;
       }
       this.serverErrors.set(map);

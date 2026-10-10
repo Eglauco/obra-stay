@@ -16,6 +16,7 @@ import {
   EntradaResultado,
   LocalEntrada,
 } from '../../../core/models/entrada.model';
+import { QuartoDisponivel } from '../../../core/models/hospedagem.model';
 import {
   HistoricoStatus,
   SOLICITACAO_STATUS_LABEL,
@@ -57,6 +58,9 @@ export class EntradaPublica {
   protected readonly consulta = signal<ConsultaEntrada | null>(null);
   protected readonly processando = signal(false);
   protected readonly erro = signal<string | null>(null);
+
+  // Quarto escolhido para a ENTRADA (null na SAIDA)
+  protected readonly quartoId = signal<number | null>(null);
 
   // Resultado (entrada/saída)
   protected readonly resultado = signal<EntradaResultado | null>(null);
@@ -103,6 +107,11 @@ export class EntradaPublica {
   );
   protected readonly podeSaida = computed(() => this.consulta()?.acao === 'SAIDA');
   protected readonly bloqueado = computed(() => this.consulta()?.acao === 'BLOQUEADO');
+
+  // Quartos com vaga para a ENTRADA (vêm da consulta)
+  protected readonly quartosDisponiveis = computed(() => this.consulta()?.quartos ?? []);
+  /** Só habilita "Dar entrada" depois de escolher um quarto. */
+  protected readonly entradaPronta = computed(() => this.podeEntrada() && this.quartoId() != null);
 
   protected readonly obsCount = computed(() => this.solObs().length);
   protected readonly solValido = computed(
@@ -157,6 +166,8 @@ export class EntradaPublica {
       next: (c) => {
         this.processando.set(false);
         this.consulta.set(c);
+        // Pré-seleciona quando só há um quarto com vaga; senão o trabalhador escolhe.
+        this.quartoId.set(c.acao === 'ENTRADA' && c.quartos.length === 1 ? c.quartos[0].id : null);
         this.etapa.set('menu');
       },
       error: (e: HttpErrorResponse) => {
@@ -166,12 +177,29 @@ export class EntradaPublica {
     });
   }
 
+  protected selecionarQuartoEntrada(id: number): void {
+    this.quartoId.set(id);
+    this.erro.set(null);
+  }
+
+  /** Vagas restantes de um quarto (lotação - ocupados). */
+  protected vagas(q: QuartoDisponivel): number {
+    return Math.max(0, q.lotacaoMaxima - q.ocupados);
+  }
+
   // ----- Menu: entrada/saída (executa direto) -----
   protected darEntradaSaida(): void {
     if (this.processando() || this.localId == null) return;
+    // Na ENTRADA é obrigatório escolher o quarto; na SAIDA não há quarto.
+    const entrada = this.podeEntrada();
+    if (entrada && this.quartoId() == null) {
+      this.erro.set('Escolha o quarto para dar entrada.');
+      return;
+    }
+    const quartoId = entrada ? this.quartoId() : null;
     this.processando.set(true);
     this.erro.set(null);
-    this.service.confirmar(this.localId, this.cpf()).subscribe({
+    this.service.confirmar(this.localId, this.cpf(), quartoId).subscribe({
       next: (r) => {
         this.processando.set(false);
         this.resultado.set(r);
@@ -324,6 +352,7 @@ export class EntradaPublica {
   protected trocarCpf(): void {
     this.etapa.set('cpf');
     this.consulta.set(null);
+    this.quartoId.set(null);
     this.erro.set(null);
     this.cpf.set('');
   }

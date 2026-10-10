@@ -3,6 +3,7 @@ package com.example.hospedagem.service;
 import com.example.hospedagem.domain.ItemMobiliaLocal;
 import com.example.hospedagem.domain.Local;
 import com.example.hospedagem.domain.LocalStatusHistorico;
+import com.example.hospedagem.domain.Quarto;
 import com.example.hospedagem.domain.StatusLocal;
 import com.example.hospedagem.dto.ItemMobiliaLocalRequest;
 import com.example.hospedagem.dto.ItemMobiliaLocalResponse;
@@ -11,11 +12,14 @@ import com.example.hospedagem.dto.LocalRequest;
 import com.example.hospedagem.dto.LocalResponse;
 import com.example.hospedagem.dto.LocalStatusHistoricoResponse;
 import com.example.hospedagem.dto.PageResponse;
+import com.example.hospedagem.dto.QuartoRequest;
+import com.example.hospedagem.dto.QuartoResponse;
 import com.example.hospedagem.dto.TrocarStatusLocalRequest;
 import com.example.hospedagem.exception.DuplicateCodigoException;
 import com.example.hospedagem.exception.RegraNegocioException;
 import com.example.hospedagem.exception.ResourceNotFoundException;
 import com.example.hospedagem.exception.StorageException;
+import com.example.hospedagem.repository.HospedagemRepository;
 import com.example.hospedagem.repository.LocalRepository;
 import com.example.hospedagem.repository.LocalStatusHistoricoRepository;
 import com.example.hospedagem.repository.StatusLocalRepository;
@@ -27,8 +31,14 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +80,7 @@ public class LocalService {
     private final StatusLocalRepository statusRepository;
     private final LocalStatusHistoricoRepository historicoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final HospedagemRepository hospedagemRepository;
     private final ObjectProvider<StorageService> storageProvider;
     private final ProcessadorImagem processador;
 
@@ -77,12 +88,14 @@ public class LocalService {
                         StatusLocalRepository statusRepository,
                         LocalStatusHistoricoRepository historicoRepository,
                         UsuarioRepository usuarioRepository,
+                        HospedagemRepository hospedagemRepository,
                         ObjectProvider<StorageService> storageProvider,
                         ProcessadorImagem processador) {
         this.repository = repository;
         this.statusRepository = statusRepository;
         this.historicoRepository = historicoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.hospedagemRepository = hospedagemRepository;
         this.storageProvider = storageProvider;
         this.processador = processador;
     }
@@ -118,7 +131,6 @@ public class LocalService {
         Local local = Local.builder()
                 .codigo(codigo)
                 .nome(request.nome().trim())
-                .capacidade(request.capacidade())
                 .cep(request.cep().trim())
                 .logradouro(request.logradouro().trim())
                 .numero(request.numero().trim())
@@ -126,11 +138,11 @@ public class LocalService {
                 .bairro(request.bairro().trim())
                 .cidade(request.cidade().trim())
                 .uf(request.uf().trim().toUpperCase())
-                .quartos(request.quartos())
                 .valorAluguel(request.valorAluguel() != null ? request.valorAluguel() : BigDecimal.ZERO)
                 .status(status)
                 .build();
         aplicarItensMobilia(local, request.itensMobilia());
+        aplicarQuartos(local, request.quartos());
 
         if (temFoto(foto)) {
             local.setFotoKey(subirFoto(foto));
@@ -153,7 +165,6 @@ public class LocalService {
 
         local.setCodigo(codigo);
         local.setNome(request.nome().trim());
-        local.setCapacidade(request.capacidade());
         local.setCep(request.cep().trim());
         local.setLogradouro(request.logradouro().trim());
         local.setNumero(request.numero().trim());
@@ -161,11 +172,11 @@ public class LocalService {
         local.setBairro(request.bairro().trim());
         local.setCidade(request.cidade().trim());
         local.setUf(request.uf().trim().toUpperCase());
-        local.setQuartos(request.quartos());
         local.setValorAluguel(request.valorAluguel() != null ? request.valorAluguel() : BigDecimal.ZERO);
         // Substitui a lista de itens de mobília do local (orphanRemoval apaga os antigos).
         local.limparItensMobilia();
         aplicarItensMobilia(local, request.itensMobilia());
+        aplicarQuartos(local, request.quartos());
 
         String keyAntiga = local.getFotoKey();
         boolean apagarAntiga = false;
@@ -244,7 +255,7 @@ public class LocalService {
                     l.getCodigo(),
                     l.getNome(),
                     l.getCapacidade(),
-                    l.getQuartos(),
+                    l.getQuartos().size(),
                     l.getValorAluguel(),
                     l.getCep(),
                     l.getLogradouro(),
@@ -352,12 +363,20 @@ public class LocalService {
         return toResponse(local, true);
     }
 
-    private LocalResponse toResponse(Local local, boolean incluirMobilia) {
+    private LocalResponse toResponse(Local local, boolean incluirDetalhe) {
         StatusLocal status = local.getStatus();
-        List<ItemMobiliaLocalResponse> mobilia = incluirMobilia
+        List<ItemMobiliaLocalResponse> mobilia = incluirDetalhe
                 ? local.getItensMobilia().stream()
                         .map(i -> new ItemMobiliaLocalResponse(
                                 i.getId(), i.getNome(), i.getPrecoUnitario(), i.getQuantidade()))
+                        .toList()
+                : List.of();
+        List<QuartoResponse> quartos = incluirDetalhe
+                ? local.getQuartos().stream()
+                        .sorted(Comparator.comparingInt(Quarto::getOrdem)
+                                .thenComparing(q -> q.getId() == null ? 0L : q.getId()))
+                        .map(q -> new QuartoResponse(
+                                q.getId(), q.getNome(), q.getLotacaoMaxima(), q.getOrdem()))
                         .toList()
                 : List.of();
         return new LocalResponse(
@@ -376,9 +395,78 @@ public class LocalService {
                 status != null ? status.getId() : null,
                 status != null ? status.getNome() : null,
                 status != null && status.isHospedagemLiberada(),
-                local.getQuartos(),
+                quartos,
                 local.getValorAluguel(),
                 mobilia);
+    }
+
+    /**
+     * Reconcilia os quartos do local com a lista enviada (atualiza os que ficam pela id, remove
+     * os que saíram — bloqueando se houver colaborador hospedado — e insere os novos). Ao final,
+     * a capacidade do local é recalculada como a SOMA das lotações dos quartos.
+     */
+    private void aplicarQuartos(Local local, List<QuartoRequest> itens) {
+        List<QuartoRequest> lista = itens != null ? itens : List.of();
+
+        // Nomes únicos (case-insensitive) dentro do local.
+        Set<String> nomesVistos = new HashSet<>();
+        for (QuartoRequest it : lista) {
+            String chave = it.nome() == null ? "" : it.nome().trim().toLowerCase();
+            if (!nomesVistos.add(chave)) {
+                throw new RegraNegocioException("quartos", "Há mais de um quarto com o mesmo nome.");
+            }
+        }
+
+        Map<Long, Quarto> existentes = new HashMap<>();
+        for (Quarto q : local.getQuartos()) {
+            existentes.put(q.getId(), q);
+        }
+        Set<Long> idsRequest = lista.stream()
+                .map(QuartoRequest::id).filter(Objects::nonNull).collect(Collectors.toSet());
+
+        // Remove os quartos que saíram. Bloqueia se houver QUALQUER hospedagem (ativa ou do
+        // histórico) vinculada — a FK impede apagar o quarto, e o histórico deve ser preservado.
+        for (Quarto q : new ArrayList<>(local.getQuartos())) {
+            if (!idsRequest.contains(q.getId())) {
+                if (hospedagemRepository.existsByQuartoId(q.getId())) {
+                    throw new RegraNegocioException("quartos",
+                            "Não é possível remover o quarto \"" + q.getNome()
+                                    + "\": existe hospedagem (atual ou do histórico) vinculada a ele.");
+                }
+                local.getQuartos().remove(q); // orphanRemoval apaga
+            }
+        }
+
+        // Atualiza os mantidos e insere os novos, na ordem enviada.
+        int ordem = 0;
+        for (QuartoRequest it : lista) {
+            if (it.id() != null) {
+                Quarto q = existentes.get(it.id());
+                if (q == null) {
+                    throw new RegraNegocioException("quartos", "Quarto inválido no envio.");
+                }
+                // Não deixa reduzir a lotação abaixo de quem já está hospedado no quarto.
+                long ativos = hospedagemRepository.countByQuartoIdAndDataSaidaIsNull(q.getId());
+                if (it.lotacaoMaxima() < ativos) {
+                    throw new RegraNegocioException("quartos",
+                            "A lotação do quarto \"" + q.getNome() + "\" não pode ser menor que "
+                                    + ativos + " (colaboradores hospedados nele).");
+                }
+                q.setNome(it.nome().trim());
+                q.setLotacaoMaxima(it.lotacaoMaxima());
+                q.setOrdem(ordem);
+            } else {
+                local.addQuarto(Quarto.builder()
+                        .nome(it.nome().trim())
+                        .lotacaoMaxima(it.lotacaoMaxima())
+                        .ordem(ordem)
+                        .build());
+            }
+            ordem++;
+        }
+
+        local.setCapacidade(local.getQuartos().stream()
+                .mapToInt(Quarto::getLotacaoMaxima).sum());
     }
 
     /** Copia os itens de mobília do request para o local (define a ordem pela posição). */

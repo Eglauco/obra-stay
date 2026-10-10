@@ -81,22 +81,6 @@
               @if (codigoError()) { <p class="text-[0.8125rem] text-danger">{{ codigoError() }}</p> }
             </div>
             <div class="flex flex-col gap-1.5">
-              <label for="loc-capacidade" class="text-sm font-medium text-fg">Capacidade <span class="text-danger" aria-hidden="true">*</span></label>
-              <input id="loc-capacidade" type="number" [formField]="f.capacidade" (input)="clearServerError('capacidade')" placeholder="Ex.: 40"
-                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
-                [style.border-color]="capacidadeError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="capacidadeError() ? 'true' : null" />
-              @if (capacidadeError()) { <p class="text-[0.8125rem] text-danger">{{ capacidadeError() }}</p> }
-              @else { <p class="text-[0.8125rem] text-faint">Quantos colaboradores cabem.</p> }
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label for="loc-quartos" class="text-sm font-medium text-fg">Quartos <span class="text-danger" aria-hidden="true">*</span></label>
-              <input #quartosInput id="loc-quartos" type="number" inputmode="numeric" min="1" step="1" [value]="quartos() ?? ''" (input)="setQuartos(quartosInput.value)" placeholder="Ex.: 3" [attr.readonly]="somenteLeitura() ? '' : null"
-                class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
-                [style.border-color]="quartosError() ? 'var(--color-danger)' : null" [attr.aria-invalid]="quartosError() ? 'true' : null" [attr.aria-describedby]="quartosError() ? 'loc-quartos-erro' : null" />
-              @if (quartosError()) { <p id="loc-quartos-erro" class="text-[0.8125rem] text-danger">{{ quartosError() }}</p> }
-              @else { <p class="text-[0.8125rem] text-faint">Usado no cálculo de mobiliário.</p> }
-            </div>
-            <div class="flex flex-col gap-1.5">
               <label for="loc-aluguel" class="text-sm font-medium text-fg">Valor do aluguel (R$/mês)</label>
               <input #aluguelInput id="loc-aluguel" type="number" inputmode="decimal" min="0" step="0.01" [value]="valorAluguel() ?? ''" (input)="setValorAluguel(aluguelInput.value)" placeholder="0,00" [attr.readonly]="somenteLeitura() ? '' : null"
                 class="tabular h-11 w-full rounded-control border bg-canvas px-3.5 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
@@ -105,6 +89,95 @@
               @else { <p class="text-[0.8125rem] text-faint">Opcional. Usado no Resumo Financeiro.</p> }
             </div>
           </div>
+        </fieldset>
+
+        <!-- Quartos -->
+        <fieldset class="flex flex-col gap-3 border-t border-border pt-6">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Quartos</legend>
+
+          <!-- Capacidade derivada (soma das lotações) -->
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-control border bg-surface-2/40 px-4 py-3">
+            <span class="text-sm text-muted">
+              Capacidade: <strong class="tabular text-fg">{{ capacidade() }}</strong>
+              <span class="text-faint">(soma das lotações dos quartos)</span>
+            </span>
+            <span class="text-sm text-muted"><strong class="tabular text-fg">{{ quartos().length }}</strong> quarto(s)</span>
+          </div>
+
+          @if (!somenteLeitura()) {
+            <!-- Gerador de quartos -->
+            <div class="flex flex-col gap-3 rounded-card border bg-canvas p-4">
+              <p class="text-sm font-medium text-fg">Gerar vários quartos de uma vez</p>
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div class="flex flex-col gap-1.5">
+                  <label for="ger-qtd" class="text-[0.8125rem] font-medium text-muted">Quantidade de quartos</label>
+                  <input #gerQtdInput id="ger-qtd" type="number" inputmode="numeric" min="1" step="1" [value]="gerQtd()" (input)="setGerQtd(gerQtdInput.value)" placeholder="Ex.: 3"
+                    class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent sm:w-44" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label for="ger-lot" class="text-[0.8125rem] font-medium text-muted">Lotação por quarto</label>
+                  <input #gerLotInput id="ger-lot" type="number" inputmode="numeric" min="1" step="1" [value]="gerLotacao()" (input)="setGerLotacao(gerLotInput.value)" placeholder="Ex.: 4"
+                    class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent sm:w-44" />
+                </div>
+                <button type="button" (click)="gerarQuartos()"
+                  class="inline-flex h-11 items-center justify-center gap-2 rounded-control border border-border-strong px-4 text-sm font-medium text-fg transition-colors hover:bg-surface-2">
+                  <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                  Gerar quartos
+                </button>
+              </div>
+              <p class="text-[0.8125rem] text-muted">Cria os quartos numerados (continuando a partir dos existentes) com a lotação informada. Você pode ajustar cada um na lista abaixo.</p>
+            </div>
+          }
+
+          @if (quartosServerError()) {
+            <p class="rounded-control border px-3 py-2 text-[0.8125rem] text-danger" style="border-color: var(--color-danger); background-color: var(--color-danger-soft)">{{ quartosServerError() }}</p>
+          }
+
+          <!-- Cabeçalho da lista -->
+          <div class="flex items-center justify-between">
+            <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-faint">Lista de quartos</p>
+            <button type="button" (click)="adicionarQuarto()" [attr.disabled]="somenteLeitura() ? '' : null"
+              class="inline-flex h-9 items-center gap-2 rounded-control border border-border-strong px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2 disabled:opacity-70">
+              <svg viewBox="0 0 20 20" fill="none" class="size-4" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+              Adicionar quarto
+            </button>
+          </div>
+
+          @if (quartos().length === 0) {
+            <p class="rounded-control border border-dashed border-border-strong px-4 py-6 text-center text-sm text-muted">Nenhum quarto. Gere vários acima ou clique em “Adicionar quarto”. O local pode começar sem quartos.</p>
+          }
+
+          @for (q of quartos(); track q.key; let i = $index) {
+            <div class="rounded-control border bg-canvas p-3.5">
+              <div class="grid gap-3 sm:grid-cols-12 sm:items-start">
+                <div class="flex flex-col gap-1 sm:col-span-7">
+                  <label class="text-[0.8125rem] font-medium text-muted" [for]="'q-nome-' + q.key">Quarto {{ i + 1 }} <span class="text-danger" aria-hidden="true">*</span></label>
+                  <input [id]="'q-nome-' + q.key" type="text" autocomplete="off" [value]="q.nome" (input)="atualizarQuarto(q.key, 'nome', $event)"
+                    placeholder="Ex.: Quarto 1" [attr.readonly]="somenteLeitura() ? '' : null"
+                    class="h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
+                    [style.border-color]="submetido() && !q.nome.trim() ? 'var(--color-danger)' : null"
+                    [attr.aria-invalid]="submetido() && !q.nome.trim() ? 'true' : null"
+                    [attr.aria-describedby]="erroLinhaQuarto(q) ? 'q-erro-' + q.key : null" />
+                </div>
+                <div class="flex flex-col gap-1 sm:col-span-4">
+                  <label class="text-[0.8125rem] font-medium text-muted" [for]="'q-lot-' + q.key">Lotação máxima <span class="text-danger" aria-hidden="true">*</span></label>
+                  <input [id]="'q-lot-' + q.key" type="number" inputmode="numeric" min="1" step="1" [value]="q.lotacao" (input)="atualizarQuarto(q.key, 'lotacao', $event)"
+                    placeholder="Ex.: 4" [attr.readonly]="somenteLeitura() ? '' : null"
+                    class="tabular h-11 w-full rounded-control border bg-surface px-3 text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-accent read-only:opacity-70"
+                    [style.border-color]="submetido() && !lotacaoQuartoValida(q) ? 'var(--color-danger)' : null"
+                    [attr.aria-invalid]="submetido() && !lotacaoQuartoValida(q) ? 'true' : null"
+                    [attr.aria-describedby]="erroLinhaQuarto(q) ? 'q-erro-' + q.key : null" />
+                </div>
+                <div class="flex sm:col-span-1 sm:justify-end sm:pt-6.5">
+                  <button type="button" (click)="removerQuarto(q.key)" [attr.aria-label]="'Remover quarto ' + (i + 1)" title="Remover quarto" [attr.disabled]="somenteLeitura() ? '' : null"
+                    class="grid size-11 place-items-center rounded-control text-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-70 sm:size-9">
+                    <svg viewBox="0 0 20 20" fill="none" class="size-4.5" aria-hidden="true"><path d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5A1.5 1.5 0 0 1 12.5 17h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </button>
+                </div>
+              </div>
+              @if (erroLinhaQuarto(q); as e) { <p [id]="'q-erro-' + q.key" class="mt-1.5 text-[0.8125rem] text-danger">{{ e }}</p> }
+            </div>
+          }
         </fieldset>
 
         <!-- Endereço -->
@@ -309,7 +382,7 @@
         <!-- Resumo -->
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-control border bg-surface-2/40 px-4 py-3">
           <span class="text-sm text-muted">
-            <strong class="tabular text-fg">{{ quartos() ?? 0 }}</strong> quarto(s) ·
+            <strong class="tabular text-fg">{{ quartos().length }}</strong> quarto(s) ·
             <strong class="tabular text-fg">{{ itensMobilia().length }}</strong> item(ns)
           </span>
           <span class="text-sm text-muted">Total estimado: <strong class="tabular text-fg">{{ brl(totalMobilia()) }}</strong></span>
@@ -326,7 +399,7 @@
         </div>
 
         <p class="text-[0.8125rem] text-muted">
-          Ao copiar de um orçamento, a quantidade é calculada pelo nº de quartos ({{ quartos() ?? 0 }}). Depois você ajusta a quantidade livremente.
+          Ao copiar de um orçamento, a quantidade é calculada pelo nº de quartos ({{ quartos().length }}). Depois você ajusta a quantidade livremente.
         </p>
 
         @if (itensMobiliaServerError()) {
@@ -391,7 +464,7 @@
               <caption class="sr-only">Valor de mobiliário por residente</caption>
               <thead>
                 <tr class="bg-accent text-accent-fg">
-                  <th scope="col" class="px-4 py-2.5 text-left font-semibold uppercase tracking-wide">Casa de {{ quartos() ?? 0 }} quarto(s)</th>
+                  <th scope="col" class="px-4 py-2.5 text-left font-semibold uppercase tracking-wide">Casa de {{ quartos().length }} quarto(s)</th>
                   <th scope="colgroup" colspan="2" class="border-l border-white/20 px-4 py-2.5 text-center font-semibold uppercase tracking-wide">Valor por residente (mobília)</th>
                 </tr>
                 <tr class="bg-surface-2 text-[0.6875rem] uppercase tracking-wide text-muted">
@@ -412,7 +485,7 @@
             </table>
           </div>
         } @else {
-          <p class="rounded-control border border-dashed border-border-strong px-4 py-6 text-center text-sm text-muted">Informe a capacidade (nº de moradores) e adicione itens de mobília para ver os valores.</p>
+          <p class="rounded-control border border-dashed border-border-strong px-4 py-6 text-center text-sm text-muted">Adicione quartos (a capacidade vem da soma das lotações) e inclua itens de mobília para ver os valores.</p>
         }
 
         <!-- Custo total: aluguel + mobiliário -->
@@ -443,7 +516,7 @@
             </div>
           </dl>
           @if (moradoresFinanceiro() <= 0) {
-            <p class="border-t px-4 py-2 text-[0.8125rem] text-muted">Informe a capacidade (nº de moradores) na aba “Dados gerais” para o custo por morador.</p>
+            <p class="border-t px-4 py-2 text-[0.8125rem] text-muted">Adicione quartos na aba “Dados gerais” (a capacidade vem da soma das lotações) para o custo por morador.</p>
           }
         </div>
       </div>
